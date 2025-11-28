@@ -1,0 +1,27 @@
+{
+	"compileOnSave": false,
+	"compilerOptions": {
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"composite": true,
+		"target": "ESNext",
+		"module": "esnext",
+		"useDefineForClassFields": true,
+		"skipLibCheck": true,
+		"baseUrl": ".",
+		"rootDir": ".",
+		"outDir": ".out/types",
+		"sourceMap": true,
+		"declaration": true,
+		"moduleResolution": "bundler",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"strict": true,
+		"paths": {}
+	},
+	"references": [],
+	"exclude": [
+		"node_modules",
+		"tmp"
+	]
+}

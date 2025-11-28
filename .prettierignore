@@ -1,0 +1,11 @@
+**auto-generated**
+.vscode
+.gitlab-ci.yml
+node_modules
+storage
+pnpm-lock.yaml
+README.md
+lib/generator/sequelize-auto/module/*
+src/templates/html/styles.css
+lib/templates/html/**/*.js
+pnpm-*
