@@ -1,0 +1,12 @@
+{
+  "name": "dev-prep-root",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "sqlite3",
+      "@nestjs/core",
+      "esbuild"
+    ]
+  }
+}
