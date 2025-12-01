@@ -36,6 +36,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+        // Prevent infinite loop: if the failed request was already a refresh attempt, don't retry
+        if (originalRequest?.url?.includes('/auth/refresh-token')) {
+          return Promise.reject(error);
+        }
+
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
           try {

@@ -36,7 +36,8 @@
 				"ms-azuretools.vscode-azurefunctions",
 				"ms-azuretools.vscode-azureresourcegroups",
 				"ms-azuretools.vscode-azurevirtualmachines",
-				"ms-azure-devops.azure-pipelines"
+				"ms-azure-devops.azure-pipelines",
+				"Postman.postman-for-vscode"
 			]
 		}
 	}
