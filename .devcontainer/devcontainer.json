@@ -38,13 +38,13 @@
 				"ms-azuretools.vscode-azureresourcegroups",
 				"ms-azuretools.vscode-azurevirtualmachines",
 				"ms-azure-devops.azure-pipelines",
-				"Postman.postman-for-vscode"
+				"Postman.postman-for-vscode",
+				"bradlc.vscode-tailwindcss",
+				"formulahendry.auto-rename-tag"
 			]
 		}
 	},
-	"mounts": [
-		"source=/Users/longngphuc/.ssh,target=/root/.ssh,type=bind,consistency=cached"
-	]
+	"mounts": ["source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"]
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "root"
 }
