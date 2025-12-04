@@ -40,7 +40,8 @@
 				"ms-azure-devops.azure-pipelines",
 				"Postman.postman-for-vscode",
 				"bradlc.vscode-tailwindcss",
-				"formulahendry.auto-rename-tag"
+				"formulahendry.auto-rename-tag",
+				"Prettier.prettier-vscode"
 			]
 		}
 	},

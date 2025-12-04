@@ -12,7 +12,50 @@ const meta: Meta<typeof QueryProvider> = {
 	parameters: {
 		docs: {
 			description: {
-				component: "Another description, overriding the comments",
+				component: `
+## What is React Query (TanStack Query)?
+
+React Query is a powerful data-fetching and state management library for React applications. It manages server state, providing automatic caching, background updates, and synchronization of server data.
+
+**Key Features:**
+- **Automatic Caching**: Fetched data is cached and reused across components
+- **Background Refetching**: Keeps data fresh with automatic background updates
+- **Loading & Error States**: Built-in status management for async operations
+- **Dependent Queries**: Enable queries based on other data (e.g., fetch wards after selecting a province)
+- **Query Invalidation**: Automatically refetch when data becomes stale
+
+## Use Cases
+
+React Query is ideal for:
+- **API Data Fetching**: REST APIs, GraphQL, or any async data source
+- **Server State Management**: Managing data from external sources (different from client state like form inputs)
+- **Dependent/Cascading Requests**: When one query depends on another's result
+- **Real-time Data**: Auto-refresh data in the background
+- **Optimistic Updates**: Update UI before server confirms changes
+
+## How This Example Works
+
+This story demonstrates a **Province & Ward Selector** using React Query:
+
+1. **QueryProvider**: Wraps the app with \`QueryClientProvider\` to enable React Query functionality throughout the component tree
+
+2. **Province Query**:
+   - \`queryKey: ["provinces"]\` - Unique identifier for caching
+   - \`queryFn: fetchProvinces\` - Fetches all provinces from API
+   - Loads automatically when component mounts
+
+3. **Ward Query (Dependent Query)**:
+   - \`queryKey: ["ward", selectedProvince]\` - Cache key includes the province ID
+   - \`enabled: !!selectedProvince\` - Only runs when a province is selected
+   - Automatically refetches when \`selectedProvince\` changes
+
+4. **Benefits Demonstrated**:
+   - Selecting the same province again won't refetch (cached)
+   - Loading states (\`isFetched\`) control UI rendering
+   - Dependent query pattern for cascading dropdowns
+
+**Try it:** Select a province to trigger the ward query. Notice how switching back to a previously selected province is instant (cached data)!
+				`,
 			},
 		},
 	},
