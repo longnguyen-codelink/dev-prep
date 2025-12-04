@@ -1,73 +1,37 @@
-# React + TypeScript + Vite
+# React State Management Examples
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project demonstrates various state management approaches in React, helping developers understand different tools and when to use them.
 
-Currently, two official plugins are available:
+## Branch Purpose: `challenge/fe-state-managements`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This branch is dedicated to exploring and comparing different state management solutions in React:
 
-## React Compiler
+- **Context API**: For sharing global state across components without prop drilling
+- **React Query (TanStack Query)**: For managing server state, caching, and data fetching
+- **Redux** (coming soon): For complex application state with predictable updates
+- **Zustand** (coming soon): For lightweight, simple global state management
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Each example includes detailed documentation and interactive demos via Storybook.
 
-## Expanding the ESLint configuration
+## Getting Started
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Install dependencies:
 
-```js
-export default defineConfig([
-	globalIgnores(["dist"]),
-	{
-		files: ["**/*.{ts,tsx}"],
-		extends: [
-			// Other configs...
-
-			// Remove tseslint.configs.recommended and replace with this
-			tseslint.configs.recommendedTypeChecked,
-			// Alternatively, use this for stricter rules
-			tseslint.configs.strictTypeChecked,
-			// Optionally, add this for stylistic rules
-			tseslint.configs.stylisticTypeChecked,
-
-			// Other configs...
-		],
-		languageOptions: {
-			parserOptions: {
-				project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-				tsconfigRootDir: import.meta.dirname,
-			},
-			// other options...
-		},
-	},
-]);
+```bash
+pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Run Storybook to view examples:
 
-```js
-// eslint.config.js
-import reactX from "eslint-plugin-react-x";
-import reactDom from "eslint-plugin-react-dom";
-
-export default defineConfig([
-	globalIgnores(["dist"]),
-	{
-		files: ["**/*.{ts,tsx}"],
-		extends: [
-			// Other configs...
-			// Enable lint rules for React
-			reactX.configs["recommended-typescript"],
-			// Enable lint rules for React DOM
-			reactDom.configs.recommended,
-		],
-		languageOptions: {
-			parserOptions: {
-				project: ["./tsconfig.node.json", "./tsconfig.app.json"],
-				tsconfigRootDir: import.meta.dirname,
-			},
-			// other options...
-		},
-	},
-]);
+```bash
+pnpm storybook
 ```
+
+This will start Storybook at `http://localhost:6006` where you can explore interactive examples of each state management approach.
+
+## Future Updates
+
+- **React Hooks Examples**: Demonstrations of core hooks including `useState`, `useEffect`, `useCallback`, `useMemo`, and custom hooks
+- **Redux Integration**: Complete Redux setup with Redux Toolkit
+- **Zustand Examples**: Simple global state management patterns
+- **Performance Optimization**: Examples of state optimization techniques
