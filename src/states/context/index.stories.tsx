@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Fragment } from "react";
 
-import { ThemeProvider, useTheme } from "./_provider";
+import { ThemeProvider, useTheme } from "./provider";
 import { Button } from "@/components/ui/button";
 
 const meta: Meta<typeof ThemeProvider> = {
