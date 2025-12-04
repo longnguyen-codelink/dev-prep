@@ -6,8 +6,14 @@ import { Button } from "@/components/ui/button";
 
 const meta: Meta<typeof ThemeProvider> = {
 	title: "States/Context",
-	component: ThemeProvider,
 	tags: ["autodocs"],
+	parameters: {
+		docs: {
+			description: {
+				component: "Another description, overriding the comments",
+			},
+		},
+	},
 };
 
 export default meta;
@@ -40,8 +46,8 @@ function StorybookButtonChangeTheme() {
 function StorybookContextExample() {
 	const context = useTheme();
 	return (
-		<div>
-			(This component receive Context) Current theme: <span className='text-accent-foreground font-bold'>{context.theme}</span>
+		<div className='text-blue-400'>
+			(This component receive Context) Current theme: <span className='font-bold'>{context.theme}</span>
 		</div>
 	);
 }
@@ -49,8 +55,8 @@ function StorybookContextExample() {
 function StorbookNoContextExample() {
 	const context = useTheme();
 	return (
-		<div>
-			(This component does not receive Context) Current theme: <span className='text-accent-foreground font-bold'>{context.theme}</span>
+		<div className='text-blue-400'>
+			(This component does not receive Context) Current theme: <span className='font-bold'>{context.theme}</span>
 		</div>
 	);
 }
