@@ -3,10 +3,10 @@
 {
 	"name": "Node.js & TypeScript",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": ".."
-	},
+	"dockerComposeFile": "docker-compose.yaml",
+	"service": "devcontainer",
+	"workspaceFolder": "/workspaces/dev-prep",
+	"overrideCommand": true,
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils": {
@@ -41,11 +41,12 @@
 				"Postman.postman-for-vscode",
 				"bradlc.vscode-tailwindcss",
 				"formulahendry.auto-rename-tag",
-				"Prettier.prettier-vscode"
+				"prettier.prettier-vscode",
+				"cweijan.vscode-database-client2"
 			]
 		}
 	},
-	"mounts": ["source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"]
+	"mounts": ["source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/root/.ssh,type=bind,consistency=cached,readonly"],
+	"remoteUser": "root"
 	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }
