@@ -24,20 +24,20 @@ Dependency Injection is a design pattern where a class receives its dependencies
 ```typescript
 @Injectable()
 export class DogsService {
-  findAll() {
-    return 'All dogs';
-  }
+	findAll() {
+		return "All dogs";
+	}
 }
 
-@Controller('dogs')
+@Controller("dogs")
 export class DogsController {
-  // DogsService is automatically injected by NestJS
-  constructor(private readonly dogsService: DogsService) {}
+	// DogsService is automatically injected by NestJS
+	constructor(private readonly dogsService: DogsService) {}
 
-  @Get()
-  findAll() {
-    return this.dogsService.findAll();
-  }
+	@Get()
+	findAll() {
+		return this.dogsService.findAll();
+	}
 }
 ```
 
@@ -54,10 +54,10 @@ export class DogsController {
 
 ```typescript
 // ❌ WRONG - Type-only import (erased at runtime)
-import type { DogsService } from './dogs.service';
+import type { DogsService } from "./dogs.service";
 
 // ✅ CORRECT - Regular import (available at runtime)
-import { DogsService } from './dogs.service';
+import { DogsService } from "./dogs.service";
 ```
 
 ---
@@ -75,14 +75,14 @@ Decorators are special declarations that attach metadata to classes, methods, pr
 ```typescript
 // Marks a class as a NestJS module
 @Module({
-  imports: [],
-  controllers: [DogsController],
-  providers: [DogsService],
+	imports: [],
+	controllers: [DogsController],
+	providers: [DogsService],
 })
 export class DogsModule {}
 
 // Marks a class as a controller (handles HTTP requests)
-@Controller('dogs')
+@Controller("dogs")
 export class DogsController {}
 
 // Marks a class as a provider (can be injected)
@@ -93,38 +93,38 @@ export class DogsService {}
 #### Method Decorators
 
 ```typescript
-@Controller('dogs')
+@Controller("dogs")
 export class DogsController {
-  // HTTP method decorators
-  @Get() // Handle GET requests
-  @Post() // Handle POST requests
-  @Put(':id') // Handle PUT requests with route parameter
-  @Delete(':id') // Handle DELETE requests
-  @Patch(':id') // Handle PATCH requests
+	// HTTP method decorators
+	@Get() // Handle GET requests
+	@Post() // Handle POST requests
+	@Put(":id") // Handle PUT requests with route parameter
+	@Delete(":id") // Handle DELETE requests
+	@Patch(":id") // Handle PATCH requests
 
-  // Swagger/OpenAPI documentation
-  @ApiOperation({ summary: 'Get all dogs' })
-  @ApiResponse({ status: 200, description: 'Returns all dogs' })
-  findAll() {}
+	// Swagger/OpenAPI documentation
+	@ApiOperation({ summary: "Get all dogs" })
+	@ApiResponse({ status: 200, description: "Returns all dogs" })
+	findAll() {}
 }
 ```
 
 #### Parameter Decorators
 
 ```typescript
-@Controller('dogs')
+@Controller("dogs")
 export class DogsController {
-  @Get(':id')
-  findOne(
-    @Param('id') id: string, // Extract route parameter
-    @Query('limit') limit?: number, // Extract query parameter
-    @Body() createDogDto: CreateDogDto, // Extract request body
-    @Headers() headers: any, // Extract all headers
-    @Req() request: Request, // Get full request object
-    @Res() response: Response, // Get full response object
-  ) {
-    return `Dog ${id} with limit ${limit}`;
-  }
+	@Get(":id")
+	findOne(
+		@Param("id") id: string, // Extract route parameter
+		@Query("limit") limit?: number, // Extract query parameter
+		@Body() createDogDto: CreateDogDto, // Extract request body
+		@Headers() headers: any, // Extract all headers
+		@Req() request: Request, // Get full request object
+		@Res() response: Response, // Get full response object
+	) {
+		return `Dog ${id} with limit ${limit}`;
+	}
 }
 ```
 
@@ -140,10 +140,10 @@ A module is a class annotated with `@Module()` decorator. Modules organize the a
 
 ```typescript
 @Module({
-  imports: [OtherModule], // Import other modules
-  controllers: [DogsController], // Controllers defined in this module
-  providers: [DogsService], // Services/providers available in this module
-  exports: [DogsService], // Make providers available to other modules
+	imports: [OtherModule], // Import other modules
+	controllers: [DogsController], // Controllers defined in this module
+	providers: [DogsService], // Services/providers available in this module
+	exports: [DogsService], // Make providers available to other modules
 })
 export class DogsModule {}
 ```
@@ -160,20 +160,20 @@ export class DogsModule {}
 ```typescript
 // dogs.module.ts
 @Module({
-  imports: [DatabaseModule], // Import database functionality
-  controllers: [DogsController],
-  providers: [DogsService, DogsRepository],
-  exports: [DogsService], // Other modules can use DogsService
+	imports: [DatabaseModule], // Import database functionality
+	controllers: [DogsController],
+	providers: [DogsService, DogsRepository],
+	exports: [DogsService], // Other modules can use DogsService
 })
 export class DogsModule {}
 
 // app.module.ts (root module)
 @Module({
-  imports: [
-    DogsModule, // Import DogsModule to use its exported providers
-    CatsModule,
-    UsersModule,
-  ],
+	imports: [
+		DogsModule, // Import DogsModule to use its exported providers
+		CatsModule,
+		UsersModule,
+	],
 })
 export class AppModule {}
 ```
@@ -199,14 +199,14 @@ A provider is a class that can be injected as a dependency. Most NestJS classes 
 // Mark with @Injectable() decorator
 @Injectable()
 export class DogsService {
-  findAll() {
-    return ['Dog 1', 'Dog 2'];
-  }
+	findAll() {
+		return ["Dog 1", "Dog 2"];
+	}
 }
 
 // Register in module
 @Module({
-  providers: [DogsService], // Shorthand syntax
+	providers: [DogsService], // Shorthand syntax
 })
 export class DogsModule {}
 ```
@@ -215,37 +215,37 @@ export class DogsModule {}
 
 ```typescript
 @Module({
-  providers: [
-    // Standard class provider (most common)
-    DogsService,
+	providers: [
+		// Standard class provider (most common)
+		DogsService,
 
-    // Equivalent to:
-    {
-      provide: DogsService,
-      useClass: DogsService,
-    },
+		// Equivalent to:
+		{
+			provide: DogsService,
+			useClass: DogsService,
+		},
 
-    // Value provider
-    {
-      provide: 'API_KEY',
-      useValue: process.env.API_KEY,
-    },
+		// Value provider
+		{
+			provide: "API_KEY",
+			useValue: process.env.API_KEY,
+		},
 
-    // Factory provider
-    {
-      provide: 'DATABASE_CONNECTION',
-      useFactory: async (config: ConfigService) => {
-        return createConnection(config.get('database'));
-      },
-      inject: [ConfigService],
-    },
+		// Factory provider
+		{
+			provide: "DATABASE_CONNECTION",
+			useFactory: async (config: ConfigService) => {
+				return createConnection(config.get("database"));
+			},
+			inject: [ConfigService],
+		},
 
-    // Existing provider (alias)
-    {
-      provide: 'DogsServiceAlias',
-      useExisting: DogsService,
-    },
-  ],
+		// Existing provider (alias)
+		{
+			provide: "DogsServiceAlias",
+			useExisting: DogsService,
+		},
+	],
 })
 export class DogsModule {}
 ```
@@ -279,42 +279,42 @@ A service is a type of provider that contains business logic. Services are typic
 ```typescript
 @Injectable()
 export class DogsService {
-  private dogs = [];
+	private dogs = [];
 
-  // Business logic methods
-  findAll() {
-    return this.dogs;
-  }
+	// Business logic methods
+	findAll() {
+		return this.dogs;
+	}
 
-  findOne(id: string) {
-    return this.dogs.find((dog) => dog.id === id);
-  }
+	findOne(id: string) {
+		return this.dogs.find((dog) => dog.id === id);
+	}
 
-  create(createDogDto: CreateDogDto) {
-    const newDog = {
-      id: Date.now().toString(),
-      ...createDogDto,
-    };
-    this.dogs.push(newDog);
-    return newDog;
-  }
+	create(createDogDto: CreateDogDto) {
+		const newDog = {
+			id: Date.now().toString(),
+			...createDogDto,
+		};
+		this.dogs.push(newDog);
+		return newDog;
+	}
 
-  update(id: string, updateDogDto: UpdateDogDto) {
-    const dogIndex = this.dogs.findIndex((dog) => dog.id === id);
-    if (dogIndex > -1) {
-      this.dogs[dogIndex] = { ...this.dogs[dogIndex], ...updateDogDto };
-      return this.dogs[dogIndex];
-    }
-    return null;
-  }
+	update(id: string, updateDogDto: UpdateDogDto) {
+		const dogIndex = this.dogs.findIndex((dog) => dog.id === id);
+		if (dogIndex > -1) {
+			this.dogs[dogIndex] = { ...this.dogs[dogIndex], ...updateDogDto };
+			return this.dogs[dogIndex];
+		}
+		return null;
+	}
 
-  delete(id: string) {
-    const dogIndex = this.dogs.findIndex((dog) => dog.id === id);
-    if (dogIndex > -1) {
-      return this.dogs.splice(dogIndex, 1)[0];
-    }
-    return null;
-  }
+	delete(id: string) {
+		const dogIndex = this.dogs.findIndex((dog) => dog.id === id);
+		if (dogIndex > -1) {
+			return this.dogs.splice(dogIndex, 1)[0];
+		}
+		return null;
+	}
 }
 ```
 
@@ -323,16 +323,16 @@ export class DogsService {
 ```typescript
 @Injectable()
 export class DogsService {
-  constructor(
-    private readonly dogsRepository: DogsRepository,
-    private readonly logger: LoggerService,
-    @Inject('API_KEY') private readonly apiKey: string,
-  ) {}
+	constructor(
+		private readonly dogsRepository: DogsRepository,
+		private readonly logger: LoggerService,
+		@Inject("API_KEY") private readonly apiKey: string,
+	) {}
 
-  async findAll() {
-    this.logger.log('Finding all dogs');
-    return this.dogsRepository.findAll();
-  }
+	async findAll() {
+		this.logger.log("Finding all dogs");
+		return this.dogsRepository.findAll();
+	}
 }
 ```
 
@@ -363,27 +363,20 @@ Interceptors are classes that can intercept incoming requests or outgoing respon
 ### Basic Interceptor Example
 
 ```typescript
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap, map } from 'rxjs/operators';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from "@nestjs/common";
+import { Observable } from "rxjs";
+import { tap, map } from "rxjs/operators";
 
 @Injectable()
 export class LoggingInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const now = Date.now();
-    const request = context.switchToHttp().getRequest();
+	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+		const now = Date.now();
+		const request = context.switchToHttp().getRequest();
 
-    console.log(`Before... ${request.method} ${request.url}`);
+		console.log(`Before... ${request.method} ${request.url}`);
 
-    return next
-      .handle()
-      .pipe(tap(() => console.log(`After... ${Date.now() - now}ms`)));
-  }
+		return next.handle().pipe(tap(() => console.log(`After... ${Date.now() - now}ms`)));
+	}
 }
 ```
 
@@ -391,28 +384,22 @@ export class LoggingInterceptor implements NestInterceptor {
 
 ```typescript
 interface Response<T> {
-  data: T;
-  timestamp: string;
-  statusCode: number;
+	data: T;
+	timestamp: string;
+	statusCode: number;
 }
 
 @Injectable()
-export class TransformInterceptor<T> implements NestInterceptor<
-  T,
-  Response<T>
-> {
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<Response<T>> {
-    return next.handle().pipe(
-      map((data) => ({
-        data,
-        timestamp: new Date().toISOString(),
-        statusCode: context.switchToHttp().getResponse().statusCode,
-      })),
-    );
-  }
+export class TransformInterceptor<T> implements NestInterceptor<T, Response<T>> {
+	intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
+		return next.handle().pipe(
+			map((data) => ({
+				data,
+				timestamp: new Date().toISOString(),
+				statusCode: context.switchToHttp().getResponse().statusCode,
+			})),
+		);
+	}
 }
 ```
 
@@ -421,24 +408,24 @@ export class TransformInterceptor<T> implements NestInterceptor<
 ```typescript
 // Global interceptor (applies to all routes)
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalInterceptors(new LoggingInterceptor());
-  await app.listen(3000);
+	const app = await NestFactory.create(AppModule);
+	app.useGlobalInterceptors(new LoggingInterceptor());
+	await app.listen(3000);
 }
 
 // Controller-level interceptor
-@Controller('dogs')
+@Controller("dogs")
 @UseInterceptors(LoggingInterceptor)
 export class DogsController {}
 
 // Method-level interceptor
-@Controller('dogs')
+@Controller("dogs")
 export class DogsController {
-  @Get()
-  @UseInterceptors(TransformInterceptor)
-  findAll() {
-    return [];
-  }
+	@Get()
+	@UseInterceptors(TransformInterceptor)
+	findAll() {
+		return [];
+	}
 }
 ```
 
@@ -462,24 +449,24 @@ When multiple interceptors are applied, they execute in a specific order:
 ```typescript
 @Injectable()
 export class CacheInterceptor implements NestInterceptor {
-  private cache = new Map();
+	private cache = new Map();
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const key = request.url;
+	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+		const request = context.switchToHttp().getRequest();
+		const key = request.url;
 
-    if (this.cache.has(key)) {
-      console.log('Returning cached response');
-      return of(this.cache.get(key));
-    }
+		if (this.cache.has(key)) {
+			console.log("Returning cached response");
+			return of(this.cache.get(key));
+		}
 
-    return next.handle().pipe(
-      tap((response) => {
-        console.log('Caching response');
-        this.cache.set(key, response);
-      }),
-    );
-  }
+		return next.handle().pipe(
+			tap((response) => {
+				console.log("Caching response");
+				this.cache.set(key, response);
+			}),
+		);
+	}
 }
 ```
 
@@ -488,19 +475,19 @@ export class CacheInterceptor implements NestInterceptor {
 ```typescript
 @Injectable()
 export class TimeoutInterceptor implements NestInterceptor {
-  constructor(private readonly timeout: number = 5000) {}
+	constructor(private readonly timeout: number = 5000) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    return next.handle().pipe(
-      timeout(this.timeout),
-      catchError((err) => {
-        if (err instanceof TimeoutError) {
-          throw new RequestTimeoutException('Request took too long');
-        }
-        throw err;
-      }),
-    );
-  }
+	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+		return next.handle().pipe(
+			timeout(this.timeout),
+			catchError((err) => {
+				if (err instanceof TimeoutError) {
+					throw new RequestTimeoutException("Request took too long");
+				}
+				throw err;
+			}),
+		);
+	}
 }
 ```
 
