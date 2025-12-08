@@ -23,7 +23,8 @@
 		"noFallthroughCasesInSwitch": false,
 		"paths": {
 			"@/*": ["src/*"]
-		}
+		},
+		"composite": true
 	},
 	"include": ["src/**/*", "@types/**/*.d.ts"],
 	"exclude": ["node_modules", "dist", "coverage", "build", "scripts", "test", "tests", "**/*.spec.ts", "**/*.test.ts"]
