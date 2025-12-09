@@ -9,18 +9,17 @@ import { DatabaseConfig, DatabaseConfigDto } from "./dto/database-config.dto";
 		ConfigModule.forRoot({
 			validate: void DatabaseConfigDto.parse,
 			load: [
-				() => {
-					return {
-						database: {
-							host: process.env.Database__host,
-							port: Number(process.env.Database__port),
-							username: process.env.Database__user,
-							password: process.env.Database__password,
-							database: process.env.Database__database,
-							dialect: process.env.Database__dialect,
-						} satisfies DatabaseConfig,
-					};
-				},
+				() => ({
+					// Todo: use mapNestString utility here
+					database: {
+						host: process.env.database__host,
+						port: Number(process.env.database__port),
+						username: process.env.database__user,
+						password: process.env.database__password,
+						database: process.env.database__database,
+						dialect: process.env.database__dialect,
+					} satisfies DatabaseConfig,
+				}),
 			],
 		}),
 		SequelizeModule.forRootAsync({
