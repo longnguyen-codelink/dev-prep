@@ -1,10 +1,10 @@
 import { Controller, Get, Param, Post } from "@nestjs/common";
-import { DogsService } from "./dogs.service";
+import { BreedService } from "./breed.service";
 import { ApiOperation } from "@nestjs/swagger";
 
-@Controller("dogs")
-export class DogsController {
-	constructor(private readonly dogsService: DogsService) {}
+@Controller("breed")
+export class BreedController {
+	constructor(private readonly dogsService: BreedService) {}
 
 	@Get()
 	@ApiOperation({ summary: "Get all dogs" })

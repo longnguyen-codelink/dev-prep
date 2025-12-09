@@ -10,6 +10,7 @@ services:
       - oracle-data:/opt/oracle/oradata
 
   devcontainer:
+    platform: linux/amd64
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile

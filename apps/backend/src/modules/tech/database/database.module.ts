@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { SequelizeModule } from "@nestjs/sequelize";
 import { DatabaseService } from "./database.service";
 import { DatabaseConfig, DatabaseConfigDto } from "./dto/database-config.dto";
+import { models } from "./database.models";
 
 @Module({
 	imports: [
@@ -24,7 +25,11 @@ import { DatabaseConfig, DatabaseConfigDto } from "./dto/database-config.dto";
 		}),
 		SequelizeModule.forRootAsync({
 			imports: [ConfigModule],
-			useFactory: (configService: ConfigService) => configService.get<DatabaseConfig>("database")!, // Safe due to validation
+			useFactory: (configService: ConfigService) => ({
+				...configService.get<DatabaseConfig>("database")!, // Safe due to validation
+				models,
+				autoLoadModels: true,
+			}),
 			inject: [ConfigService],
 		}),
 	],

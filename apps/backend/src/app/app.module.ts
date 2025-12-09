@@ -1,4 +1,4 @@
-import { DogsModule } from "@/modules/domain/dogs/dogs.module";
+import { BreedModule } from "@/modules/domain/breed/breed.module";
 import { DatabaseModule } from "@/modules/tech/database/database.module";
 import { Module } from "@nestjs/common";
 import { AppController } from "./app.controller";
@@ -9,7 +9,7 @@ import { AppService } from "./app.service";
 		// Service Modules
 		DatabaseModule,
 		// Domain Modules
-		DogsModule,
+		BreedModule,
 	],
 	controllers: [AppController],
 	providers: [AppService],

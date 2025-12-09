@@ -23,16 +23,16 @@ Dependency Injection is a design pattern where a class receives its dependencies
 
 ```typescript
 @Injectable()
-export class DogsService {
+export class BreedService {
 	findAll() {
 		return "All dogs";
 	}
 }
 
 @Controller("dogs")
-export class DogsController {
-	// DogsService is automatically injected by NestJS
-	constructor(private readonly dogsService: DogsService) {}
+export class BreedController {
+	// BreedService is automatically injected by NestJS
+	constructor(private readonly dogsService: BreedService) {}
 
 	@Get()
 	findAll() {
@@ -54,10 +54,10 @@ export class DogsController {
 
 ```typescript
 // ❌ WRONG - Type-only import (erased at runtime)
-import type { DogsService } from "./dogs.service";
+import type { BreedService } from "./dogs.service";
 
 // ✅ CORRECT - Regular import (available at runtime)
-import { DogsService } from "./dogs.service";
+import { BreedService } from "./dogs.service";
 ```
 
 ---
@@ -76,25 +76,25 @@ Decorators are special declarations that attach metadata to classes, methods, pr
 // Marks a class as a NestJS module
 @Module({
 	imports: [],
-	controllers: [DogsController],
-	providers: [DogsService],
+	controllers: [BreedController],
+	providers: [BreedService],
 })
-export class DogsModule {}
+export class BreedModule {}
 
 // Marks a class as a controller (handles HTTP requests)
 @Controller("dogs")
-export class DogsController {}
+export class BreedController {}
 
 // Marks a class as a provider (can be injected)
 @Injectable()
-export class DogsService {}
+export class BreedService {}
 ```
 
 #### Method Decorators
 
 ```typescript
 @Controller("dogs")
-export class DogsController {
+export class BreedController {
 	// HTTP method decorators
 	@Get() // Handle GET requests
 	@Post() // Handle POST requests
@@ -113,7 +113,7 @@ export class DogsController {
 
 ```typescript
 @Controller("dogs")
-export class DogsController {
+export class BreedController {
 	@Get(":id")
 	findOne(
 		@Param("id") id: string, // Extract route parameter
@@ -141,11 +141,11 @@ A module is a class annotated with `@Module()` decorator. Modules organize the a
 ```typescript
 @Module({
 	imports: [OtherModule], // Import other modules
-	controllers: [DogsController], // Controllers defined in this module
-	providers: [DogsService], // Services/providers available in this module
-	exports: [DogsService], // Make providers available to other modules
+	controllers: [BreedController], // Controllers defined in this module
+	providers: [BreedService], // Services/providers available in this module
+	exports: [BreedService], // Make providers available to other modules
 })
-export class DogsModule {}
+export class BreedModule {}
 ```
 
 ### Key Properties
@@ -161,16 +161,16 @@ export class DogsModule {}
 // dogs.module.ts
 @Module({
 	imports: [DatabaseModule], // Import database functionality
-	controllers: [DogsController],
-	providers: [DogsService, DogsRepository],
-	exports: [DogsService], // Other modules can use DogsService
+	controllers: [BreedController],
+	providers: [BreedService, BreedRepository],
+	exports: [BreedService], // Other modules can use BreedService
 })
-export class DogsModule {}
+export class BreedModule {}
 
 // app.module.ts (root module)
 @Module({
 	imports: [
-		DogsModule, // Import DogsModule to use its exported providers
+		BreedModule, // Import BreedModule to use its exported providers
 		CatsModule,
 		UsersModule,
 	],
@@ -198,7 +198,7 @@ A provider is a class that can be injected as a dependency. Most NestJS classes 
 ```typescript
 // Mark with @Injectable() decorator
 @Injectable()
-export class DogsService {
+export class BreedService {
 	findAll() {
 		return ["Dog 1", "Dog 2"];
 	}
@@ -206,9 +206,9 @@ export class DogsService {
 
 // Register in module
 @Module({
-	providers: [DogsService], // Shorthand syntax
+	providers: [BreedService], // Shorthand syntax
 })
-export class DogsModule {}
+export class BreedModule {}
 ```
 
 ### Provider Registration Patterns
@@ -217,12 +217,12 @@ export class DogsModule {}
 @Module({
 	providers: [
 		// Standard class provider (most common)
-		DogsService,
+		BreedService,
 
 		// Equivalent to:
 		{
-			provide: DogsService,
-			useClass: DogsService,
+			provide: BreedService,
+			useClass: BreedService,
 		},
 
 		// Value provider
@@ -242,12 +242,12 @@ export class DogsModule {}
 
 		// Existing provider (alias)
 		{
-			provide: "DogsServiceAlias",
-			useExisting: DogsService,
+			provide: "BreedServiceAlias",
+			useExisting: BreedService,
 		},
 	],
 })
-export class DogsModule {}
+export class BreedModule {}
 ```
 
 ### Provider Scope
@@ -255,7 +255,7 @@ export class DogsModule {}
 ```typescript
 // Default: SINGLETON (shared across the entire app)
 @Injectable()
-export class DogsService {}
+export class BreedService {}
 
 // REQUEST scope (new instance per request)
 @Injectable({ scope: Scope.REQUEST })
@@ -278,7 +278,7 @@ A service is a type of provider that contains business logic. Services are typic
 
 ```typescript
 @Injectable()
-export class DogsService {
+export class BreedService {
 	private dogs = [];
 
 	// Business logic methods
@@ -322,9 +322,9 @@ export class DogsService {
 
 ```typescript
 @Injectable()
-export class DogsService {
+export class BreedService {
 	constructor(
-		private readonly dogsRepository: DogsRepository,
+		private readonly dogsRepository: BreedRepository,
 		private readonly logger: LoggerService,
 		@Inject("API_KEY") private readonly apiKey: string,
 	) {}
@@ -416,11 +416,11 @@ async function bootstrap() {
 // Controller-level interceptor
 @Controller("dogs")
 @UseInterceptors(LoggingInterceptor)
-export class DogsController {}
+export class BreedController {}
 
 // Method-level interceptor
 @Controller("dogs")
-export class DogsController {
+export class BreedController {
 	@Get()
 	@UseInterceptors(TransformInterceptor)
 	findAll() {
