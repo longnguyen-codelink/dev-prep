@@ -1,0 +1,3 @@
+{
+	"references": [{ "path": "apps/backend/tsconfig.json" }, { "path": "apps/frontend/tsconfig.json" }]
+}
