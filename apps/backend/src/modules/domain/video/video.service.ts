@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/sequelize";
 import { Video } from "./model/video.model";
-import { VideoCreationDTO, VideoCreationResponseDTO } from "./dto/video.dto";
+import { VideoCreationDTO, VideoCreationResponseDTO, VideoResponseDTO } from "./dto/video.dto";
 import { StorageService } from "@/modules/tech/storage/storage.service";
 import { v7 } from "uuid";
 
@@ -37,12 +37,12 @@ export class VideoService {
 		});
 	}
 
-	public async getById(id: string): Promise<VideoCreationResponseDTO | null> {
+	public async getById(id: string): Promise<VideoResponseDTO | null> {
 		const video = await this.videoModel.findByPk(id);
 		if (!video) return null;
 
 		const presignedUrl = await this.storageService.getPresignedDownloadUrl(video.url);
 
-		return { id: video.id, presignedUrl: presignedUrl };
+		return { id: video.id, title: video.title, description: video.description, presignedUrl: presignedUrl };
 	}
 }

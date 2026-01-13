@@ -18,3 +18,17 @@ export class VideoCreationResponseDTO {
 	@ApiProperty({ description: "Presigned URL for uploading the video" })
 	declare presignedUrl: string;
 }
+
+export class VideoResponseDTO {
+	@ApiProperty({ description: "ID of the video" })
+	declare id: string;
+
+	@ApiProperty({ description: "Title of the video" })
+	declare title: string;
+
+	@ApiProperty({ description: "Description of the video", required: false })
+	declare description?: string;
+
+	@ApiProperty({ description: "URL of the video" })
+	declare presignedUrl: string;
+}

@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { ApiBody, ApiOkResponse, ApiOperation } from "@nestjs/swagger";
+import { VideoCreationDTO, VideoCreationResponseDTO, VideoResponseDTO } from "./dto/video.dto";
 import { VideoService } from "./video.service";
-import { VideoCreationDTO, VideoCreationResponseDTO } from "./dto/video.dto";
 
-@Controller("video")
+@Controller("videos")
 export class VideoController {
 	constructor(private readonly videoService: VideoService) {}
 
@@ -17,7 +17,7 @@ export class VideoController {
 
 	@Get("/:id")
 	@ApiOperation({ summary: "Get a video by id" })
-	@ApiOkResponse({ description: "Video found successfully", type: VideoCreationResponseDTO })
+	@ApiOkResponse({ description: "Video found successfully", type: VideoResponseDTO })
 	public getById(@Param("id") id: string) {
 		return this.videoService.getById(id);
 	}
