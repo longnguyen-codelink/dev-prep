@@ -22,7 +22,7 @@ export class VideoService {
 					id: v7(),
 					title: body.title,
 					description: body.description,
-					url: `${bucketName}/${body.fileName}`,
+					url: body.fileName,
 					created_at: new Date(),
 				},
 				{ transaction },
@@ -35,5 +35,14 @@ export class VideoService {
 
 			return { id: video.id, presignedUrl: presignedUrl.url };
 		});
+	}
+
+	public async getById(id: string): Promise<VideoCreationResponseDTO | null> {
+		const video = await this.videoModel.findByPk(id);
+		if (!video) return null;
+
+		const presignedUrl = await this.storageService.getPresignedDownloadUrl(video.url);
+
+		return { id: video.id, presignedUrl: presignedUrl };
 	}
 }

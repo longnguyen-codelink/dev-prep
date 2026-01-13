@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ConfigService } from "@nestjs/config";
 
@@ -45,6 +45,23 @@ export class StorageService {
 			};
 		} catch (error) {
 			this.logger.error(`Failed to generate presigned URL: ${error.message}`);
+			throw error;
+		}
+	}
+
+	public async getPresignedDownloadUrl(fileName: string) {
+		try {
+			const command = new GetObjectCommand({
+				Bucket: this.bucketName,
+				Key: fileName,
+			});
+
+			// Generate a URL that expires in 5 minutes (300 seconds)
+			const url = await getSignedUrl(this.s3Client, command, { expiresIn: 300 });
+
+			return url;
+		} catch (error) {
+			this.logger.error(`Failed to generate presigned download URL: ${error.message}`);
 			throw error;
 		}
 	}
