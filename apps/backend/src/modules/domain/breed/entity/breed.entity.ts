@@ -18,7 +18,7 @@ export interface BreedAttributes {
 	height: Measurement;
 }
 
-@Table({ tableName: "breed", schema: "system", timestamps: false })
+@Table({ tableName: "breed", schema: "public", timestamps: false })
 export class Breed extends Model<BreedAttributes> implements BreedAttributes {
 	@Column({ primaryKey: true, autoIncrement: true })
 	declare id: number;

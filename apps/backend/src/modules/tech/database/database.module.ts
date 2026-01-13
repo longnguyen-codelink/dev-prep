@@ -1,4 +1,4 @@
-import { Module } from "@nestjs/common";
+import { Logger, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { SequelizeModule } from "@nestjs/sequelize";
 import { DatabaseService } from "./database.service";
@@ -29,6 +29,14 @@ import { models } from "./database.models";
 				...configService.get<DatabaseConfig>("database")!, // Safe due to validation
 				models,
 				autoLoadModels: true,
+				// Logging options
+				benchmark: true,
+				logging: (msg, timing) => {
+					const logger = new Logger(DatabaseModule.name);
+					// Log example: Executing (default): SELECT 1+1 AS result
+					const [transaction, ...rest] = msg.split(":");
+					logger.debug(`${transaction.trim()} in ${timing?.toString()}ms: ${rest.join(":").trim()}`);
+				},
 			}),
 			inject: [ConfigService],
 		}),
