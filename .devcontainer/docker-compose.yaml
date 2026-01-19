@@ -1,0 +1,27 @@
+services:
+  database:
+    image: postgres:latest
+    container_name: postgres_db
+    environment:
+      - POSTGRES_USER=your_username
+      - POSTGRES_PASSWORD=your_password
+      - POSTGRES_DB=your_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  file-storage:
+    image: chrislusf/seaweedfs:latest
+    container_name: seaweedfs
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+      - AWS_ACCESS_KEY_ID=your_access_key
+      - AWS_SECRET_ACCESS_KEY=your_secret_key
+    ports:
+      - "9333:9333" # Master server (admin UI at http://localhost:9333)
+      - "8080:8080" # Volume server
+      - "8888:8888" # Filer server (file browser UI)
+      - "23646:23646" # S3 API server
+    volumes:
+      - /Users/longngphuc/Developer/Personal/Docker/seaweedfs/data:/data
+    command: ["mini", "-dir=/data"]
