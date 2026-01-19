@@ -1,5 +1,8 @@
 # Coding Exercise 1: Order Service
 
+## The coding: https://youtu.be/HWI84VrVsVU
+## The test: TBD
+
 ```typescript
 // orderService.ts
 import fs from 'fs';
