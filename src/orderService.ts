@@ -34,8 +34,7 @@ export class OrderService {
 		const tax = getTax({ items: order.items, coupon: order.coupon, ordersCount: user.ordersCount, processedAt });
 
 		// Write file
-		await fs.promises.writeFile(`./receipts/${order.id}.txt`, `User:${user.name}\\nTotal:${tax.toFixed(2)}`);
-
+		await writeReceipt(`${order.id}.txt`, `User:${user.name}\\nTotal:${tax.toFixed(2)}`);
 		this.lastTotal = tax;
 		console.log("Done", this.lastTotal);
 
@@ -45,6 +44,18 @@ export class OrderService {
 	public getLastTotal() {
 		return this.lastTotal;
 	}
+}
+
+// utils/writeResult.ts
+const writeFolder = "./receipts";
+export async function writeReceipt(fileName: string, data: string) {
+	if (!fs.existsSync(writeFolder)) {
+		console.log("No receipt folder, creating receipt folder");
+		await fs.promises.mkdir(writeFolder);
+	}
+
+	const filePath = `${writeFolder}/${fileName}`;
+	return fs.promises.writeFile(filePath, data);
 }
 
 // Create get discount function
