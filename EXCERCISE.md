@@ -1,7 +1,7 @@
 # Coding Exercise 1: Order Service
 
 ## The coding: https://youtu.be/HWI84VrVsVU
-## The test: TBD
+## The test: https://youtu.be/7VaiTxF8srs
 
 ```typescript
 // orderService.ts
