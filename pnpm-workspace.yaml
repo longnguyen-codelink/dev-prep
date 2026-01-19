@@ -4,5 +4,8 @@ packages:
 onlyBuiltDependencies:
   - '@parcel/watcher'
   - esbuild
+  - less
   - lmdb
   - msgpackr-extract
+  - nx
+  - unrs-resolver
