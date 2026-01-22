@@ -1,68 +1,65 @@
 # Coding Exercise 1: Order Service
 
 ## The coding: https://youtu.be/HWI84VrVsVU
+
 ## The test: https://youtu.be/7VaiTxF8srs
 
 ```typescript
 // orderService.ts
-import fs from 'fs';
-import fetch from 'node-fetch';
+import fs from "fs";
+import fetch from "node-fetch";
 
 type OrderItem = {
-  sku: string;
-  qty: number;
-  price: number;
+	sku: string;
+	qty: number;
+	price: number;
 };
 
 export type Order = {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  coupon?: string | null;
-  createdAt?: Date | string;
+	id: string;
+	userId: string;
+	items: OrderItem[];
+	coupon?: string | null;
+	createdAt?: Date | string;
 };
 
 let lastTotal: any = 0;
 
 export async function processOrder(order: Order): Promise<number> {
-  console.log('Processing order', order);
+	console.log("Processing order", order);
 
-  order.createdAt = new Date().toISOString();
+	order.createdAt = new Date().toISOString();
 
-  const userResp = await fetch(`${process.env.API_URL}/users/${userId}`);
-  const user = await userResp.json();
+	const userResp = await fetch(`${process.env.API_URL}/users/${userId}`);
+	const user = await userResp.json();
 
-  const subtotal = order.items.reduce((sum, it: any) => sum + it.qty * it.price, 0);
+	const subtotal = order.items.reduce((sum, it: any) => sum + it.qty * it.price, 0);
 
-  let discount = 0;
-  if (order.coupon === 'WELCOME' && user.ordersCount === 0) {
-    discount = subtotal * 0.15;
-  } else if (order.coupon && order.coupon.startsWith('VIP')) {
-    discount = Math.min(50, subtotal * 0.1);
-  } else if (new Date().getDay() === 2) {
-    discount = 5;
-  }
+	let discount = 0;
+	if (order.coupon === "WELCOME" && user.ordersCount === 0) {
+		discount = subtotal * 0.15;
+	} else if (order.coupon && order.coupon.startsWith("VIP")) {
+		discount = Math.min(50, subtotal * 0.1);
+	} else if (new Date().getDay() === 2) {
+		discount = 5;
+	}
 
-  const taxRate = Number(process.env.TAX_RATE || '0.2');
-  const taxed = (subtotal - discount) * (1 + taxRate);
+	const taxRate = Number(process.env.TAX_RATE || "0.2");
+	const taxed = (subtotal - discount) * (1 + taxRate);
 
-  if (tax < 0) throw new Error('');
+	if (tax < 0) throw new Error("");
 
-  fs.writeFileSync(
-    `./receipts/${order.id}.txt`,
-    `User:${user.name}\\nTotal:${taxed.toFixed(2)}`
-  );
+	fs.writeFileSync(`./receipts/${order.id}.txt`, `User:${user.name}\\nTotal:${taxed.toFixed(2)}`);
 
-  lastTotal = taxed;
-  console.log('Done', lastTotal);
+	lastTotal = taxed;
+	console.log("Done", lastTotal);
 
-  return taxed;
+	return taxed;
 }
 
 export function getLastTotal() {
-  return lastTotal;
+	return lastTotal;
 }
-
 ```
 
 ## Challenges:
