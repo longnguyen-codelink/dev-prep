@@ -1,0 +1,6 @@
+@dev_prep_HostAddress = http://localhost:5283
+
+GET {{dev_prep_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
