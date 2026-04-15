@@ -16,14 +16,14 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.UseHttpsRedirection();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment()) { }
-app.MapOpenApi();
+// if (app.Environment.IsDevelopment()) { }
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
-
+app.MapOpenApi();
 app.MapControllers();
+
 app.Run();
