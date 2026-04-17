@@ -3,6 +3,7 @@ using System;
 using FinanceTracker.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FinanceTracker.Migrations
 {
     [DbContext(typeof(DBContext))]
-    partial class DBContextModelSnapshot : ModelSnapshot
+    [Migration("20260417044039_MapCategoryColumnId")]
+    partial class MapCategoryColumnId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -67,8 +70,7 @@ namespace FinanceTracker.Migrations
                         .HasColumnName("id");
 
                     b.Property<Guid>("CategoryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("category_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -77,6 +79,9 @@ namespace FinanceTracker.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("created_by");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("EventDate")
                         .HasColumnType("timestamp with time zone")
@@ -94,6 +99,9 @@ namespace FinanceTracker.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
 
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal>("Value")
                         .HasColumnType("numeric")
                         .HasColumnName("value");
@@ -102,9 +110,9 @@ namespace FinanceTracker.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("CreatedBy");
+                    b.HasIndex("CreatedByUserId");
 
-                    b.HasIndex("UpdatedBy");
+                    b.HasIndex("UpdatedByUserId");
 
                     b.ToTable("Transaction");
                 });
@@ -179,14 +187,13 @@ namespace FinanceTracker.Migrations
 
                     b.HasOne("FinanceTracker.Models.User", "CreatedByUser")
                         .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("FinanceTracker.Models.User", "UpdatedByUser")
                         .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .HasForeignKey("UpdatedByUserId");
 
                     b.Navigation("Category");
 

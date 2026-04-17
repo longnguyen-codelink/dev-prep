@@ -7,7 +7,10 @@
     "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "features": {
         "ghcr.io/devcontainers/features/dotnet:2": {},
-        "ghcr.io/nikiforovall/devcontainer-features/dotnet-csharpier:1": {}
+        "ghcr.io/nikiforovall/devcontainer-features/dotnet-csharpier:1": {},
+        "ghcr.io/devcontainers/features/common-utils": {
+			"installOhMyZsh": true
+		}
     },
     "customizations": {
         "vscode": {

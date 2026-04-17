@@ -2,10 +2,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Models
 {
-    public class Category
+    public class User
     {
         public Guid Id { get; set; }
-        public required string Name { get; set; }
+        public required string Username { get; set; }
+        public required string Password { get; set; }
 
         // Fields for tracking creation
         public DateTime CreatedAt { get; set; }
@@ -15,59 +16,60 @@ namespace FinanceTracker.Models
         public DateTime? UpdatedAt { get; set; }
         public Guid? UpdatedBy { get; set; }
 
-        // Navigation property for related transactions
-        public ICollection<Transaction>? Transactions { get; set; }
+        // Navigation properties for tracking who created/updated the user
         public User? CreatedByUser { get; set; }
         public User? UpdatedByUser { get; set; }
 
         public static void Configure(ModelBuilder modelBuilder)
         {
-            // Configuring the mapping for the Category entity
-            modelBuilder.Entity<Category>().Property(c => c.Id).HasColumnName("id").IsRequired();
+            // Configuring the mapping for the User entity
+            modelBuilder.Entity<User>().Property(u => u.Id).HasColumnName("id").IsRequired();
 
             modelBuilder
-                .Entity<Category>()
-                .Property(c => c.Name)
-                .HasColumnName("name")
+                .Entity<User>()
+                .Property(u => u.Username)
+                .HasColumnName("username")
                 .IsRequired();
 
             modelBuilder
-                .Entity<Category>()
-                .Property(c => c.CreatedAt)
+                .Entity<User>()
+                .Property(u => u.Password)
+                .HasColumnName("password")
+                .IsRequired();
+
+            modelBuilder
+                .Entity<User>()
+                .Property(u => u.CreatedAt)
                 .HasColumnName("created_at")
                 .IsRequired();
 
-            modelBuilder
-                .Entity<Category>()
-                .Property(c => c.CreatedBy)
-                .HasColumnName("created_by")
-                .IsRequired();
+            modelBuilder.Entity<User>().Property(u => u.CreatedBy).HasColumnName("created_by");
 
             modelBuilder
-                .Entity<Category>()
-                .Property(c => c.UpdatedAt)
+                .Entity<User>()
+                .Property(u => u.UpdatedAt)
                 .HasColumnName("updated_at")
                 .IsRequired(false);
 
             modelBuilder
-                .Entity<Category>()
-                .Property(c => c.UpdatedBy)
+                .Entity<User>()
+                .Property(u => u.UpdatedBy)
                 .HasColumnName("updated_by")
                 .IsRequired(false);
 
             // Configuring relationships
             modelBuilder
-                .Entity<Category>()
-                .HasOne(c => c.CreatedByUser)
+                .Entity<User>()
+                .HasOne(u => u.CreatedByUser)
                 .WithMany()
-                .HasForeignKey(c => c.CreatedBy)
+                .HasForeignKey(u => u.CreatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder
-                .Entity<Category>()
-                .HasOne(c => c.UpdatedByUser)
+                .Entity<User>()
+                .HasOne(u => u.UpdatedByUser)
                 .WithMany()
-                .HasForeignKey(c => c.UpdatedBy)
+                .HasForeignKey(u => u.UpdatedBy)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
