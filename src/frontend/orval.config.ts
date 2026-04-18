@@ -13,7 +13,7 @@ export default defineConfig({
       httpClient: "axios",
       override: {
         mutator: {
-          path: "./src/api/axios-instance.ts",
+          path: "./src/api/instance/index.ts",
           name: "customInstance",
         },
         query: {

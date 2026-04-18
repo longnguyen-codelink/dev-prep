@@ -16,21 +16,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  optimizeDeps: {
-    include: [
-      'react',
-      'react-dom/client',
-      'react/jsx-runtime',
-      'react/jsx-dev-runtime',
-      '@tanstack/react-router',
-      '@tanstack/react-query',
-      'axios',
-      'class-variance-authority',
-      'clsx',
-      'tailwind-merge',
-    ],
-  },
   server: {
+    host: '0.0.0.0',
     port: 4200,
     proxy: {
       '/api': {
