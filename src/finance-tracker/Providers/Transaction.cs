@@ -2,6 +2,7 @@ namespace FinanceTracker.Providers;
 
 using FinanceTracker.Models;
 using FinanceTracker.Services;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction>(dBContext)
@@ -55,5 +56,10 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
         await DBContext.SaveChangesAsync();
 
         return existingTransaction;
+    }
+
+    public async Task<IActionResult> GetSummary()
+    {
+        throw new NotImplementedException();
     }
 }

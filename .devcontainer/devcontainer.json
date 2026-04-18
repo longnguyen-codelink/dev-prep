@@ -9,8 +9,11 @@
         "ghcr.io/devcontainers/features/dotnet:2": {},
         "ghcr.io/nikiforovall/devcontainer-features/dotnet-csharpier:1": {},
         "ghcr.io/devcontainers/features/common-utils": {
-			"installOhMyZsh": true
-		}
+            "installOhMyZsh": true
+        },
+        "ghcr.io/devcontainers-extra/features/pnpm": {
+            "version": "latest"
+        }
     },
     "customizations": {
         "vscode": {
@@ -23,6 +26,9 @@
         }
     },
     "mounts": [
-        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.zsh_history,target=/home/vscode/.zsh_history,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.dotnet,target=/home/vscode/.dotnet,type=bind,consistency=cached",
+        "source=${localEnv:HOME}/.nuget/packages,target=/home/vscode/.nuget/packages,type=bind,consistency=cached"
     ]
 }
