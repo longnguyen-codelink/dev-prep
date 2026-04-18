@@ -2,6 +2,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FinanceTracker.Models
 {
+    public class CategoryMutationDTO
+    {
+        public required string Name { get; set; }
+    }
+
+    public class CategoryListDTO
+    {
+        public Guid Id { get; set; }
+        public required string Name { get; set; }
+    }
+
     public class Category
     {
         public Guid Id { get; set; }

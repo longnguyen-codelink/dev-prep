@@ -8,6 +8,14 @@ namespace FinanceTracker.Models
         Expense,
     }
 
+    public class TransactionMutationDTO
+    {
+        public Guid CategoryId { get; set; }
+        public TransactionType Type { get; set; }
+        public decimal Amount { get; set; }
+        public DateTime Date { get; set; }
+    }
+
     public class Transaction
     {
         public Guid Id { get; set; }
@@ -27,7 +35,7 @@ namespace FinanceTracker.Models
 
         // Navigation property
         public Category? Category { get; set; }
-        public required User CreatedByUser { get; set; }
+        public User? CreatedByUser { get; set; }
         public User? UpdatedByUser { get; set; }
 
         public static void Configure(ModelBuilder modelBuilder)

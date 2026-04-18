@@ -2,9 +2,8 @@ using FinanceTracker.Services;
 
 namespace FinanceTracker.Providers
 {
-    public class BaseProvider(ILogger<BaseProvider> logger)
+    public class BaseProvider<T>(DBContext dBContext)
     {
-        protected readonly ILogger<BaseProvider> _logger = logger;
-        protected readonly DBContext? dBContext;
+        protected DBContext DBContext { get; } = dBContext;
     }
 }
