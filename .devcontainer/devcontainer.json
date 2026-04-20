@@ -30,5 +30,6 @@
         "source=${localEnv:HOME}/.zsh_history,target=/home/vscode/.zsh_history,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.dotnet,target=/home/vscode/.dotnet,type=bind,consistency=cached",
         "source=${localEnv:HOME}/.nuget/packages,target=/home/vscode/.nuget/packages,type=bind,consistency=cached"
-    ]
+    ],
+    "postCreateCommand": "zsh ./.devcontainer/commands/post-create.sh"
 }
