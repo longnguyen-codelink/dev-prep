@@ -5,3 +5,8 @@ export interface LoginResponse {
 export interface TokenResponse {
   accessToken: string
 }
+
+export interface RoleOption {
+  label: string
+  value: string
+}

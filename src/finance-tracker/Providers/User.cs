@@ -21,16 +21,70 @@ public class UserProvider(
         return await DBContext.User.FirstOrDefaultAsync(u => u.Username == username);
     }
 
-    public async Task<User> CreateUser(User user)
+    public async Task<List<Commmon.SelectOption>> GetAllRoles()
     {
-        user.Id = Guid.NewGuid();
-        user.CreatedAt = DateTime.UtcNow;
-        user.CreatedBy = Guid.Empty; // Replace with actual user ID
+        return
+        [
+            .. Enum.GetNames<UserRole>()
+                .Select(role => new Commmon.SelectOption
+                {
+                    Label = role,
+                    Value = ((int)Enum.Parse<UserRole>(role)).ToString(),
+                }),
+        ];
+    }
 
-        await DBContext.User.AddAsync(user);
+    public async Task<IEnumerable<UserListItemDTO>> GetUsers(Commmon.QueryParams queryParams)
+    {
+        IQueryable<User> query = DBContext.User;
+
+        if (!string.IsNullOrEmpty(queryParams.Search))
+        {
+            string searchLower = queryParams.Search.ToLower();
+            query = query.Where(u =>
+                u.Username.Contains(searchLower, StringComparison.CurrentCultureIgnoreCase)
+            );
+        }
+
+        Console.WriteLine($"Query ${{query.ToQueryString()}}");
+
+        return await query
+            .Skip((queryParams.Page - 1) * queryParams.PageSize)
+            .Take(queryParams.PageSize)
+            .Select(u => new UserListItemDTO
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Role = u.Role,
+                CreatedAt = u.CreatedAt,
+                CreatedBy = u.CreatedBy,
+                UpdatedAt = u.UpdatedAt,
+                UpdatedBy = u.UpdatedBy,
+            })
+            .ToListAsync();
+    }
+
+    public async Task<User> CreateUser(UserMutationDTO user)
+    {
+        var newUser = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = user.Username,
+            Password = HashPassword(user.Password),
+            Role = user.Role,
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = Guid.Empty, // Replace with actual user ID
+        };
+
+        await DBContext.User.AddAsync(newUser);
         await DBContext.SaveChangesAsync();
 
-        return user;
+        return newUser;
+    }
+
+    public string HashPassword(string password)
+    {
+        return BCrypt.HashPassword(password);
     }
 
     public async Task<string> VerifyUserCredentials(LoginDTO loginDTO)

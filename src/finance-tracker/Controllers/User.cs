@@ -1,15 +1,34 @@
+using FinanceTracker.Interfaces;
+using FinanceTracker.Models;
+using FinanceTracker.Providers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FinanceTracker.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class UserController : ControllerBase
+public class UserController(UserProvider userProvider) : ControllerBase
 {
-    [HttpGet(Name = "GetUsers")]
-    public async Task<IEnumerable<string>> Get()
+    [HttpGet("roles", Name = "GetAllRoles")]
+    public async Task<IActionResult> GetAllRoles()
     {
-        // Placeholder for fetching users from the database
-        return ["User1", "User2"];
+        var roles = await userProvider.GetAllRoles();
+        return Ok(roles);
+    }
+
+    [HttpGet(Name = "GetUsers")]
+    public async Task<IActionResult> Get([FromQuery] Commmon.QueryParams queryParams)
+    {
+        var users = await userProvider.GetUsers(queryParams);
+        return Ok(users);
+    }
+
+    [Authorize(Roles = nameof(UserRole.Admin))]
+    [HttpPost(Name = "CreateUser")]
+    public async Task<IActionResult> CreateUser([FromBody] UserMutationDTO userDto)
+    {
+        await userProvider.CreateUser(userDto);
+        return Ok($"User '{userDto.Username}' created successfully.");
     }
 }

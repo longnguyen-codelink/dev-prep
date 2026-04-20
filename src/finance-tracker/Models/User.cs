@@ -15,6 +15,24 @@ namespace FinanceTracker.Models
         Admin,
     }
 
+    public class UserMutationDTO
+    {
+        public required string Username { get; set; }
+        public required string Password { get; set; }
+        public UserRole Role { get; set; } = UserRole.User;
+    }
+
+    public class UserListItemDTO
+    {
+        public Guid Id { get; set; }
+        public required string Username { get; set; }
+        public required UserRole Role { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public Guid CreatedBy { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
+    }
+
     public class User
     {
         public Guid Id { get; set; }

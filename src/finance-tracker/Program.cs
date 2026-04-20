@@ -57,10 +57,19 @@ builder
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(jwtOptions =>
     {
+        jwtOptions.MapInboundClaims = false;
         jwtOptions.TokenValidationParameters = new TokenValidationParameters
         {
             ValidIssuer = jwtSettings.Authority,
             ValidAudience = jwtSettings.Audience,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.SecretKey)
+            ),
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = "role",
+            NameClaimType = "sub",
         };
     });
 

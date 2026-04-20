@@ -18,10 +18,12 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings)
         JwtSecurityTokenHandler tokenHandler = new();
         SecurityTokenDescriptor tokenDescriptor = new()
         {
+            Issuer = _jwtSettings.Authority,
+            Audience = _jwtSettings.Audience,
             Expires = expiresAt,
             Subject = new ClaimsIdentity([
-                new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
-                new Claim(ClaimTypes.Role, role.ToString()),
+                new Claim("sub", userId.ToString()),
+                new Claim("role", role.ToString()),
             ]),
             SigningCredentials = new SigningCredentials(
                 new SymmetricSecurityKey(key),
