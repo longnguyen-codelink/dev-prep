@@ -5,6 +5,7 @@
  * OpenAPI spec version: 1.0
  */
 import type { User as __User } from './user';
+import type { UserRole } from './userRole';
 
 export interface User {
   id?: string;
@@ -12,6 +13,7 @@ export interface User {
   username: string | null;
   /** @nullable */
   password: string | null;
+  role: UserRole;
   createdAt?: string;
   createdBy?: string;
   /** @nullable */

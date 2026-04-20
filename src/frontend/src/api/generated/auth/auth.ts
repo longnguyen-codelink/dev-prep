@@ -15,7 +15,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  LoginDTO
+  LoginDTO,
+  TokenExchangeDTO
 } from '../model';
 
 import { customInstance } from '../../instance/index';
@@ -79,4 +80,116 @@ const {mutation: mutationOptions} = options ?
         TContext
       > => {
       return useMutation(getLoginMutationOptions(options), queryClient);
+    }
+    export const exchangeToken = (
+    tokenExchangeDTO: TokenExchangeDTO,
+ signal?: AbortSignal
+) => {
+
+
+      return customInstance<void>(
+      {url: `/auth/token`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: tokenExchangeDTO, signal
+    },
+      );
+    }
+
+
+
+export const getExchangeTokenMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeToken>>, TError,{data: TokenExchangeDTO}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof exchangeToken>>, TError,{data: TokenExchangeDTO}, TContext> => {
+
+const mutationKey = ['exchangeToken'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof exchangeToken>>, {data: TokenExchangeDTO}> = (props) => {
+          const {data} = props ?? {};
+
+          return  exchangeToken(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ExchangeTokenMutationResult = NonNullable<Awaited<ReturnType<typeof exchangeToken>>>
+    export type ExchangeTokenMutationBody = TokenExchangeDTO
+    export type ExchangeTokenMutationError = unknown
+
+    export const useExchangeToken = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof exchangeToken>>, TError,{data: TokenExchangeDTO}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof exchangeToken>>,
+        TError,
+        {data: TokenExchangeDTO},
+        TContext
+      > => {
+      return useMutation(getExchangeTokenMutationOptions(options), queryClient);
+    }
+    export const refreshToken = (
+
+ signal?: AbortSignal
+) => {
+
+
+      return customInstance<void>(
+      {url: `/auth/token/refresh`, method: 'POST', signal
+    },
+      );
+    }
+
+
+
+export const getRefreshTokenMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshToken>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof refreshToken>>, TError,void, TContext> => {
+
+const mutationKey = ['refreshToken'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof refreshToken>>, void> = () => {
+
+
+          return  refreshToken()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RefreshTokenMutationResult = NonNullable<Awaited<ReturnType<typeof refreshToken>>>
+
+    export type RefreshTokenMutationError = unknown
+
+    export const useRefreshToken = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof refreshToken>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof refreshToken>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getRefreshTokenMutationOptions(options), queryClient);
     }

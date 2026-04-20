@@ -1,9 +1,11 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router"
+import { createRootRoute, Link, Outlet, useMatchRoute, useNavigate } from "@tanstack/react-router"
+import { useEffect } from "react"
 import LayoutDashboard from "lucide-react/dist/esm/icons/layout-dashboard.js"
 import ArrowLeftRight from "lucide-react/dist/esm/icons/arrow-left-right.js"
 import Tags from "lucide-react/dist/esm/icons/tags.js"
 import ShieldCheck from "lucide-react/dist/esm/icons/shield-check.js"
 import { Separator } from "@/components/ui/separator"
+import { useAuth } from "@/auth/auth-context"
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -17,6 +19,38 @@ const navItems = [
 ] as const
 
 function RootLayout() {
+  const { isAuthenticated, isLoading } = useAuth()
+  const matchRoute = useMatchRoute()
+  const navigate = useNavigate()
+  const isLoginPage = matchRoute({ to: "/login" })
+
+  useEffect(() => {
+    if (isLoading) return
+    if (!isAuthenticated && !isLoginPage) {
+      navigate({ to: "/login" })
+    } else if (isAuthenticated && isLoginPage) {
+      navigate({ to: "/" })
+    }
+  }, [isAuthenticated, isLoading, isLoginPage, navigate])
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    )
+  }
+
+  // Login page renders without sidebar
+  if (isLoginPage) {
+    return <Outlet />
+  }
+
+  // Not authenticated and not on login — show nothing while redirect happens
+  if (!isAuthenticated) {
+    return null
+  }
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}

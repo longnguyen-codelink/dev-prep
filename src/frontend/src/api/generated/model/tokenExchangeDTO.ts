@@ -5,11 +5,9 @@
  * OpenAPI spec version: 1.0
  */
 
-export interface LoginDTO {
+export interface TokenExchangeDTO {
   /** @nullable */
-  username: string | null;
+  code: string | null;
   /** @nullable */
-  password: string | null;
-  /** @nullable */
-  codeChallenge: string | null;
+  codeVerifier: string | null;
 }
