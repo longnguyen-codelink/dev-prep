@@ -7,8 +7,10 @@ namespace FinanceTracker.Services
         public static IServiceCollection AddProviders(this IServiceCollection services)
         {
             // Add all your providers here
-            services.AddScoped<CategoryProvider>();
-            // services.AddScoped<UserProvider>();
+            services
+                .AddScoped<CategoryProvider>()
+                .AddScoped<TransactionProvider>()
+                .AddScoped<UserProvider>();
 
             return services;
         }

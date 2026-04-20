@@ -6,6 +6,13 @@ namespace FinanceTracker.Models
     {
         public required string Username { get; set; }
         public required string Password { get; set; }
+        public required string CodeChallenge { get; set; }
+    }
+
+    public enum UserRole
+    {
+        User,
+        Admin,
     }
 
     public class User
@@ -13,6 +20,7 @@ namespace FinanceTracker.Models
         public Guid Id { get; set; }
         public required string Username { get; set; }
         public required string Password { get; set; }
+        public required UserRole Role { get; set; } = UserRole.User;
 
         // Fields for tracking creation
         public DateTime CreatedAt { get; set; }
@@ -42,6 +50,12 @@ namespace FinanceTracker.Models
                 .Property(u => u.Password)
                 .HasColumnName("password")
                 .IsRequired();
+
+            modelBuilder
+                .Entity<User>()
+                .Property(u => u.Role)
+                .HasColumnName("role")
+                .HasDefaultValue(UserRole.User);
 
             modelBuilder
                 .Entity<User>()
