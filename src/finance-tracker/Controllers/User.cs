@@ -9,6 +9,7 @@ namespace FinanceTracker.Controllers;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class UserController(UserProvider userProvider) : ControllerBase
 {
     [HttpGet("roles", Name = "GetAllRoles")]

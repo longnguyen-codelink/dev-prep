@@ -2,6 +2,7 @@ using System.Security.Claims;
 using AutoMapper;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static FinanceTracker.Interfaces.Common;
 
@@ -9,6 +10,7 @@ namespace FinanceTracker.Controllers
 {
     [ApiController]
     [Route("[controller]")]
+    [Authorize]
     public class CategoryController(
         ILogger<CategoryController> logger,
         CategoryProvider categoryProvider,

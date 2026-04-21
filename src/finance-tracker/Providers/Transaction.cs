@@ -3,15 +3,16 @@ namespace FinanceTracker.Providers;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Services;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction>(dBContext)
 {
     public async Task<IEnumerable<Transaction>> GetTransactions(Common.QueryParams queryParams)
     {
-        // Placeholder for fetching transactions from the database with pagination and filtering
-        return await DBContext.Transaction.ToListAsync();
+        return await DBContext.Transaction
+            .Include(t => t.Category)
+            .OrderByDescending(t => t.EventDate)
+            .ToListAsync();
     }
 
     public async Task<IEnumerable<Transaction>> GetTransactions()
@@ -72,8 +73,32 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
         return existingTransaction;
     }
 
-    public async Task<IActionResult> GetSummary()
+    public async Task<TransactionSummaryDTO> GetSummary(Guid categoryId)
     {
-        throw new NotImplementedException();
+        // Placeholder for fetching transaction summary from the database
+        IQueryable<Transaction> query = DBContext.Transaction;
+
+        // Filter by categoryId if provided
+        if (categoryId != Guid.Empty)
+            query = query.Where(t => t.CategoryId == categoryId);
+
+        var totalTransaction = await query.Select(t => new { t.Type, t.Value }).ToListAsync();
+
+        decimal totalIncome = totalTransaction
+            .Where(t => t.Type == TransactionType.Income)
+            .Sum(t => t.Value);
+
+        decimal totalExpense = totalTransaction
+            .Where(t => t.Type == TransactionType.Expense)
+            .Sum(t => t.Value);
+
+        decimal netBalance = totalIncome - totalExpense;
+
+        return new TransactionSummaryDTO
+        {
+            TotalIncome = totalIncome,
+            TotalExpense = totalExpense,
+            NetBalance = netBalance,
+        };
     }
 }

@@ -5,10 +5,12 @@ using AutoMapper;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 [ApiController]
 [Route("[controller]")]
+[Authorize]
 public class TransactionController(
     ILogger<TransactionController> logger,
     TransactionProvider transactionProvider,
@@ -46,9 +48,9 @@ public class TransactionController(
     }
 
     [HttpGet("summary", Name = "GetTransactionSummary")]
-    public async Task<IActionResult> Summary()
+    public async Task<IActionResult> Summary([FromQuery] Guid categoryId)
     {
-        var summary = await _transactionProvider.GetSummary();
+        var summary = await _transactionProvider.GetSummary(categoryId);
         return Ok(summary);
     }
 }

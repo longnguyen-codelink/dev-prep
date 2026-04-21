@@ -9,6 +9,7 @@ export * from './category';
 export * from './categoryListDTO';
 export * from './categoryMutationDTO';
 export * from './getTransactionsParams';
+export * from './getTransactionSummaryParams';
 export * from './getUsersParams';
 export * from './loginDTO';
 export * from './tokenExchangeDTO';

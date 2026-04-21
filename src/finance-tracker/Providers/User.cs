@@ -46,8 +46,6 @@ public class UserProvider(
             );
         }
 
-        Console.WriteLine($"Query ${{query.ToQueryString()}}");
-
         return await query
             .Skip((queryParams.Page - 1) * queryParams.PageSize)
             .Take(queryParams.PageSize)

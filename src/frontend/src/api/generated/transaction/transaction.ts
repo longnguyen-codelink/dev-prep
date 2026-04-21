@@ -24,6 +24,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetTransactionSummaryParams,
   GetTransactionsParams,
   TransactionMutationDTO
 } from '../model';
@@ -178,13 +179,14 @@ const {mutation: mutationOptions} = options ?
       return useMutation(getCreateTransactionMutationOptions(options), queryClient);
     }
     export const getTransactionSummary = (
-
+    params?: GetTransactionSummaryParams,
  signal?: AbortSignal
 ) => {
 
 
       return customInstance<void>(
-      {url: `/transaction/summary`, method: 'GET', signal
+      {url: `/transaction/summary`, method: 'GET',
+        params, signal
     },
       );
     }
@@ -192,23 +194,23 @@ const {mutation: mutationOptions} = options ?
 
 
 
-export const getGetTransactionSummaryQueryKey = () => {
+export const getGetTransactionSummaryQueryKey = (params?: GetTransactionSummaryParams,) => {
     return [
-    `/transaction/summary`
+    `/transaction/summary`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetTransactionSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
+export const getGetTransactionSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>(params?: GetTransactionSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetTransactionSummaryQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionSummaryQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionSummary>>> = ({ signal }) => getTransactionSummary(signal);
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactionSummary>>> = ({ signal }) => getTransactionSummary(params, signal);
 
 
 
@@ -222,7 +224,7 @@ export type GetTransactionSummaryQueryError = unknown
 
 
 export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>(
-  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>> & Pick<
+ params: undefined |  GetTransactionSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getTransactionSummary>>,
           TError,
@@ -232,7 +234,7 @@ export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTr
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>> & Pick<
+ params?: GetTransactionSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getTransactionSummary>>,
           TError,
@@ -242,16 +244,16 @@ export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
+ params?: GetTransactionSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 
 export function useGetTransactionSummary<TData = Awaited<ReturnType<typeof getTransactionSummary>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
+ params?: GetTransactionSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactionSummary>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGetTransactionSummaryQueryOptions(options)
+  const queryOptions = getGetTransactionSummaryQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
