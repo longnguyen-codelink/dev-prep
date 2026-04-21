@@ -24,10 +24,98 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  GetTransactionsParams,
   TransactionMutationDTO
 } from '../model';
 
 import { customInstance } from '../../instance/index';
+
+
+
+
+export const getTransactions = (
+    params?: GetTransactionsParams,
+ signal?: AbortSignal
+) => {
+
+
+      return customInstance<void>(
+      {url: `/transaction`, method: 'GET',
+        params, signal
+    },
+      );
+    }
+
+
+
+
+export const getGetTransactionsQueryKey = (params?: GetTransactionsParams,) => {
+    return [
+    `/transaction`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetTransactionsQueryOptions = <TData = Awaited<ReturnType<typeof getTransactions>>, TError = unknown>(params?: GetTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTransactionsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTransactions>>> = ({ signal }) => getTransactions(params, signal);
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetTransactionsQueryResult = NonNullable<Awaited<ReturnType<typeof getTransactions>>>
+export type GetTransactionsQueryError = unknown
+
+
+export function useGetTransactions<TData = Awaited<ReturnType<typeof getTransactions>>, TError = unknown>(
+ params: undefined |  GetTransactionsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactions>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTransactions<TData = Awaited<ReturnType<typeof getTransactions>>, TError = unknown>(
+ params?: GetTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getTransactions>>,
+          TError,
+          Awaited<ReturnType<typeof getTransactions>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetTransactions<TData = Awaited<ReturnType<typeof getTransactions>>, TError = unknown>(
+ params?: GetTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+
+export function useGetTransactions<TData = Awaited<ReturnType<typeof getTransactions>>, TError = unknown>(
+ params?: GetTransactionsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getTransactions>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetTransactionsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
 
 
 

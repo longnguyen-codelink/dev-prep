@@ -1,6 +1,7 @@
 using FinanceTracker.Models;
 using FinanceTracker.Services;
 using Microsoft.EntityFrameworkCore;
+using static FinanceTracker.Interfaces.Common;
 
 namespace FinanceTracker.Providers
 {
@@ -17,14 +18,17 @@ namespace FinanceTracker.Providers
             return await DBContext.Category.FindAsync(id);
         }
 
-        public async Task<Category> CreateCategory(CategoryMutationDTO category)
+        public async Task<Category> CreateCategory(
+            CategoryMutationDTO category,
+            IMutationInitiator mutationInitiator
+        )
         {
             Category newCategory = new()
             {
                 Id = Guid.NewGuid(),
                 Name = category.Name,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = Guid.Empty, // Replace with actual user ID
+                CreatedAt = mutationInitiator.Timestamp,
+                CreatedBy = mutationInitiator.UserId,
             };
 
             await DBContext.Category.AddAsync(newCategory);
@@ -33,7 +37,11 @@ namespace FinanceTracker.Providers
             return newCategory;
         }
 
-        public async Task<Category?> UpdateCategory(Guid id, CategoryMutationDTO category)
+        public async Task<Category?> UpdateCategory(
+            Guid id,
+            CategoryMutationDTO category,
+            IMutationInitiator mutationInitiator
+        )
         {
             var existingCategory = await DBContext.Category.FindAsync(id);
             if (existingCategory == null)
@@ -42,13 +50,26 @@ namespace FinanceTracker.Providers
             }
 
             existingCategory.Name = category.Name;
-            existingCategory.UpdatedAt = DateTime.UtcNow;
-            existingCategory.UpdatedBy = Guid.Empty; // Replace with actual user ID
+            existingCategory.UpdatedAt = mutationInitiator.Timestamp;
+            existingCategory.UpdatedBy = mutationInitiator.UserId;
 
             DBContext.Category.Update(existingCategory);
             await DBContext.SaveChangesAsync();
 
             return existingCategory;
+        }
+
+        public async Task<bool> DeleteCategory(Guid id)
+        {
+            var category = await DBContext.Category.FindAsync(id);
+            if (category == null)
+            {
+                return false;
+            }
+
+            DBContext.Category.Remove(category);
+            await DBContext.SaveChangesAsync();
+            return true;
         }
     }
 }

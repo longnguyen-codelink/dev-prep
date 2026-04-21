@@ -1,8 +1,7 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { useQueryClient } from "@tanstack/react-query"
 import Plus from "lucide-react/dist/esm/icons/plus.js"
-import Pencil from "lucide-react/dist/esm/icons/pencil.js"
-import Trash2 from "lucide-react/dist/esm/icons/trash-2.js"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -31,13 +30,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { PageHeader } from "@/components/PageHeader"
-import { ConfirmDialog } from "@/components/ConfirmDialog"
 import {
-  mockTransactions,
-  type Transaction,
-  type TransactionType,
-} from "@/mock/transactions"
-import { mockCategories } from "@/mock/categories"
+  useGetTransactions,
+  useCreateTransaction,
+  getGetTransactionsQueryKey,
+} from "@/api/generated/transaction/transaction"
+import { useGetCategories } from "@/api/generated/category/category"
+import type { Transaction } from "@/api/generated/model/transaction"
+import type { CategoryListDTO } from "@/api/generated/model/categoryListDTO"
+import { TransactionType } from "@/api/generated/model/transactionType"
 
 export const Route = createFileRoute("/transactions")({
   component: TransactionsPage,
@@ -45,87 +46,62 @@ export const Route = createFileRoute("/transactions")({
 
 interface FormData {
   categoryId: string
-  type: TransactionType
+  type: string
   amount: string
   date: string
 }
 
 const emptyForm: FormData = {
   categoryId: "",
-  type: "Expense",
+  type: String(TransactionType.NUMBER_0),
   amount: "",
   date: new Date().toISOString().split("T")[0],
 }
 
+const TYPE_LABEL: Record<number, string> = {
+  [TransactionType.NUMBER_0]: "Expense",
+  [TransactionType.NUMBER_1]: "Income",
+}
+
 function TransactionsPage() {
-  const [transactions, setTransactions] =
-    useState<Transaction[]>(mockTransactions)
+  const queryClient = useQueryClient()
+  const { data: transactions, isLoading } = useGetTransactions() as { data: Transaction[] | undefined; isLoading: boolean }
+  const { data: categories } = useGetCategories() as { data: CategoryListDTO[] | undefined }
+  const createTransaction = useCreateTransaction()
+
   const [formOpen, setFormOpen] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormData>(emptyForm)
 
-  const openAdd = () => {
-    setEditingId(null)
-    setForm(emptyForm)
-    setFormOpen(true)
-  }
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: getGetTransactionsQueryKey() })
 
-  const openEdit = (tx: Transaction) => {
-    setEditingId(tx.id)
+  const openAdd = () => {
     setForm({
-      categoryId: tx.categoryId,
-      type: tx.type,
-      amount: tx.value.toString(),
-      date: tx.eventDate,
+      ...emptyForm,
+      categoryId: categories?.[0]?.id ?? "",
     })
     setFormOpen(true)
   }
 
-  const openDelete = (id: string) => {
-    setDeletingId(id)
-    setDeleteOpen(true)
-  }
-
   const handleSave = () => {
-    const category = mockCategories.find((c) => c.id === form.categoryId)
-    if (!category || !form.amount || !form.date) return
+    if (!form.categoryId || !form.amount || !form.date) return
 
-    if (editingId) {
-      setTransactions((prev) =>
-        prev.map((tx) =>
-          tx.id === editingId
-            ? {
-                ...tx,
-                categoryId: form.categoryId,
-                categoryName: category.name,
-                type: form.type,
-                value: parseFloat(form.amount),
-                eventDate: form.date,
-              }
-            : tx
-        )
-      )
-    } else {
-      const newTx: Transaction = {
-        id: crypto.randomUUID(),
-        categoryId: form.categoryId,
-        categoryName: category.name,
-        type: form.type,
-        value: parseFloat(form.amount),
-        eventDate: form.date,
+    createTransaction.mutate(
+      {
+        data: {
+          categoryId: form.categoryId,
+          type: Number(form.type) as TransactionType,
+          amount: parseFloat(form.amount),
+          date: form.date,
+        },
+      },
+      {
+        onSuccess: () => {
+          invalidate()
+          setFormOpen(false)
+        },
       }
-      setTransactions((prev) => [newTx, ...prev])
-    }
-    setFormOpen(false)
-  }
-
-  const handleDelete = () => {
-    if (deletingId) {
-      setTransactions((prev) => prev.filter((tx) => tx.id !== deletingId))
-      setDeletingId(null)
-    }
+    )
   }
 
   return (
@@ -142,76 +118,59 @@ function TransactionsPage() {
       />
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.length === 0 ? (
+        {isLoading ? (
+          <p className="h-24 flex items-center justify-center text-sm text-muted-foreground">
+            Loading transactions…
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  No transactions yet.
-                </TableCell>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Amount</TableHead>
               </TableRow>
-            ) : (
-              transactions.map((tx) => (
-                <TableRow key={tx.id}>
-                  <TableCell>{tx.eventDate}</TableCell>
-                  <TableCell>{tx.categoryName}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        tx.type === "Income" ? "default" : "destructive"
-                      }
-                    >
-                      {tx.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${tx.value.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(tx)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDelete(tx.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {!transactions?.length ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-24 text-center">
+                    No transactions yet.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                transactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell>{tx.eventDate}</TableCell>
+                    <TableCell>{tx.category?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          tx.type === TransactionType.NUMBER_1 ? "default" : "destructive"
+                        }
+                      >
+                        {TYPE_LABEL[tx.type ?? TransactionType.NUMBER_0]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      ${(tx.value ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Add Transaction Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {editingId ? "Edit Transaction" : "Add Transaction"}
-            </DialogTitle>
+            <DialogTitle>Add Transaction</DialogTitle>
             <DialogDescription>
-              {editingId
-                ? "Update the transaction details below."
-                : "Fill in the details for the new transaction."}
+              Fill in the details for the new transaction.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -220,13 +179,14 @@ function TransactionsPage() {
               <Select
                 value={form.categoryId}
                 onValueChange={(v) => setForm((f) => ({ ...f, categoryId: v }))}
+                disabled={createTransaction.isPending}
               >
                 <SelectTrigger id="category">
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {mockCategories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
+                  {categories?.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id!}>
                       {cat.name}
                     </SelectItem>
                   ))}
@@ -237,16 +197,15 @@ function TransactionsPage() {
               <Label htmlFor="type">Type</Label>
               <Select
                 value={form.type}
-                onValueChange={(v) =>
-                  setForm((f) => ({ ...f, type: v as TransactionType }))
-                }
+                onValueChange={(v) => setForm((f) => ({ ...f, type: v }))}
+                disabled={createTransaction.isPending}
               >
                 <SelectTrigger id="type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Income">Income</SelectItem>
-                  <SelectItem value="Expense">Expense</SelectItem>
+                  <SelectItem value={String(TransactionType.NUMBER_0)}>Expense</SelectItem>
+                  <SelectItem value={String(TransactionType.NUMBER_1)}>Income</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -259,6 +218,7 @@ function TransactionsPage() {
                 min="0"
                 placeholder="0.00"
                 value={form.amount}
+                disabled={createTransaction.isPending}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, amount: e.target.value }))
                 }
@@ -270,6 +230,7 @@ function TransactionsPage() {
                 id="date"
                 type="date"
                 value={form.date}
+                disabled={createTransaction.isPending}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, date: e.target.value }))
                 }
@@ -277,25 +238,15 @@ function TransactionsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>
+            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={createTransaction.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              {editingId ? "Save Changes" : "Add Transaction"}
+            <Button onClick={handleSave} disabled={createTransaction.isPending}>
+              {createTransaction.isPending ? "Adding…" : "Add Transaction"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Delete Transaction"
-        description="Are you sure you want to delete this transaction? This action cannot be undone."
-        onConfirm={handleDelete}
-        confirmLabel="Delete"
-      />
     </div>
   )
 }

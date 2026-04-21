@@ -21,12 +21,12 @@ public class UserProvider(
         return await DBContext.User.FirstOrDefaultAsync(u => u.Username == username);
     }
 
-    public async Task<List<Commmon.SelectOption>> GetAllRoles()
+    public async Task<List<Common.SelectOption>> GetAllRoles()
     {
         return
         [
             .. Enum.GetNames<UserRole>()
-                .Select(role => new Commmon.SelectOption
+                .Select(role => new Common.SelectOption
                 {
                     Label = role,
                     Value = ((int)Enum.Parse<UserRole>(role)).ToString(),
@@ -34,7 +34,7 @@ public class UserProvider(
         ];
     }
 
-    public async Task<IEnumerable<UserListItemDTO>> GetUsers(Commmon.QueryParams queryParams)
+    public async Task<IEnumerable<UserListItemDTO>> GetUsers(Common.QueryParams queryParams)
     {
         IQueryable<User> query = DBContext.User;
 
@@ -64,7 +64,10 @@ public class UserProvider(
             .ToListAsync();
     }
 
-    public async Task<User> CreateUser(UserMutationDTO user)
+    public async Task<User> CreateUser(
+        UserMutationDTO user,
+        Common.IMutationInitiator mutationInitiator
+    )
     {
         var newUser = new User
         {
@@ -72,8 +75,8 @@ public class UserProvider(
             Username = user.Username,
             Password = HashPassword(user.Password),
             Role = user.Role,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = Guid.Empty, // Replace with actual user ID
+            CreatedAt = mutationInitiator.Timestamp,
+            CreatedBy = mutationInitiator.UserId,
         };
 
         await DBContext.User.AddAsync(newUser);

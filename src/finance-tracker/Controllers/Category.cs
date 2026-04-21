@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using AutoMapper;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
 using Microsoft.AspNetCore.Mvc;
+using static FinanceTracker.Interfaces.Common;
 
 namespace FinanceTracker.Controllers
 {
@@ -33,8 +35,12 @@ namespace FinanceTracker.Controllers
         [HttpPost(Name = "CreateCategory")]
         public async Task<IActionResult> CreateCategory([FromBody] CategoryMutationDTO category)
         {
+            MutationInitiator mutationInitiator = MutationInitiator.WithJWTClaims(
+                HttpContext.User.Identity as ClaimsIdentity
+            );
+
             // Placeholder for creating a new category
-            var newCategory = await _categoryProvider.CreateCategory(category);
+            var newCategory = await _categoryProvider.CreateCategory(category, mutationInitiator);
             _logger.LogInformation($"Creating category: {newCategory.Name}");
             return CreatedAtAction(
                 nameof(GetCategoryById),
@@ -49,14 +55,35 @@ namespace FinanceTracker.Controllers
             [FromBody] CategoryMutationDTO category
         )
         {
+            MutationInitiator mutationInitiator = MutationInitiator.WithJWTClaims(
+                HttpContext.User.Identity as ClaimsIdentity
+            );
+
             // Placeholder for updating a category
-            var updatedCategory = await _categoryProvider.UpdateCategory(id, category);
+            var updatedCategory = await _categoryProvider.UpdateCategory(
+                id,
+                category,
+                mutationInitiator
+            );
             if (updatedCategory == null)
             {
                 return NotFound();
             }
 
             _logger.LogInformation($"Updating category: {updatedCategory.Name}");
+            return NoContent();
+        }
+
+        [HttpDelete("{id}", Name = "DeleteCategory")]
+        public async Task<IActionResult> DeleteCategory(Guid id)
+        {
+            // Placeholder for deleting a category
+            bool deleted = await _categoryProvider.DeleteCategory(id);
+            if (!deleted)
+            {
+                return NotFound();
+            }
+            _logger.LogInformation($"Deleted category with ID: {id}");
             return NoContent();
         }
     }

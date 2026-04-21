@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { useQueryClient } from "@tanstack/react-query"
 import Plus from "lucide-react/dist/esm/icons/plus.js"
 import Pencil from "lucide-react/dist/esm/icons/pencil.js"
 import Trash2 from "lucide-react/dist/esm/icons/trash-2.js"
@@ -24,19 +25,34 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { PageHeader } from "@/components/PageHeader"
 import { ConfirmDialog } from "@/components/ConfirmDialog"
-import { mockCategories, type Category } from "@/mock/categories"
+import {
+  useGetCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  getGetCategoriesQueryKey,
+} from "@/api/generated/category/category"
+import type { CategoryListDTO } from "@/api/generated/model/categoryListDTO"
 
 export const Route = createFileRoute("/categories")({
   component: CategoriesPage,
 })
 
 function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories)
+  const queryClient = useQueryClient()
+  const { data: categories, isLoading } = useGetCategories() as { data: CategoryListDTO[] | undefined; isLoading: boolean }
+  const createCategory = useCreateCategory()
+  const updateCategory = useUpdateCategory()
+  const deleteCategory = useDeleteCategory()
+
   const [formOpen, setFormOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [name, setName] = useState("")
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: getGetCategoriesQueryKey() })
 
   const openAdd = () => {
     setEditingId(null)
@@ -44,9 +60,9 @@ function CategoriesPage() {
     setFormOpen(true)
   }
 
-  const openEdit = (cat: Category) => {
-    setEditingId(cat.id)
-    setName(cat.name)
+  const openEdit = (cat: CategoryListDTO) => {
+    setEditingId(cat.id!)
+    setName(cat.name ?? "")
     setFormOpen(true)
   }
 
@@ -55,26 +71,30 @@ function CategoriesPage() {
     setDeleteOpen(true)
   }
 
+  const isPending = createCategory.isPending || updateCategory.isPending
+
   const handleSave = () => {
     if (!name.trim()) return
 
     if (editingId) {
-      setCategories((prev) =>
-        prev.map((c) => (c.id === editingId ? { ...c, name: name.trim() } : c))
+      updateCategory.mutate(
+        { id: editingId, data: { name: name.trim() } },
+        { onSuccess: () => { invalidate(); setFormOpen(false) } }
       )
     } else {
-      setCategories((prev) => [
-        { id: crypto.randomUUID(), name: name.trim() },
-        ...prev,
-      ])
+      createCategory.mutate(
+        { data: { name: name.trim() } },
+        { onSuccess: () => { invalidate(); setFormOpen(false) } }
+      )
     }
-    setFormOpen(false)
   }
 
   const handleDelete = () => {
     if (deletingId) {
-      setCategories((prev) => prev.filter((c) => c.id !== deletingId))
-      setDeletingId(null)
+      deleteCategory.mutate(
+        { id: deletingId },
+        { onSuccess: () => { invalidate(); setDeletingId(null) } }
+      )
     }
   }
 
@@ -92,47 +112,53 @@ function CategoriesPage() {
       />
 
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {categories.length === 0 ? (
+        {isLoading ? (
+          <p className="h-24 flex items-center justify-center text-sm text-muted-foreground">
+            Loading categories…
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={2} className="h-24 text-center">
-                  No categories yet.
-                </TableCell>
+                <TableHead>Name</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
-            ) : (
-              categories.map((cat) => (
-                <TableRow key={cat.id}>
-                  <TableCell className="font-medium">{cat.name}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(cat)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openDelete(cat.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {!categories?.length ? (
+                <TableRow>
+                  <TableCell colSpan={2} className="h-24 text-center">
+                    No categories yet.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                categories.map((cat) => (
+                  <TableRow key={cat.id}>
+                    <TableCell className="font-medium">{cat.name}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(cat)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openDelete(cat.id!)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {/* Add/Edit Dialog */}
@@ -156,6 +182,7 @@ function CategoriesPage() {
                 placeholder="Category name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={isPending}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSave()
                 }}
@@ -163,11 +190,11 @@ function CategoriesPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)}>
+            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSave}>
-              {editingId ? "Save Changes" : "Add Category"}
+            <Button onClick={handleSave} disabled={isPending}>
+              {isPending ? "Saving…" : editingId ? "Save Changes" : "Add Category"}
             </Button>
           </DialogFooter>
         </DialogContent>

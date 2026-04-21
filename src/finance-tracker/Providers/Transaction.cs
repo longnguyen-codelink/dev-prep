@@ -1,5 +1,6 @@
 namespace FinanceTracker.Providers;
 
+using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,12 @@ using Microsoft.EntityFrameworkCore;
 
 public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction>(dBContext)
 {
+    public async Task<IEnumerable<Transaction>> GetTransactions(Common.QueryParams queryParams)
+    {
+        // Placeholder for fetching transactions from the database with pagination and filtering
+        return await DBContext.Transaction.ToListAsync();
+    }
+
     public async Task<IEnumerable<Transaction>> GetTransactions()
     {
         // Placeholder for fetching transactions from the database
@@ -18,17 +25,20 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
         return await DBContext.Transaction.FindAsync(id);
     }
 
-    public async Task<Transaction> CreateTransaction(TransactionMutationDTO transaction)
+    public async Task<Transaction> CreateTransaction(
+        TransactionMutationDTO transaction,
+        Common.IMutationInitiator mutationInitiator
+    )
     {
         Transaction newTransaction = new()
         {
             Id = Guid.NewGuid(),
             Value = transaction.Amount,
-            EventDate = transaction.Date,
+            EventDate = NormalizeUtcTimestamp(transaction.Date),
             CategoryId = transaction.CategoryId,
             Type = transaction.Type,
-            CreatedAt = DateTime.UtcNow,
-            CreatedBy = Guid.Empty, // Replace with actual user ID
+            CreatedAt = mutationInitiator.Timestamp,
+            CreatedBy = mutationInitiator.UserId,
         };
 
         await DBContext.Transaction.AddAsync(newTransaction);
@@ -37,7 +47,11 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
         return newTransaction;
     }
 
-    public async Task<Transaction?> UpdateTransaction(Guid id, TransactionMutationDTO transaction)
+    public async Task<Transaction?> UpdateTransaction(
+        Guid id,
+        TransactionMutationDTO transaction,
+        Common.IMutationInitiator mutationInitiator
+    )
     {
         var existingTransaction = await DBContext.Transaction.FindAsync(id);
         if (existingTransaction == null)
@@ -46,11 +60,11 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
         }
 
         existingTransaction.Value = transaction.Amount;
-        existingTransaction.EventDate = transaction.Date;
+        existingTransaction.EventDate = NormalizeUtcTimestamp(transaction.Date);
         existingTransaction.CategoryId = transaction.CategoryId;
         existingTransaction.Type = transaction.Type;
-        existingTransaction.UpdatedAt = DateTime.UtcNow;
-        existingTransaction.UpdatedBy = Guid.Empty; // Replace with actual user ID
+        existingTransaction.UpdatedAt = mutationInitiator.Timestamp;
+        existingTransaction.UpdatedBy = mutationInitiator.UserId;
 
         DBContext.Transaction.Update(existingTransaction);
         await DBContext.SaveChangesAsync();

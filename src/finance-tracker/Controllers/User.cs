@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
@@ -18,7 +19,7 @@ public class UserController(UserProvider userProvider) : ControllerBase
     }
 
     [HttpGet(Name = "GetUsers")]
-    public async Task<IActionResult> Get([FromQuery] Commmon.QueryParams queryParams)
+    public async Task<IActionResult> Get([FromQuery] Common.QueryParams queryParams)
     {
         var users = await userProvider.GetUsers(queryParams);
         return Ok(users);
@@ -28,7 +29,11 @@ public class UserController(UserProvider userProvider) : ControllerBase
     [HttpPost(Name = "CreateUser")]
     public async Task<IActionResult> CreateUser([FromBody] UserMutationDTO userDto)
     {
-        await userProvider.CreateUser(userDto);
+        Common.MutationInitiator mutationInitiator = Common.MutationInitiator.WithJWTClaims(
+            HttpContext.User.Identity as ClaimsIdentity
+        );
+
+        await userProvider.CreateUser(userDto, mutationInitiator);
         return Ok($"User '{userDto.Username}' created successfully.");
     }
 }
