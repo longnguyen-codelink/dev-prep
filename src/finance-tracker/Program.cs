@@ -4,6 +4,7 @@ using FinanceTracker.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +21,28 @@ builder.Services.Configure<RouteOptions>(options =>
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 
 // Swagger/OpenAPI configuration
-builder.Services.AddOpenApi().AddEndpointsApiExplorer().AddSwaggerGen();
+builder
+    .Services.AddOpenApi()
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen(c =>
+    {
+        c.AddSecurityDefinition(
+            "Bearer",
+            new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Enter your JWT access token",
+            }
+        );
+        c.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
+        {
+            { new OpenApiSecuritySchemeReference("Bearer"), [] },
+        });
+    });
 
 // Mapper
 builder.Services.AddAutoMapper(cfg =>
