@@ -6,6 +6,8 @@
         "**/.DS_Store": true,
         "**/Thumbs.db": true,
         "src/**/bin": true,
-        "src/**/obj": true
+        "src/**/obj": true,
+        "tests/**/bin": true,
+        "tests/**/obj": true
     }
 }
