@@ -9,8 +9,8 @@ public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction
 {
     public async Task<IEnumerable<Transaction>> GetTransactions(Common.QueryParams queryParams)
     {
-        return await DBContext.Transaction
-            .Include(t => t.Category)
+        return await DBContext
+            .Transaction.Include(t => t.Category)
             .OrderByDescending(t => t.EventDate)
             .ToListAsync();
     }
