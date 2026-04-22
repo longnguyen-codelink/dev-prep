@@ -4,6 +4,7 @@ using BCrypt.Net;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Services;
+using Gridify;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -34,21 +35,10 @@ public class UserProvider(
         ];
     }
 
-    public async Task<IEnumerable<UserListItemDTO>> GetUsers(Common.QueryParams queryParams)
+    public async Task<IEnumerable<UserListItemDTO>> GetUsers(IGridifyQuery queryParams)
     {
-        IQueryable<User> query = DBContext.User;
-
-        if (!string.IsNullOrEmpty(queryParams.Search))
-        {
-            string searchLower = queryParams.Search.ToLower();
-            query = query.Where(u =>
-                u.Username.Contains(searchLower, StringComparison.CurrentCultureIgnoreCase)
-            );
-        }
-
-        return await query
-            .Skip((queryParams.Page - 1) * queryParams.PageSize)
-            .Take(queryParams.PageSize)
+        return await DBContext
+            .User.ApplyFilteringOrderingPaging(queryParams)
             .Select(u => new UserListItemDTO
             {
                 Id = u.Id,

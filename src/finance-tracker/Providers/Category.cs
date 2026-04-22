@@ -1,5 +1,6 @@
 using FinanceTracker.Models;
 using FinanceTracker.Services;
+using Gridify;
 using Microsoft.EntityFrameworkCore;
 using static FinanceTracker.Interfaces.Common;
 
@@ -7,10 +8,10 @@ namespace FinanceTracker.Providers
 {
     public class CategoryProvider(DBContext dBContext) : BaseProvider<Category>(dBContext)
     {
-        public async Task<IEnumerable<Category>> GetCategories()
+        public async Task<IEnumerable<Category>> GetCategories(IGridifyQuery queryParams)
         {
             // Placeholder for fetching categories from the database
-            return await DBContext.Category.ToListAsync();
+            return await DBContext.Category.ApplyFilteringOrderingPaging(queryParams).ToListAsync();
         }
 
         public async Task<Category?> GetCategoryById(Guid id)

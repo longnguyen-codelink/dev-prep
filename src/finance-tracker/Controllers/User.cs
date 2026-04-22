@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
+using Gridify;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -20,7 +21,7 @@ public class UserController(UserProvider userProvider) : ControllerBase
     }
 
     [HttpGet(Name = "GetUsers")]
-    public async Task<IActionResult> Get([FromQuery] Common.QueryParams queryParams)
+    public async Task<IActionResult> Get([FromQuery] IGridifyQuery queryParams)
     {
         var users = await userProvider.GetUsers(queryParams);
         return Ok(users);

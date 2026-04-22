@@ -5,6 +5,7 @@ using AutoMapper;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
+using Gridify;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,7 +23,7 @@ public class TransactionController(
     private readonly IMapper _mapper = mapper;
 
     [HttpGet(Name = "GetTransactions")]
-    public async Task<IActionResult> Get([FromQuery] Common.QueryParams queryParams)
+    public async Task<IActionResult> Get([FromQuery] IGridifyQuery queryParams)
     {
         var transactions = await _transactionProvider.GetTransactions(queryParams);
         return Ok(transactions);

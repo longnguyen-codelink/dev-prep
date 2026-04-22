@@ -2,6 +2,7 @@ using System.Security.Claims;
 using AutoMapper;
 using FinanceTracker.Models;
 using FinanceTracker.Providers;
+using Gridify;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static FinanceTracker.Interfaces.Common;
@@ -22,9 +23,9 @@ namespace FinanceTracker.Controllers
         private readonly IMapper _mapper = mapper;
 
         [HttpGet(Name = "GetCategories")]
-        public async Task<IEnumerable<CategoryListDTO>> Get()
+        public async Task<IEnumerable<CategoryListDTO>> Get([FromQuery] IGridifyQuery queryParams)
         {
-            var categories = await _categoryProvider.GetCategories();
+            var categories = await _categoryProvider.GetCategories(queryParams);
             return categories.Select(_mapper.Map<CategoryListDTO>);
         }
 

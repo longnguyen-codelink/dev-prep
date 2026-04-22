@@ -3,15 +3,16 @@ namespace FinanceTracker.Providers;
 using FinanceTracker.Interfaces;
 using FinanceTracker.Models;
 using FinanceTracker.Services;
+using Gridify;
 using Microsoft.EntityFrameworkCore;
 
 public class TransactionProvider(DBContext dBContext) : BaseProvider<Transaction>(dBContext)
 {
-    public async Task<IEnumerable<Transaction>> GetTransactions(Common.QueryParams queryParams)
+    public async Task<IEnumerable<Transaction>> GetTransactions(IGridifyQuery queryParams)
     {
         return await DBContext
             .Transaction.Include(t => t.Category)
-            .OrderByDescending(t => t.EventDate)
+            .ApplyFilteringOrderingPaging(queryParams)
             .ToListAsync();
     }
 
