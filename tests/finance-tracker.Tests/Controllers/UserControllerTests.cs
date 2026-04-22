@@ -5,6 +5,7 @@ using FinanceTracker.Models;
 using FinanceTracker.Providers;
 using FinanceTracker.Services;
 using FinanceTracker.Tests.Helpers;
+using Gridify;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
@@ -80,7 +81,7 @@ public class UserControllerTests
         );
         await context.SaveChangesAsync();
 
-        var result = await controller.Get(new Common.QueryParams());
+        var result = await controller.Get(new GridifyQuery() { Page = 1, PageSize = 10 });
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var users = Assert.IsAssignableFrom<IEnumerable<UserListItemDTO>>(ok.Value);
@@ -92,7 +93,7 @@ public class UserControllerTests
     {
         var (controller, _) = CreateController();
 
-        var result = await controller.Get(new Common.QueryParams());
+        var result = await controller.Get(new GridifyQuery() { Page = 1, PageSize = 10 });
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var users = Assert.IsAssignableFrom<IEnumerable<UserListItemDTO>>(ok.Value);

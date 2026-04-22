@@ -6,6 +6,7 @@ using FinanceTracker.Models;
 using FinanceTracker.Providers;
 using FinanceTracker.Services;
 using FinanceTracker.Tests.Helpers;
+using Gridify;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -85,7 +86,7 @@ public class TransactionControllerTests
         SeedTransaction(context);
         SeedTransaction(context, TransactionType.Expense, 50m);
 
-        var result = await controller.Get(new Common.QueryParams());
+        var result = await controller.Get(new GridifyQuery() { Page = 1, PageSize = 10 });
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var list = Assert.IsAssignableFrom<IEnumerable<Transaction>>(ok.Value);
@@ -97,7 +98,7 @@ public class TransactionControllerTests
     {
         var controller = CreateController(out _);
 
-        var result = await controller.Get(new Common.QueryParams());
+        var result = await controller.Get(new GridifyQuery() { Page = 1, PageSize = 10 });
 
         var ok = Assert.IsType<OkObjectResult>(result);
         var list = Assert.IsAssignableFrom<IEnumerable<Transaction>>(ok.Value);

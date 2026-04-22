@@ -5,6 +5,7 @@ using FinanceTracker.Models;
 using FinanceTracker.Providers;
 using FinanceTracker.Services;
 using FinanceTracker.Tests.Helpers;
+using Gridify;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -67,9 +68,9 @@ public class CategoryControllerTests
         SeedCategory(context, "Food");
         SeedCategory(context, "Transport");
 
-        var result = await controller.Get();
+        var result = await controller.Get(new GridifyQuery() { Page = 1, PageSize = 10 });
 
-        var list = Assert.IsAssignableFrom<IEnumerable<CategoryListDTO>>(result);
+        var list = Assert.IsType<IEnumerable<CategoryListDTO>>(result, exactMatch: false);
         Assert.Equal(2, list.Count());
     }
 

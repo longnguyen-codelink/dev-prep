@@ -7,3 +7,5 @@ Migrations: https://learn.microsoft.com/en-us/ef/core/managing-schemas/migration
 ```shell
 dotnet tool install --global dotnet-ef
 ```
+
+Filters => Gridify: https://alirezanet.github.io/Gridify/guide/getting-started#installation

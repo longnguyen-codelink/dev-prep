@@ -14,7 +14,11 @@ namespace FinanceTracker.Tests.Controllers;
 
 public class AuthControllerTests
 {
-    private (AuthController controller, UserProvider provider, DBContext context) CreateStack()
+    private static (
+        AuthController controller,
+        UserProvider provider,
+        DBContext context
+    ) CreateStack()
     {
         var context = DbContextFactory.Create();
         var jwtService = new JwtTokenService(TestHelpers.CreateJwtSettings());
