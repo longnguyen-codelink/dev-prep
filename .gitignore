@@ -3,3 +3,7 @@
 .docs
 tmp
 node_modules
+data/
+*.pbf
+*.pmtiles
+*.mbtiles
