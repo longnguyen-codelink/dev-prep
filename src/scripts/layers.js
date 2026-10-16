@@ -1,5 +1,5 @@
 import * as maplibregl from "../vendor/maplibre-gl.mjs";
-import { CITADEL_ROADS_URL, CITADEL_OUTLINE_URL } from "./config.js";
+import { CITADEL_ROADS_URL, CITADEL_OUTLINE_URL, BIG_ROADS_URL } from "./config.js";
 
 // highway value -> [colour, base width in px]
 const ROAD_STYLES = {
@@ -64,4 +64,26 @@ export function addCitadelLayers(map) {
   });
   map.on("mouseenter", "citadel-roads", () => (map.getCanvas().style.cursor = "pointer"));
   map.on("mouseleave", "citadel-roads", () => (map.getCanvas().style.cursor = ""));
+}
+
+// The big raw layer is added on first use, so its GeoJSON is not fetched until it is switched on.
+export function setBigRoadsVisible(map, visible) {
+  if (visible && !map.getSource("hcmc-roads")) {
+    map.addSource("hcmc-roads", { type: "geojson", data: BIG_ROADS_URL });
+    map.addLayer(
+      {
+        id: "hcmc-roads",
+        type: "line",
+        source: "hcmc-roads",
+        paint: {
+          "line-color": "#1f78b4",
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.4, 18, 2.5],
+        },
+      },
+      "citadel-outline", // draw under the citadel layers
+    );
+  }
+  if (map.getLayer("hcmc-roads")) {
+    map.setLayoutProperty("hcmc-roads", "visibility", visible ? "visible" : "none");
+  }
 }
