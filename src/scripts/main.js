@@ -14,7 +14,15 @@ map.addControl(new maplibregl.NavigationControl(), "top-right");
 const bigRoadsToggle = document.getElementById("toggle-big-roads");
 bigRoadsToggle.addEventListener("change", () => setBigRoadsVisible(map, bigRoadsToggle.checked));
 
-map.on("load", () => {
+map.on("load", async () => {
   addCitadelLayers(map);
   bigRoadsToggle.disabled = false;
+
+  // ?bench shows the measurement panel, ?bench=auto also runs it. Loaded on demand so normal
+  // page loads carry no measurement code.
+  const bench = new URLSearchParams(location.search).get("bench");
+  if (bench !== null) {
+    const { mountBenchPanel } = await import("./measure.js");
+    mountBenchPanel(map, bench === "auto");
+  }
 });
