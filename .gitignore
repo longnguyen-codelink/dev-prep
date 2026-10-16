@@ -7,3 +7,4 @@ data/
 *.pbf
 *.pmtiles
 *.mbtiles
+src/vendor/

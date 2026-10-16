@@ -36,6 +36,13 @@
   "forwardPorts": [
     8080
   ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
   "portsAttributes": {
     "8080": {
       "label": "http-server"
