@@ -1,14 +1,11 @@
 import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, existsSync } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";
-import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { Writable } from "node:stream";
+import { DATA_DIR, VIETNAM_OSM_PBF_NAME, VIETNAM_OSM_PBF_URL } from "./helpers/constants.ts";
 import { Logger } from "./helpers/logger.ts";
-
-const NAME = "vietnam-260101.osm.pbf";
-const PBF_URL = `https://download.geofabrik.de/asia/${NAME}`;
-const DATA_DIR = resolve(import.meta.dirname, "../../../tmp/data");
+import { tryCatch } from "./helpers/utils.ts";
 
 main().catch((error) => {
   Logger.error(`Unexpected error: ${(error as Error).message}`);
@@ -16,32 +13,35 @@ main().catch((error) => {
 });
 
 async function main() {
-  if (existsSync(resolve(DATA_DIR, NAME))) {
-    Logger.warn(`File already exists at ${resolve(DATA_DIR, NAME)}`);
+  if (existsSync(resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME))) {
+    Logger.warn(`File already exists at ${resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME)}`);
     return;
   }
 
-  try {
-    const filePath = await download();
-    Logger.info(`Downloaded file to ${filePath}`);
-  } catch (error) {
+  const { data: filePath, error } = await tryCatch(download());
+
+  if (error) {
     Logger.error(`Failed to download file: ${(error as Error).message}`);
+    process.exit(1);
   }
+
+  Logger.info(`Downloaded file to ${filePath}`);
 }
 
 async function fetchExpectedMd5(): Promise<string> {
-  const res = await fetch(`${PBF_URL}.md5`);
+  const res = await fetch(`${VIETNAM_OSM_PBF_URL}.md5`);
   if (!res.ok) throw new Error(`HTTP ${res.status} for the md5 file`);
   return (await res.text()).trim().split(/\s+/)[0]!;
 }
 
 async function download(): Promise<string> {
   await mkdir(DATA_DIR, { recursive: true });
-  const dest = resolve(DATA_DIR, NAME);
+  const dest = resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME);
   const part = `${dest}.part`;
 
-  const [response, expectedMd5] = await Promise.all([fetch(PBF_URL), fetchExpectedMd5()]);
-  if (!response.ok || !response.body) throw new Error(`HTTP ${response.status} for ${PBF_URL}`);
+  const [response, expectedMd5] = await Promise.all([fetch(VIETNAM_OSM_PBF_URL), fetchExpectedMd5()]);
+
+  if (!response.ok || !response.body) throw new Error(`HTTP ${response.status} for ${VIETNAM_OSM_PBF_URL}`);
 
   const total = Number(response.headers.get("content-length") ?? 0);
   const hash = createHash("md5");
@@ -66,12 +66,10 @@ async function download(): Promise<string> {
 
   // The file sink: a Node write stream wrapped as a web WritableStream.
   const file = Writable.toWeb(createWriteStream(part)) as WritableStream<Uint8Array>;
-
-  try {
-    await response.body.pipeThrough(measure).pipeTo(file);
-  } catch (error) {
+  const { error: pipeError } = await tryCatch(response.body.pipeThrough(measure).pipeTo(file));
+  if (pipeError) {
     await rm(part, { force: true }); // don't leave a half-written file behind
-    throw error;
+    throw pipeError;
   }
 
   const actual = hash.digest("hex");
