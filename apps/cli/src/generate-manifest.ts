@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { readdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-
-const DEFAULT_DIR = resolve(import.meta.dirname, "../../web/public/map");
+import { WEB_MAP_DIR } from "./helpers/constants.ts";
 
 /** Lists `*.geojson` files in `dir` and writes them to `manifest.json` in the same directory. */
-async function main(dir = DEFAULT_DIR) {
+async function main(dir = WEB_MAP_DIR) {
   const files = (await readdir(dir)).filter((file) => file.endsWith(".geojson")).toSorted();
   const out = join(dir, "manifest.json");
   await writeFile(out, `${JSON.stringify({ files }, null, 2)}\n`);
