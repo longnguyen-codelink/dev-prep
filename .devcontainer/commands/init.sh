@@ -3,7 +3,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-DATA_DIR="$REPO_ROOT/data"
+DATA_DIR="$REPO_ROOT/tmp/data"
 FIXTURE_NAME="monaco-latest.osm.pbf"
 FIXTURE_URL="https://download.geofabrik.de/europe/${FIXTURE_NAME}"
 

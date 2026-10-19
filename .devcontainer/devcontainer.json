@@ -1,9 +1,9 @@
 {
   "name": "gis-dev-prep",
-  "image": "node:22-bookworm-slim",
+  "image": "ghcr.io/voidzero-dev/vite-plus:latest",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2.7.1": {
-      "username": "node",
+      "username": "vp",
       "installZsh": false,
       "installOhMyZsh": false,
       "upgradePackages": false
@@ -17,22 +17,16 @@
     "ghcr.io/eitsupi/devcontainer-features/jq-likes:2.1.1": {
       "jqVersion": "latest"
     },
-    "ghcr.io/devcontainers-extra/features/http-server:1.0.4": {
-      "version": "14.1.1"
-    },
-    "ghcr.io/devcontainers-extra/features/pnpm:2.0.5": {
-      "version": "12.11.2"
-    },
     "ghcr.io/code-fabrik/features/tippecanoe:1.0.1": {},
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0.5": {}
   },
   "mounts": [
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/node/.ssh,type=bind,consistency=cached,readonly",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vp/.ssh,type=bind,consistency=cached,readonly",
     "source=gis-dev-prep-pnpm-store,target=/opt/pnpm/store,type=volume",
-    "source=zsh-history-cache,target=/home/node/.zsh_history_cache,type=volume",
-    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind,consistency=cached"
+    "source=zsh-history-cache,target=/home/vp/.zsh_history_cache,type=volume",
+    "source=${localEnv:HOME}/.claude,target=/home/vp/.claude,type=bind,consistency=cached"
   ],
-  "remoteUser": "node",
+  "remoteUser": "vp",
   "forwardPorts": [
     8080,
     5173
@@ -41,7 +35,9 @@
     "vscode": {
       "extensions": [
         "esbenp.prettier-vscode",
-        "oxc.oxc-vscode"
+        "oxc.oxc-vscode",
+        "Vue.volar",
+        "formulahendry.auto-complete-tag"
       ]
     }
   },

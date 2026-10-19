@@ -15,16 +15,6 @@
       "resolved": "ghcr.io/devcontainers-extra/features/apt-get-packages@sha256:776fa11c30c50fa91d5e1bf050444b0f130827457109c349db92e8e126b750ec",
       "integrity": "sha256:776fa11c30c50fa91d5e1bf050444b0f130827457109c349db92e8e126b750ec"
     },
-    "ghcr.io/devcontainers-extra/features/http-server:1.0.4": {
-      "version": "1.0.4",
-      "resolved": "ghcr.io/devcontainers-extra/features/http-server@sha256:4f31e429aae38cb25cf1ed3e3316fe25b6b861ac89700f800edd6011d2e241ff",
-      "integrity": "sha256:4f31e429aae38cb25cf1ed3e3316fe25b6b861ac89700f800edd6011d2e241ff"
-    },
-    "ghcr.io/devcontainers-extra/features/pnpm:2.0.5": {
-      "version": "2.0.5",
-      "resolved": "ghcr.io/devcontainers-extra/features/pnpm@sha256:694c2b6182435c9e9c06f6071728b087c1181b38c18cecf0defe2ab8c11cddd6",
-      "integrity": "sha256:694c2b6182435c9e9c06f6071728b087c1181b38c18cecf0defe2ab8c11cddd6"
-    },
     "ghcr.io/devcontainers/features/common-utils:2.7.1": {
       "version": "2.7.1",
       "resolved": "ghcr.io/devcontainers/features/common-utils@sha256:e76a6a8a35d1ad824daad1540725e0ec9f8ed2dc00d2850e990a9830013c7d08",
