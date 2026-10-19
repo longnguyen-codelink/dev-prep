@@ -29,3 +29,4 @@ dist-ssr
 tmp
 .DS_Store
 .docs
+public/map

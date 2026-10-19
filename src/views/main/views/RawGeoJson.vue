@@ -2,6 +2,7 @@
 import { onMounted } from "vue";
 import { Map, NavigationControl } from "maplibre-gl";
 import { BASEMAP_STYLE, START_CENTER, START_ZOOM } from "@/constants";
+import { addHCMCLayer } from "@/lib/map-layers";
 
 onMounted(() => {
   const map = new Map({
@@ -12,6 +13,10 @@ onMounted(() => {
   });
 
   map.addControl(new NavigationControl(), "top-right");
+
+  map.on("load", () => {
+    addHCMCLayer(map);
+  });
 
   console.log("RawGeoJson component mounted");
 });

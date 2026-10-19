@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-FIXTURE="$REPO_ROOT/data/monaco-latest.osm.pbf"
+FIXTURE="$REPO_ROOT/tmp/data/monaco-latest.osm.pbf"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
