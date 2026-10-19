@@ -3,6 +3,7 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   defaultPackage: "./apps/web",
   fmt: {
+    printWidth: 150,
     sortTailwindcss: {
       stylesheet: "./apps/web/src/styles/global.css",
       functions: ["cn", "cva"],
