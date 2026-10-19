@@ -37,7 +37,9 @@
         "esbenp.prettier-vscode",
         "oxc.oxc-vscode",
         "Vue.volar",
-        "formulahendry.auto-complete-tag"
+        "formulahendry.auto-complete-tag",
+        "bradlc.vscode-tailwindcss",
+        "VoidZero.vite-plus-extension-pack"
       ]
     }
   },

@@ -1,5 +1,6 @@
 {
   "npm.scriptRunner": "vp",
+  "typescript.tsdk": "node_modules/typescript/lib",
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"
@@ -19,5 +20,6 @@
   "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
-  }
+  },
+  "js/ts.tsdk.path": "node_modules/typescript/lib"
 }
