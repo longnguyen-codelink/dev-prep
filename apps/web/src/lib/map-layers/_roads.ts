@@ -4,6 +4,7 @@ import { BIG_ROADS_URL, cssVariableMap, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, 
 import { cssVarToRgba } from "@/lib/utils";
 
 export type RoadsMode = "tiles" | "geojson";
+export const ROADS_SOURCE_ID = "roads";
 
 const MAJOR_ROADS = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"];
 const MEDIUM_ROADS = ["secondary", "secondary_link", "tertiary", "tertiary_link"];
@@ -16,7 +17,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
     {
       id: "roads-major",
       type: "line",
-      source: "roads",
+      source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
       filter: ["in", ["get", "highway"], ["literal", MAJOR_ROADS]],
       paint: {
@@ -27,7 +28,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
     {
       id: "roads-medium",
       type: "line",
-      source: "roads",
+      source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
       filter: ["in", ["get", "highway"], ["literal", MEDIUM_ROADS]],
       paint: {
@@ -38,7 +39,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
     {
       id: "roads-minor",
       type: "line",
-      source: "roads",
+      source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
       filter: ["!", ["in", ["get", "highway"], ["literal", [...MAJOR_ROADS, ...MEDIUM_ROADS]]]],
       paint: {
@@ -51,9 +52,9 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
 
 // `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
 export function addRoadsLayer(map: Map, mode: RoadsMode, toSourceUrl: (url: string) => string = (url) => url): Map {
-  if (mode !== "tiles") map.addSource("roads", { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
+  if (mode !== "tiles") map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
   else {
-    map.addSource("roads", {
+    map.addSource(ROADS_SOURCE_ID, {
       type: "vector",
       tiles: [toSourceUrl(ROAD_TILES_URL)],
       minzoom: ROAD_TILE_MIN_ZOOM,

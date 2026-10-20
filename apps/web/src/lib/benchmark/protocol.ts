@@ -1,4 +1,4 @@
-import { addProtocol, AJAXError } from "maplibre-gl";
+import { addProtocol, AJAXError, removeProtocol } from "maplibre-gl";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
 
@@ -7,6 +7,7 @@ const PREFIX = `${BENCHMARK_PROTOCOL}://`;
 export type DataProtocol = {
   toProtocolUrl: (url: string) => string;
   missing: Set<string>; // absolute URLs (with the run tag) the server did not have
+  dispose: () => void;
 };
 
 // "./map/x" and "/map/x" both become "bench://map/x".
@@ -41,18 +42,28 @@ export function registerDataProtocol(
       (response.ok && response.headers.get("content-type")?.includes("text/html"));
     if (isMissing) {
       missing.add(url.href);
-      await response.arrayBuffer(); // Resource Timing only records the request once its body is read
+      await readBody(response, "arrayBuffer"); // Resource Timing only records the request once its body is read
       if (params.type !== "arrayBuffer") onFailure(`file missing: ${url.pathname}`);
       throw new AJAXError(404, "Not Found", url.href, new Blob());
     }
     if (!response.ok) {
-      await response.arrayBuffer();
+      await readBody(response, "arrayBuffer");
       onFailure(`HTTP ${response.status}: ${url.pathname}`);
       throw new AJAXError(response.status, response.statusText, url.href, new Blob());
     }
 
-    return { data: params.type === "json" ? await response.json() : await response.arrayBuffer() };
+    return { data: await readBody(response, params.type === "json" ? "json" : "arrayBuffer", abortController.signal) };
   });
 
-  return { toProtocolUrl, missing };
+  // A truncated or malformed body fails the run at once instead of waiting for the timeout.
+  async function readBody(response: Response, kind: "json" | "arrayBuffer", signal?: AbortSignal) {
+    try {
+      return kind === "json" ? await response.json() : await response.arrayBuffer();
+    } catch (error) {
+      if (!signal?.aborted) onFailure(`could not read ${new URL(response.url).pathname} (${String(error)})`);
+      throw error;
+    }
+  }
+
+  return { toProtocolUrl, missing, dispose: () => removeProtocol(BENCHMARK_PROTOCOL) };
 }

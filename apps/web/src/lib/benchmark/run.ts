@@ -1,36 +1,33 @@
-import type { Map } from "maplibre-gl";
+import type { ErrorEvent, Map } from "maplibre-gl";
 
 import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_TIMEOUT_MS } from "@/constants";
-import type { RoadsMode } from "@/lib/map-layers";
+import { ROADS_SOURCE_ID, type RoadsMode } from "@/lib/map-layers";
 
 import { registerDataProtocol } from "./protocol";
 import { saveRun } from "./storage";
 import type { BenchmarkRun } from "./types";
 
-const SOURCE_ID = "roads";
-
 /**
- * Call once per page load, in onMounted and before the map is created. Pass `toProtocolUrl` to addRoadsLayer, then
- * call `run(map)` right after the layers are added; it resolves with the stored run.
+ * Call once per page load, right after the map is created. Pass `toProtocolUrl` to addRoadsLayer. The run ends, and is
+ * stored, when the roads source is loaded and the map is idle, or on a failure, or after the timeout; call `fail` if
+ * adding the layers throws and `dispose` when the map is torn down.
  */
-export function createBenchmark(mode: RoadsMode) {
+export function createBenchmark(mode: RoadsMode, map: Map) {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const mountedAt = performance.now();
-  let fail: (reason: string) => void = () => {};
-  let failedEarly: string | null = null;
+  let finished = false;
+  // A tab that was hidden at any point had throttled timers and rendering, so the run is flagged hidden.
+  let wasHidden = document.visibilityState === "hidden";
+  const onVisibility = () => (wasHidden ||= document.visibilityState === "hidden");
+  document.addEventListener("visibilitychange", onVisibility);
 
   performance.setResourceTimingBufferSize(BENCHMARK_RESOURCE_BUFFER);
-  const protocol = registerDataProtocol(id, (reason) => {
-    failedEarly ??= reason;
-    fail(reason);
-  });
+  const protocol = registerDataProtocol(id, (reason) => finish(null, reason));
 
-  function buildRun(map: Map, readyAt: number | null, failure: string | null): BenchmarkRun {
+  function buildRun(readyAt: number | null, failure: string | null): BenchmarkRun {
     const tagged = performance
       .getEntriesByType("resource")
-      .filter((entry) =>
-        entry.name.includes(`${BENCHMARK_RUN_PARAM}=${id}`),
-      ) as PerformanceResourceTiming[];
+      .filter((entry) => new URL(entry.name).searchParams.get(BENCHMARK_RUN_PARAM) === id) as PerformanceResourceTiming[];
     const served = tagged.filter((entry) => !protocol.missing.has(entry.name));
 
     let status: BenchmarkRun["status"] = failure === null ? "ok" : "failed";
@@ -72,47 +69,41 @@ export function createBenchmark(mode: RoadsMode) {
       afterDownloadMs,
       readyMs,
       viewport: { width: container.clientWidth, height: container.clientHeight },
-      visibility: document.visibilityState,
+      visibility: wasHidden ? "hidden" : document.visibilityState,
       userAgent: navigator.userAgent,
     };
   }
 
-  // Ready = the roads source reports loaded, then the next idle.
-  function run(map: Map): Promise<BenchmarkRun> {
-    return new Promise((resolve) => {
-      let sourceLoaded = false;
-      let finished = false;
+  // Ready = the roads source is loaded when the map next goes idle.
+  const onIdle = () => {
+    if (map.getSource(ROADS_SOURCE_ID) && map.isSourceLoaded(ROADS_SOURCE_ID)) finish(performance.now(), null);
+  };
+  // Only errors of the roads source fail the run; basemap tile and glyph errors are not part of the comparison.
+  const onError = (event: ErrorEvent & { sourceId?: string }) => {
+    if (event.sourceId === ROADS_SOURCE_ID) finish(null, `source error: ${event.error?.message ?? "unknown"}`);
+  };
+  const timer = setTimeout(() => finish(null, `timeout after ${BENCHMARK_TIMEOUT_MS / 1000} s`), BENCHMARK_TIMEOUT_MS);
+  map.on("idle", onIdle);
+  map.on("error", onError);
 
-      const finish = (readyAt: number | null, failure: string | null) => {
-        if (finished) return;
-        finished = true;
-        clearTimeout(timer);
-        map.off("sourcedata", onSourceData);
-        map.off("idle", onIdle);
-        const result = buildRun(map, readyAt, failure);
-        saveRun(result);
-        window.__benchmarkRun = result;
-        console.log("[benchmark]", result);
-        resolve(result);
-      };
-
-      const onSourceData = (event: { sourceId?: string }) => {
-        if (event.sourceId === SOURCE_ID && map.isSourceLoaded(SOURCE_ID)) sourceLoaded = true;
-      };
-      const onIdle = () => {
-        if (sourceLoaded) finish(performance.now(), null);
-      };
-      const timer = setTimeout(
-        () => finish(null, `timeout after ${BENCHMARK_TIMEOUT_MS / 1000} s`),
-        BENCHMARK_TIMEOUT_MS,
-      );
-
-      fail = (reason) => finish(null, reason);
-      if (failedEarly) return finish(null, failedEarly);
-      map.on("sourcedata", onSourceData);
-      map.on("idle", onIdle);
-    });
+  // The protocol stays registered after the run: the map keeps loading tiles when it is moved.
+  function finish(readyAt: number | null, failure: string | null) {
+    if (finished) return;
+    finished = true;
+    clearTimeout(timer);
+    map.off("idle", onIdle);
+    map.off("error", onError);
+    document.removeEventListener("visibilitychange", onVisibility);
+    const result = buildRun(readyAt, failure);
+    saveRun(result);
+    window.__benchmarkRun = result;
+    console.log("[benchmark]", result);
   }
 
-  return { toProtocolUrl: protocol.toProtocolUrl, run };
+  function dispose() {
+    finish(null, "disposed before the run finished");
+    protocol.dispose();
+  }
+
+  return { toProtocolUrl: protocol.toProtocolUrl, fail: (reason: string) => finish(null, reason), dispose };
 }
