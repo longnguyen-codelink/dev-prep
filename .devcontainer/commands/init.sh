@@ -24,6 +24,17 @@ if [ -d "$PNPM_STORE_DIR" ]; then
   echo "init: pnpm store is $(pnpm store path)"
 fi
 
+# The claude-code devcontainer feature npm-installs as root into the vite-plus Node
+# prefix, so Claude Code's auto-updater can't write there. Hand the package scope to
+# the current user.
+if CLAUDE_BIN="$(command -v claude)"; then
+  CLAUDE_SCOPE_DIR="$(dirname "$(dirname "$(dirname "$(readlink -f "$CLAUDE_BIN")")")")"
+  if [ "$(basename "$CLAUDE_SCOPE_DIR")" = "@anthropic-ai" ] && [ ! -w "$CLAUDE_SCOPE_DIR" ]; then
+    echo "init: making $CLAUDE_SCOPE_DIR writable for $(id -un)"
+    sudo -n chown -R "$(id -u):$(id -g)" "$CLAUDE_SCOPE_DIR"
+  fi
+fi
+
 if [ -s "$DATA_DIR/$FIXTURE_NAME" ]; then
   echo "init: $FIXTURE_NAME already present, skipping download"
   exit 0
