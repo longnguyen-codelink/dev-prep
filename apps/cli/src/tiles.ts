@@ -41,6 +41,7 @@ async function main() {
     Logger.error(TILES_USAGE);
     process.exit(1);
   }
+
   if (!/^[a-z0-9][a-z0-9-]*$/.test(values.name)) {
     Logger.error(`--name may only use lowercase letters, digits and dashes, got "${values.name}"`);
     process.exit(1);

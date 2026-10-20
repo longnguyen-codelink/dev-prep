@@ -28,9 +28,7 @@ type Row = { name: string; change: string; cells: string[] };
 
 // Rebuilds the tiles once per variant, measures each build, and writes a markdown table.
 async function main() {
-  const { values } = parseArgs({
-    options: { input: { type: "string" }, only: { type: "string" }, keep: { type: "boolean" } },
-  });
+  const { values } = parseArgs({ options: { input: { type: "string" }, only: { type: "string" }, keep: { type: "boolean" } } });
 
   const input = resolve(values.input ?? resolve(DATA_DIR, ROADS_GEOJSON_NAME));
   const only = values.only?.split(",");
@@ -39,10 +37,12 @@ async function main() {
     Logger.error(`unknown variant(s): ${unknown.join(", ")}. ${SWEEP_USAGE}`);
     process.exit(1);
   }
+
   if (!existsSync(input)) {
     Logger.error(`input not found: ${input} (build it with roads.ts)`);
     process.exit(1);
   }
+
   await assertTools();
 
   const rows: Row[] = [];
