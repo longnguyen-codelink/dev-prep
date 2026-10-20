@@ -51,7 +51,7 @@ function describe(tile: SizedTile): string {
 }
 
 async function checkTiles(dir: string, limit: number, view: View): Promise<boolean> {
-  if (!existsSync(dir)) throw new Error(`tile folder not found: ${dir} (build it with 04-build-tiles.ts)`);
+  if (!existsSync(dir)) throw new Error(`tile folder not found: ${dir} (build it with \`pnpm cli build tiles\`)`);
   const tiles = await withGzipSizes(await listTiles(dir));
   if (tiles.length === 0) throw new Error(`no tiles in ${dir}`);
 

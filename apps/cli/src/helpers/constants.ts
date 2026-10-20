@@ -56,10 +56,10 @@ export const HIGHWAY_MIN_ZOOM: Record<string, number> = {
 export const DEFAULT_HIGHWAY_MIN_ZOOM = 15; // footway, path, track, pedestrian, steps, cycleway, others
 
 export const TILES_USAGE =
-  "usage: 04-build-tiles.ts --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
+  "usage: pnpm cli build tiles --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
   "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
 
-export const SWEEP_USAGE = "usage: 06-sweep-tiles.ts [--input <roads.geojson>] [--only name,name] [--keep]";
+export const SWEEP_USAGE = "usage: pnpm cli sweep tiles [--input <roads.geojson>] [--only name,name] [--keep]";
 
 // Settings sweep: every variant changes one thing from the base (all attributes, every class from the
 // lowest zoom, dropping on as a safety net), except the first (no safety net) and the last (the chosen mix).
@@ -84,7 +84,7 @@ export const SWEEP_VARIANTS: { name: string; change: string; settings: Partial<T
 ];
 
 export const CHECK_TILES_USAGE =
-  "usage: 05-check-tiles.ts --name <folder name> [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
+  "usage: pnpm cli check tiles --name <folder name> [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
 
 // Budgets from the track: every compressed tile at most 500 KB; the initial view at most about 3 MB.
 export const MAX_TILE_GZIP_BYTES = 500_000;
@@ -93,3 +93,43 @@ export const INITIAL_VIEW_BUDGET_BYTES = 3_000_000;
 // The "initial view" used for the budget check (center is [lng, lat]); MapLibre requests 512 px vector tiles.
 export const INITIAL_VIEW = { center: [106.7, 10.78] as [number, number], zoom: 12, width: 1280, height: 720 };
 export const MAPLIBRE_TILE_SIZE = 512;
+
+// --- Command line ---
+export const FETCH_BASE_FILE_USAGE = "usage: pnpm cli fetch base-file";
+export const EXTRACT_BOUNDARY_USAGE = "usage: pnpm cli extract boundary [--relation <osm id>] [--pbf <file>] [--out <file>]";
+export const BUILD_ROADS_USAGE = "usage: pnpm cli build roads --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]";
+
+// Every command: `pnpm cli <action> <target>`. `file` is in src/entrypoints/ and exports run(args); the numbers
+// in the file names are the pipeline order, so only this table needs to know them.
+export const COMMANDS: readonly { action: string; target: string; file: string; description: string; usage: string }[] = [
+  {
+    action: "fetch",
+    target: "base-file",
+    file: "01-fetch-base-file.ts",
+    description: "Download the OSM base file (the Vietnam snapshot)",
+    usage: FETCH_BASE_FILE_USAGE,
+  },
+  {
+    action: "extract",
+    target: "boundary",
+    file: "02-extract-boundary.ts",
+    description: "Extract the HCMC boundary GeoJSON",
+    usage: EXTRACT_BOUNDARY_USAGE,
+  },
+  { action: "build", target: "roads", file: "03-build-roads.ts", description: "Build the roads GeoJSON inside a boundary", usage: BUILD_ROADS_USAGE },
+  { action: "build", target: "tiles", file: "04-build-tiles.ts", description: "Prepare the features and run tippecanoe", usage: TILES_USAGE },
+  {
+    action: "check",
+    target: "tiles",
+    file: "05-check-tiles.ts",
+    description: "Check the tile and initial-view size budgets",
+    usage: CHECK_TILES_USAGE,
+  },
+  {
+    action: "sweep",
+    target: "tiles",
+    file: "06-sweep-tiles.ts",
+    description: "Table of tile settings versus size (optional step)",
+    usage: SWEEP_USAGE,
+  },
+];

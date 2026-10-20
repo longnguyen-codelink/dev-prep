@@ -57,7 +57,7 @@ export async function run(args: string[] = process.argv.slice(2)) {
 
   const { data, error } = await tryCatch<Awaited<ReturnType<typeof buildTiles>>, Error>(
     (async () => {
-      if (!existsSync(input)) throw new Error(`input not found: ${input} (build it with 03-build-roads.ts)`);
+      if (!existsSync(input)) throw new Error(`input not found: ${input} (build it with \`pnpm cli build roads\`)`);
       await assertTools();
       return buildTiles(input, values.name!, settings);
     })(),

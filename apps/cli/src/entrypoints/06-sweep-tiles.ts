@@ -34,7 +34,7 @@ export async function run(args: string[] = process.argv.slice(2)) {
   }
 
   if (!existsSync(input)) {
-    Logger.error(`input not found: ${input} (build it with 03-build-roads.ts)`);
+    Logger.error(`input not found: ${input} (build it with \`pnpm cli build roads\`)`);
     process.exit(1);
   }
 

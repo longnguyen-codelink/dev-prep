@@ -3,6 +3,7 @@ import { mkdir, rename, rm, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {
+  BUILD_ROADS_USAGE,
   DATA_DIR,
   DEFAULT_EXTRACT_STRATEGY,
   EXTRACT_STRATEGIES,
@@ -15,7 +16,7 @@ import { Logger } from "../helpers/logger.ts";
 import { assertTools, runTool } from "../helpers/shell-tools.ts";
 import { formatDuration, tryCatch } from "../helpers/utils.ts";
 
-// Usage: 03-build-roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]
+// Usage: see BUILD_ROADS_USAGE in constants.ts (pnpm cli build roads)
 export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
     args,
@@ -28,7 +29,7 @@ export async function run(args: string[] = process.argv.slice(2)) {
   });
 
   if (!values.boundary || !values.name) {
-    Logger.error("usage: 03-build-roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]");
+    Logger.error(BUILD_ROADS_USAGE);
     process.exit(1);
   }
   const strategy = values.strategy ?? DEFAULT_EXTRACT_STRATEGY;
@@ -58,7 +59,7 @@ async function requireNonEmpty(path: string, step: string): Promise<void> {
 
 async function buildRoads(boundary: string, name: string, pbf: string, strategy: string): Promise<void> {
   if (!existsSync(boundary)) throw new Error(`boundary not found: ${boundary}`);
-  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run 01-fetch-base-file.ts first)`);
+  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run \`pnpm cli fetch base-file\` first)`);
   await assertTools();
   await mkdir(DATA_DIR, { recursive: true });
 

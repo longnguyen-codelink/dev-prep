@@ -10,7 +10,7 @@ import { formatDuration, tryCatch } from "../helpers/utils.ts";
 type Feature = { geometry: { type: string; coordinates: unknown }; properties: Record<string, unknown> };
 type FeatureCollection = { features: Feature[] };
 
-// Usage: 02-extract-boundary.ts [--relation <osm id>] [--pbf <file>] [--out <file>]
+// Usage: see EXTRACT_BOUNDARY_USAGE in constants.ts (pnpm cli extract boundary)
 export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
     args,
@@ -44,7 +44,7 @@ function walkPositions(coordinates: unknown, visit: (position: number[]) => void
 }
 
 async function buildBoundary(relationId: string, pbf: string, out: string): Promise<void> {
-  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run 01-fetch-base-file.ts first)`);
+  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run \`pnpm cli fetch base-file\` first)`);
   await assertTools();
   await mkdir(DATA_DIR, { recursive: true });
   await mkdir(dirname(out), { recursive: true });
