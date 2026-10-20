@@ -32,7 +32,8 @@ export async function runTool(tool: string, args: string[], opts: RunToolOptions
     const how = error.signal
       ? `killed by ${error.signal}${error.signal === "SIGKILL" ? ", probably out of memory" : ""}`
       : `exit ${error.code}`;
-    const detail = error.stderr?.trim() || error.message;
+    // Tools like tippecanoe print long progress output; the end of stderr holds the actual error.
+    const detail = (error.stderr?.split(/[\r\n]+/).filter(Boolean).slice(-8).join("\n") ?? "") || error.message;
     throw new Error(`${label} failed (${how}): ${detail}`, { cause: error });
   }
 
@@ -47,7 +48,7 @@ export async function runTool(tool: string, args: string[], opts: RunToolOptions
  */
 export async function assertTools(): Promise<void> {
   for (const tool of REQUIRED_TOOLS) {
-    const { stdout } = await runTool(tool, ["--version"], { quiet: true });
-    Logger.info(`${tool}: ${stdout.split("\n")[0]}`);
+    const { stdout, stderr } = await runTool(tool, ["--version"], { quiet: true });
+    Logger.info(`${tool}: ${(stdout || stderr).split("\n")[0]}`); // tippecanoe prints its version on stderr
   }
 }
