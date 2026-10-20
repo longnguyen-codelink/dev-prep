@@ -56,10 +56,10 @@ export const HIGHWAY_MIN_ZOOM: Record<string, number> = {
 export const DEFAULT_HIGHWAY_MIN_ZOOM = 15; // footway, path, track, pedestrian, steps, cycleway, others
 
 export const TILES_USAGE =
-  "usage: tiles.ts --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
+  "usage: 04-build-tiles.ts --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
   "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
 
-export const SWEEP_USAGE = "usage: sweep-tiles.ts [--input <roads.geojson>] [--only name,name] [--keep]";
+export const SWEEP_USAGE = "usage: 06-sweep-tiles.ts [--input <roads.geojson>] [--only name,name] [--keep]";
 
 // Settings sweep: every variant changes one thing from the base (all attributes, every class from the
 // lowest zoom, dropping on as a safety net), except the first (no safety net) and the last (the chosen mix).
@@ -83,7 +83,8 @@ export const SWEEP_VARIANTS: { name: string; change: string; settings: Partial<T
   { name: "chosen", change: "prune + class zoom + dropping (the defaults)", settings: { keepAttributes: TILE_ATTRIBUTES, minZoomByClass: true } },
 ];
 
-export const CHECK_TILES_USAGE = "usage: check-tiles.ts --name <folder name> [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
+export const CHECK_TILES_USAGE =
+  "usage: 05-check-tiles.ts --name <folder name> [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
 
 // Budgets from the track: every compressed tile at most 500 KB; the initial view at most about 3 MB.
 export const MAX_TILE_GZIP_BYTES = 500_000;

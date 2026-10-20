@@ -1,16 +1,11 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { CHECK_TILES_USAGE, INITIAL_VIEW, INITIAL_VIEW_BUDGET_BYTES, MAX_TILE_GZIP_BYTES, TILES_DIR } from "./helpers/constants.ts";
-import { Logger } from "./helpers/logger.ts";
-import { listTiles, withGzipSizes, type SizedTile } from "./helpers/tile-folder.ts";
-import { tilesCoveringView, type View } from "./helpers/tile-math.ts";
-import { tryCatch } from "./helpers/utils.ts";
-
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
+import { CHECK_TILES_USAGE, INITIAL_VIEW, INITIAL_VIEW_BUDGET_BYTES, MAX_TILE_GZIP_BYTES, TILES_DIR } from "../helpers/constants.ts";
+import { Logger } from "../helpers/logger.ts";
+import { listTiles, withGzipSizes, type SizedTile } from "../helpers/tile-folder.ts";
+import { tilesCoveringView, type View } from "../helpers/tile-math.ts";
+import { tryCatch } from "../helpers/utils.ts";
 
 function parseView(text: string | undefined): View {
   if (text === undefined) return INITIAL_VIEW;
@@ -24,8 +19,9 @@ function parseView(text: string | undefined): View {
 }
 
 // Fails (exit 1) if any gzipped tile is over the limit, or the initial view is over its budget.
-async function main() {
+export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
+    args,
     options: { name: { type: "string" }, limit: { type: "string" }, view: { type: "string" } },
   });
 
@@ -55,7 +51,7 @@ function describe(tile: SizedTile): string {
 }
 
 async function checkTiles(dir: string, limit: number, view: View): Promise<boolean> {
-  if (!existsSync(dir)) throw new Error(`tile folder not found: ${dir} (build it with tiles.ts)`);
+  if (!existsSync(dir)) throw new Error(`tile folder not found: ${dir} (build it with 04-build-tiles.ts)`);
   const tiles = await withGzipSizes(await listTiles(dir));
   if (tiles.length === 0) throw new Error(`no tiles in ${dir}`);
 
@@ -101,4 +97,11 @@ async function checkTiles(dir: string, limit: number, view: View): Promise<boole
   }
 
   return ok;
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }

@@ -2,28 +2,18 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import {
-  ADMIN_PBF_NAME,
-  DATA_DIR,
-  HCMC_BOUNDARY_NAME,
-  HCMC_RELATION_ID,
-  VIETNAM_OSM_PBF_NAME,
-} from "./helpers/constants.ts";
-import { Logger } from "./helpers/logger.ts";
-import { assertTools, runTool } from "./helpers/shell-tools.ts";
-import { formatDuration, tryCatch } from "./helpers/utils.ts";
+import { ADMIN_PBF_NAME, DATA_DIR, HCMC_BOUNDARY_NAME, HCMC_RELATION_ID, VIETNAM_OSM_PBF_NAME } from "../helpers/constants.ts";
+import { Logger } from "../helpers/logger.ts";
+import { assertTools, runTool } from "../helpers/shell-tools.ts";
+import { formatDuration, tryCatch } from "../helpers/utils.ts";
 
 type Feature = { geometry: { type: string; coordinates: unknown }; properties: Record<string, unknown> };
 type FeatureCollection = { features: Feature[] };
 
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
-
-// Usage: boundary.ts [--relation <osm id>] [--pbf <file>] [--out <file>]
-async function main() {
+// Usage: 02-extract-boundary.ts [--relation <osm id>] [--pbf <file>] [--out <file>]
+export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
+    args,
     options: { relation: { type: "string" }, pbf: { type: "string" }, out: { type: "string" } },
   });
 
@@ -54,7 +44,7 @@ function walkPositions(coordinates: unknown, visit: (position: number[]) => void
 }
 
 async function buildBoundary(relationId: string, pbf: string, out: string): Promise<void> {
-  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run fetch-vietnam first)`);
+  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run 01-fetch-base-file.ts first)`);
   await assertTools();
   await mkdir(DATA_DIR, { recursive: true });
   await mkdir(dirname(out), { recursive: true });
@@ -64,17 +54,23 @@ async function buildBoundary(relationId: string, pbf: string, out: string): Prom
   await rm(temp, { force: true });
 
   try {
-    const filter = await runTool(
-      "osmium",
-      ["tags-filter", pbf, "r/boundary=administrative", "-o", adminPbf, "--overwrite"],
-      { label: "filter boundaries" },
-    );
+    const filter = await runTool("osmium", ["tags-filter", pbf, "r/boundary=administrative", "-o", adminPbf, "--overwrite"], {
+      label: "filter boundaries",
+    });
     const exported = await runTool(
       "ogr2ogr",
       [
-        "-f", "GeoJSON", "-lco", "RFC7946=YES", temp, adminPbf, "multipolygons",
-        "-where", `osm_id='${relationId}'`,
-        "-select", "osm_id,name,admin_level",
+        "-f",
+        "GeoJSON",
+        "-lco",
+        "RFC7946=YES",
+        temp,
+        adminPbf,
+        "multipolygons",
+        "-where",
+        `osm_id='${relationId}'`,
+        "-select",
+        "osm_id,name,admin_level",
       ],
       { label: "export boundary" },
     );
@@ -113,4 +109,11 @@ async function buildBoundary(relationId: string, pbf: string, out: string): Prom
   } finally {
     await rm(temp, { force: true });
   }
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }

@@ -1,16 +1,11 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { DATA_DIR, ROADS_GEOJSON_NAME, TILES_USAGE } from "./helpers/constants.ts";
-import { Logger } from "./helpers/logger.ts";
-import { assertTools } from "./helpers/shell-tools.ts";
-import { buildTiles, DEFAULT_TILE_SETTINGS, type TileSettings } from "./helpers/tiles.ts";
-import { formatDuration, tryCatch } from "./helpers/utils.ts";
-
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
+import { DATA_DIR, ROADS_GEOJSON_NAME, TILES_USAGE } from "../helpers/constants.ts";
+import { Logger } from "../helpers/logger.ts";
+import { assertTools } from "../helpers/shell-tools.ts";
+import { buildTiles, DEFAULT_TILE_SETTINGS, type TileSettings } from "../helpers/tiles.ts";
+import { formatDuration, tryCatch } from "../helpers/utils.ts";
 
 function numberOption(value: string | undefined, fallback: number | null, flag: string): number | null {
   if (value === undefined) return fallback;
@@ -22,8 +17,9 @@ function numberOption(value: string | undefined, fallback: number | null, flag: 
   return parsed;
 }
 
-async function main() {
+export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
+    args,
     options: {
       name: { type: "string" },
       input: { type: "string" },
@@ -61,7 +57,7 @@ async function main() {
 
   const { data, error } = await tryCatch<Awaited<ReturnType<typeof buildTiles>>, Error>(
     (async () => {
-      if (!existsSync(input)) throw new Error(`input not found: ${input} (build it with roads.ts)`);
+      if (!existsSync(input)) throw new Error(`input not found: ${input} (build it with 03-build-roads.ts)`);
       await assertTools();
       return buildTiles(input, values.name!, settings);
     })(),
@@ -76,4 +72,11 @@ async function main() {
     `total ${data.totalBytes} bytes, largest tile ${data.largestBytes} bytes (uncompressed); ` +
       `prepare ${formatDuration(data.prepareMs)}, tippecanoe ${formatDuration(data.tippecanoeMs)}`,
   );
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }

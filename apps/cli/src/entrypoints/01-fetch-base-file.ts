@@ -3,16 +3,11 @@ import { createWriteStream, existsSync } from "node:fs";
 import { mkdir, rename, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Writable } from "node:stream";
-import { DATA_DIR, VIETNAM_OSM_PBF_NAME, VIETNAM_OSM_PBF_URL } from "./helpers/constants.ts";
-import { Logger } from "./helpers/logger.ts";
-import { tryCatch } from "./helpers/utils.ts";
+import { DATA_DIR, VIETNAM_OSM_PBF_NAME, VIETNAM_OSM_PBF_URL } from "../helpers/constants.ts";
+import { Logger } from "../helpers/logger.ts";
+import { tryCatch } from "../helpers/utils.ts";
 
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
-
-async function main() {
+export async function run() {
   if (existsSync(resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME))) {
     Logger.warn(`File already exists at ${resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME)}`);
     return;
@@ -80,4 +75,11 @@ async function download(): Promise<string> {
 
   await rename(part, dest); // the final name appears only after the checksum matches
   return dest;
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }

@@ -11,24 +11,19 @@ import {
   SWEEP_USAGE,
   SWEEP_VARIANTS,
   TILES_DIR,
-} from "./helpers/constants.ts";
-import { Logger } from "./helpers/logger.ts";
-import { assertTools } from "./helpers/shell-tools.ts";
-import { listTiles, withGzipSizes } from "./helpers/tile-folder.ts";
-import { tilesCoveringView } from "./helpers/tile-math.ts";
-import { buildTiles, type TileSettings } from "./helpers/tiles.ts";
-import { formatBytes, formatDuration, tryCatch } from "./helpers/utils.ts";
-
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
+} from "../helpers/constants.ts";
+import { Logger } from "../helpers/logger.ts";
+import { assertTools } from "../helpers/shell-tools.ts";
+import { listTiles, withGzipSizes } from "../helpers/tile-folder.ts";
+import { tilesCoveringView } from "../helpers/tile-math.ts";
+import { buildTiles, type TileSettings } from "../helpers/tiles.ts";
+import { formatBytes, formatDuration, tryCatch } from "../helpers/utils.ts";
 
 type Row = { name: string; change: string; cells: string[] };
 
 // Rebuilds the tiles once per variant, measures each build, and writes a markdown table.
-async function main() {
-  const { values } = parseArgs({ options: { input: { type: "string" }, only: { type: "string" }, keep: { type: "boolean" } } });
+export async function run(args: string[] = process.argv.slice(2)) {
+  const { values } = parseArgs({ args, options: { input: { type: "string" }, only: { type: "string" }, keep: { type: "boolean" } } });
 
   const input = resolve(values.input ?? resolve(DATA_DIR, ROADS_GEOJSON_NAME));
   const only = values.only?.split(",");
@@ -39,7 +34,7 @@ async function main() {
   }
 
   if (!existsSync(input)) {
-    Logger.error(`input not found: ${input} (build it with roads.ts)`);
+    Logger.error(`input not found: ${input} (build it with 03-build-roads.ts)`);
     process.exit(1);
   }
 
@@ -93,4 +88,11 @@ async function measureVariant(input: string, name: string, change: Partial<TileS
     String(over),
     formatBytes(viewBytes),
   ];
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }

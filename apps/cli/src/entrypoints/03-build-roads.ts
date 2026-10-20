@@ -9,20 +9,16 @@ import {
   FEATURE_LINE_PREFIX,
   HIGHWAYS_PBF_NAME,
   VIETNAM_OSM_PBF_NAME,
-} from "./helpers/constants.ts";
-import { countLinesStartingWith, gzippedSize } from "./helpers/files.ts";
-import { Logger } from "./helpers/logger.ts";
-import { assertTools, runTool } from "./helpers/shell-tools.ts";
-import { formatDuration, tryCatch } from "./helpers/utils.ts";
+} from "../helpers/constants.ts";
+import { countLinesStartingWith, gzippedSize } from "../helpers/files.ts";
+import { Logger } from "../helpers/logger.ts";
+import { assertTools, runTool } from "../helpers/shell-tools.ts";
+import { formatDuration, tryCatch } from "../helpers/utils.ts";
 
-main().catch((error) => {
-  Logger.error(`Unexpected error: ${(error as Error).message}`);
-  process.exit(1);
-});
-
-// Usage: roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]
-async function main() {
+// Usage: 03-build-roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]
+export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({
+    args,
     options: {
       boundary: { type: "string" },
       name: { type: "string" },
@@ -32,7 +28,7 @@ async function main() {
   });
 
   if (!values.boundary || !values.name) {
-    Logger.error("usage: roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]");
+    Logger.error("usage: 03-build-roads.ts --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]");
     process.exit(1);
   }
   const strategy = values.strategy ?? DEFAULT_EXTRACT_STRATEGY;
@@ -62,7 +58,7 @@ async function requireNonEmpty(path: string, step: string): Promise<void> {
 
 async function buildRoads(boundary: string, name: string, pbf: string, strategy: string): Promise<void> {
   if (!existsSync(boundary)) throw new Error(`boundary not found: ${boundary}`);
-  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run fetch-vietnam first)`);
+  if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run 01-fetch-base-file.ts first)`);
   await assertTools();
   await mkdir(DATA_DIR, { recursive: true });
 
@@ -79,18 +75,12 @@ async function buildRoads(boundary: string, name: string, pbf: string, strategy:
     await requireNonEmpty(highways, "filter highways");
 
     // See EXTRACT_STRATEGIES in constants.ts for the difference between the strategies.
-    const clip = await runTool(
-      "osmium",
-      ["extract", "-s", strategy, "-p", boundary, highways, "-o", clipped, "--overwrite"],
-      { label: `clip to boundary (${strategy})` },
-    );
+    const clip = await runTool("osmium", ["extract", "-s", strategy, "-p", boundary, highways, "-o", clipped, "--overwrite"], {
+      label: `clip to boundary (${strategy})`,
+    });
     await requireNonEmpty(clipped, "clip to boundary");
 
-    const exported = await runTool(
-      "ogr2ogr",
-      ["-f", "GeoJSON", "-lco", "RFC7946=YES", temp, clipped, "lines"],
-      { label: "export geojson" },
-    );
+    const exported = await runTool("ogr2ogr", ["-f", "GeoJSON", "-lco", "RFC7946=YES", temp, clipped, "lines"], { label: "export geojson" });
     await requireNonEmpty(temp, "export geojson");
 
     const features = await countLinesStartingWith(temp, FEATURE_LINE_PREFIX);
@@ -108,4 +98,11 @@ async function buildRoads(boundary: string, name: string, pbf: string, strategy:
   } finally {
     await rm(temp, { force: true });
   }
+}
+
+if (import.meta.main) {
+  run().catch((error) => {
+    Logger.error(`Unexpected error: ${(error as Error).message}`);
+    process.exit(1);
+  });
 }
