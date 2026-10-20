@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vp run --filter @dev-prep/web dev",
     "build": "vp run -r build",
-    "check": "vp check"
+    "check": "vp check",
+    "cli": "node apps/cli/src/index.ts"
   },
   "devDependencies": {
     "typescript": "~6.0.2",

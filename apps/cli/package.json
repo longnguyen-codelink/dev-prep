@@ -2,14 +2,7 @@
   "name": "@dev-prep/cli",
   "version": "0.0.0",
   "private": true,
-  "bin": {
-    "dev-prep": "./dist/index.mjs"
-  },
   "type": "module",
-  "scripts": {
-    "build": "vp pack",
-    "dev": "vp pack --watch"
-  },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "vite": "catalog:",
