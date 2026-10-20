@@ -15,7 +15,7 @@ import {
 } from "@/lib/benchmark";
 import type { RoadsMode } from "@/lib/map-layers";
 
-const props = defineProps<{ mode: RoadsMode; spec: MapSpec; running: boolean }>();
+const props = defineProps<{ mode: RoadsMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
 const { live, win, sizeOk, movedFromStart } = props.spec;
 
@@ -78,7 +78,7 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
     <header class="flex items-center justify-between">
       <h2 class="text-sm font-semibold">Benchmark: {{ mode }}</h2>
       <div class="flex gap-2">
-        <Button size="xs" :disabled="running" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
+        <Button size="xs" :disabled="running || busy" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
         <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(mode)">
           Clear
         </Button>

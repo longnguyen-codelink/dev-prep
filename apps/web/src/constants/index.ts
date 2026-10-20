@@ -17,6 +17,9 @@ export const ROAD_TILE_MIN_ZOOM = 8;
 export const ROAD_TILE_MAX_ZOOM = 16;
 
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
+// The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
+export const MAP_READY_TIMEOUT_MS = 60_000;
+
 export const BENCHMARK_MAP_WIDTH = 1280;
 export const BENCHMARK_MAP_HEIGHT = 720;
 

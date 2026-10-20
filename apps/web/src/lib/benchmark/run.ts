@@ -86,22 +86,27 @@ export function createBenchmark(mode: RoadsMode, map: Map) {
   map.on("idle", onIdle);
   map.on("error", onError);
 
-  // The protocol stays registered after the run: the map keeps loading tiles when it is moved.
-  function finish(readyAt: number | null, failure: string | null) {
-    if (finished) return;
+  function cleanup() {
     finished = true;
     clearTimeout(timer);
     map.off("idle", onIdle);
     map.off("error", onError);
     document.removeEventListener("visibilitychange", onVisibility);
+  }
+
+  // The protocol stays registered after the run: the map keeps loading tiles when it is moved.
+  function finish(readyAt: number | null, failure: string | null) {
+    if (finished) return;
+    cleanup();
     const result = buildRun(readyAt, failure);
     saveRun(result);
     window.__benchmarkRun = result;
     console.log("[benchmark]", result);
   }
 
+  // Tearing the page down is not a result: an unfinished run is dropped, not recorded as failed.
   function dispose() {
-    finish(null, "disposed before the run finished");
+    if (!finished) cleanup();
     protocol.dispose();
   }
 

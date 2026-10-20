@@ -4,9 +4,10 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 import type { Map } from "maplibre-gl";
-import { ref, shallowRef, watch } from "vue";
+import { LoaderCircle } from "@lucide/vue";
+import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 
-import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM } from "@/constants";
+import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM, MAP_READY_TIMEOUT_MS } from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
 import type { RoadsMode } from "@/lib/map-layers";
 
@@ -27,17 +28,29 @@ if (params.has(BENCHMARK_RECORD_PARAM)) {
 const running = ref(record);
 watch(runsVersion, () => (running.value = false));
 const map = shallowRef<Map | null>(null);
+const mapView = ref<InstanceType<typeof MapView> | null>(null);
 const spec = useMapSpec(map);
+
+// The toolbar is disabled while the map loads and renders, and from the moment a mode switch starts until the reload.
+const ready = ref(false);
+const switching = ref(false);
+const busy = computed(() => !ready.value || switching.value);
+const readyTimer = setTimeout(() => (ready.value = true), MAP_READY_TIMEOUT_MS);
+watch(ready, (value) => value && clearTimeout(readyTimer));
+onBeforeUnmount(() => clearTimeout(readyTimer));
 
 // A full page reload keeps every benchmark run a clean page load.
 function reloadWith(update: (params: URLSearchParams) => void) {
   const url = new URL(window.location.href);
   update(url.searchParams);
+  mapView.value?.teardown(); // free the map's memory before the next heavy load starts
   window.location.href = url.toString();
 }
 
 function switchMode(next: unknown) {
   if (next !== "tiles" && next !== "geojson") return;
+  if (next === mode) return;
+  switching.value = true;
   reloadWith((p) => p.set("mode", next));
 }
 
@@ -52,6 +65,7 @@ function switchBenchmark(on: boolean) {
 
 // Each run is a clean page load: reload with ?run so this load records one run.
 function startRun() {
+  switching.value = true;
   reloadWith((p) => p.set(BENCHMARK_RECORD_PARAM, ""));
 }
 </script>
@@ -63,7 +77,7 @@ function startRun() {
       <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
         <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
           <section class="flex items-center">
-            <Select :model-value="mode" @update:model-value="switchMode">
+            <Select :model-value="mode" :disabled="busy" @update:model-value="switchMode">
               <SelectTrigger class="w-full max-w-30">
                 <SelectValue placeholder="Data source" />
               </SelectTrigger>
@@ -72,20 +86,21 @@ function startRun() {
                 <SelectItem value="geojson">GeoJSON</SelectItem>
               </SelectContent>
             </Select>
+            <LoaderCircle v-if="busy" class="text-muted-foreground ml-2 size-4 animate-spin" aria-label="Loading" />
           </section>
 
           <section class="flex items-center">
             <div class="flex items-center">
               <Label for="benchmark-switch" class="mr-2">Benchmark</Label>
-              <Switch id="benchmark-switch" :model-value="isBenchmark" @update:model-value="switchBenchmark" />
+              <Switch id="benchmark-switch" :model-value="isBenchmark" :disabled="busy" @update:model-value="switchBenchmark" />
             </div>
           </section>
         </div>
       </div>
 
-      <MapView :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" />
+      <MapView ref="mapView" :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" @ready="ready = true" />
       <BenchmarkDetails v-if="isBenchmark" :mode="mode" :spec="spec" />
     </div>
-    <BenchmarkPanel v-if="isBenchmark" :mode="mode" :spec="spec" :running="running" @run="startRun" />
+    <BenchmarkPanel v-if="isBenchmark" :mode="mode" :spec="spec" :running="running" :busy="busy" @run="startRun" />
   </main>
 </template>
