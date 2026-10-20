@@ -12,7 +12,7 @@ import type { RoadsMode } from "@/lib/map-layers";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";
-import RawGeoJsonView from "./views/RawGeoJson.vue";
+import MapView from "./views/Map.vue";
 
 const params = new URLSearchParams(window.location.search);
 const mode: RoadsMode = params.get("mode") === "geojson" ? "geojson" : "tiles";
@@ -83,7 +83,7 @@ function startRun() {
         </div>
       </div>
 
-      <RawGeoJsonView :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" />
+      <MapView :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" />
       <BenchmarkDetails v-if="isBenchmark" :mode="mode" :spec="spec" />
     </div>
     <BenchmarkPanel v-if="isBenchmark" :mode="mode" :spec="spec" :running="running" @run="startRun" />
