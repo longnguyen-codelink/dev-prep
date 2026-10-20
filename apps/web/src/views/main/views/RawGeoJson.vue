@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, nextTick, onMounted, watch } from "vue";
 import { Map, NavigationControl } from "maplibre-gl";
 import {
   BASEMAP_STYLE,
@@ -11,7 +11,8 @@ import {
 import { createBenchmark } from "@/lib/benchmark";
 import { addRoadsLayer, type RoadsMode } from "@/lib/map-layers";
 
-const props = defineProps<{ mode: RoadsMode; benchmark: boolean }>();
+const props = defineProps<{ mode: RoadsMode; benchmark: boolean; record: boolean }>();
+const emit = defineEmits<{ map: [map: Map] }>();
 
 const mapSize = computed(() =>
   props.benchmark
@@ -19,10 +20,21 @@ const mapSize = computed(() =>
     : { width: "100%", height: "100vh" },
 );
 
-onMounted(() => {
-  const benchmark = props.benchmark ? createBenchmark(props.mode) : null;
+let map: Map | null = null;
 
-  const map = new Map({
+// The benchmark view changes the map box without recreating the map, so tell it to pick up the new size.
+watch(
+  () => props.benchmark,
+  async () => {
+    await nextTick();
+    map?.resize();
+  },
+);
+
+onMounted(() => {
+  const benchmark = props.record ? createBenchmark(props.mode) : null;
+
+  map = new Map({
     container: "map",
     style: BASEMAP_STYLE,
     center: START_CENTER,
@@ -30,15 +42,16 @@ onMounted(() => {
   });
 
   map.addControl(new NavigationControl(), "top-right");
+  emit("map", map);
 
-  map.on("load", () => {
-    addRoadsLayer(map, props.mode, benchmark?.toProtocolUrl);
-    void benchmark?.run(map);
+  const created = map;
+  created.on("load", () => {
+    addRoadsLayer(created, props.mode, benchmark?.toProtocolUrl);
+    void benchmark?.run(created);
   });
-
 });
 </script>
 
 <template>
-  <div id="map" :style="mapSize"></div>
+  <div id="map" class="shrink-0" :style="mapSize"></div>
 </template>

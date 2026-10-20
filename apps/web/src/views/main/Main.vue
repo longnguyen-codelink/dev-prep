@@ -3,13 +3,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
+import type { Map } from "maplibre-gl";
+import { ref, shallowRef, watch } from "vue";
+
+import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM } from "@/constants";
+import { runsVersion, useMapSpec } from "@/lib/benchmark";
 import type { RoadsMode } from "@/lib/map-layers";
 
+import BenchmarkDetails from "./views/BenchmarkDetails.vue";
+import BenchmarkPanel from "./views/BenchmarkPanel.vue";
 import RawGeoJsonView from "./views/RawGeoJson.vue";
 
 const params = new URLSearchParams(window.location.search);
 const mode: RoadsMode = params.get("mode") === "geojson" ? "geojson" : "tiles";
-const isBenchmark = params.has("benchmark");
+const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
+// ?run makes this page load record one run; drop it so a manual reload only shows the view.
+const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
+if (params.has(BENCHMARK_RECORD_PARAM)) {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(BENCHMARK_RECORD_PARAM);
+  window.history.replaceState(null, "", url);
+}
+const running = ref(record);
+watch(runsVersion, () => (running.value = false));
+const map = shallowRef<Map | null>(null);
+const spec = useMapSpec(map);
 
 // A full page reload keeps every benchmark run a clean page load.
 function reloadWith(update: (params: URLSearchParams) => void) {
@@ -23,37 +41,51 @@ function switchMode(next: unknown) {
   reloadWith((p) => p.set("mode", next));
 }
 
+// Opening the benchmark view does not reload the page; the URL is kept in sync so F5 restores the view.
 function switchBenchmark(on: boolean) {
-  reloadWith((p) => (on ? p.set("benchmark", "") : p.delete("benchmark")));
+  isBenchmark.value = on;
+  const url = new URL(window.location.href);
+  if (on) url.searchParams.set(BENCHMARK_VIEW_PARAM, "");
+  else url.searchParams.delete(BENCHMARK_VIEW_PARAM);
+  window.history.replaceState(null, "", url);
+}
+
+// Each run is a clean page load: reload with ?run so this load records one run.
+function startRun() {
+  reloadWith((p) => p.set(BENCHMARK_RECORD_PARAM, ""));
 }
 </script>
 
 <template>
-  <main class="relative h-full w-full">
-    <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
-      <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
-        <section class="flex items-center">
-          <Select :model-value="mode" @update:model-value="switchMode">
-            <SelectTrigger class="w-full max-w-30">
-              <SelectValue placeholder="Data source" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="tiles">Tiles</SelectItem>
-              <SelectItem value="geojson">GeoJSON</SelectItem>
-            </SelectContent>
-          </Select>
-        </section>
-
-        <section class="flex items-center">
-          <div class="flex items-center">
-            <Label for="benchmark-switch" class="mr-2">Benchmark</Label>
-            <Switch id="benchmark-switch" :model-value="isBenchmark" @update:model-value="switchBenchmark" />
-          </div>
-        </section>
-      </div>
-    </div>
-
+  <main class="relative flex h-full w-full">
     <!-- MapView -->
-    <RawGeoJsonView :mode="mode" :benchmark="isBenchmark" />
+    <div class="relative flex flex-col" :class="isBenchmark ? 'shrink-0' : 'w-full'" :style="isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px` } : undefined">
+      <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
+        <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
+          <section class="flex items-center">
+            <Select :model-value="mode" @update:model-value="switchMode">
+              <SelectTrigger class="w-full max-w-30">
+                <SelectValue placeholder="Data source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="tiles">Tiles</SelectItem>
+                <SelectItem value="geojson">GeoJSON</SelectItem>
+              </SelectContent>
+            </Select>
+          </section>
+
+          <section class="flex items-center">
+            <div class="flex items-center">
+              <Label for="benchmark-switch" class="mr-2">Benchmark</Label>
+              <Switch id="benchmark-switch" :model-value="isBenchmark" @update:model-value="switchBenchmark" />
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <RawGeoJsonView :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" />
+      <BenchmarkDetails v-if="isBenchmark" :mode="mode" :spec="spec" />
+    </div>
+    <BenchmarkPanel v-if="isBenchmark" :mode="mode" :spec="spec" :running="running" @run="startRun" />
   </main>
 </template>

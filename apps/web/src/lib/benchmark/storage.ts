@@ -1,9 +1,14 @@
+import { ref } from "vue";
+
 import { BENCHMARK_STORAGE_KEY } from "@/constants";
 import type { RoadsMode } from "@/lib/map-layers";
 
 import type { BenchmarkRun } from "./types";
 
 const keyFor = (mode: RoadsMode) => `${BENCHMARK_STORAGE_KEY}-${mode}`;
+
+// Bumped after every write so the panel can recompute without polling or a reload.
+export const runsVersion = ref(0);
 
 export function loadRuns(mode: RoadsMode): BenchmarkRun[] {
   try {
@@ -20,4 +25,14 @@ export function saveRun(run: BenchmarkRun): void {
   } catch {
     // Storage can be blocked or full; the run is still on window.__benchmarkRun.
   }
+  runsVersion.value++;
+}
+
+export function clearRuns(mode: RoadsMode): void {
+  try {
+    localStorage.removeItem(keyFor(mode));
+  } catch {
+    // Nothing stored if storage is blocked.
+  }
+  runsVersion.value++;
 }

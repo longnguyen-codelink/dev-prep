@@ -10,6 +10,7 @@ export type BenchmarkRun = {
   bytes: number;
   requests: number;
   missingFiles: number;
+  files?: { url: string; bytes: number }[]; // served overlay files, url without the run tag; absent in older stored runs
   // All in ms; null when the run failed before the value existed.
   startupDelayMs: number | null; // page mount to the first data request
   networkMs: number | null; // first data request start to last response end

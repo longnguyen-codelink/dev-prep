@@ -23,11 +23,17 @@ export const BENCHMARK_MAP_HEIGHT = 720;
 // Overlay data goes through this MapLibre protocol so its requests run on the main thread (visible to Resource Timing).
 export const BENCHMARK_PROTOCOL = "bench";
 export const BENCHMARK_RUN_PARAM = "benchmark-run";
+// ?benchmark opens the benchmark view; ?benchmark&run makes that page load record one run (then drops the param).
+export const BENCHMARK_VIEW_PARAM = "benchmark";
+export const BENCHMARK_RECORD_PARAM = "run";
 export const BENCHMARK_TIMEOUT_MS = 120_000;
 // Runs are stored per mode under "<key>-<mode>"; bump the version when the run shape changes.
 export const BENCHMARK_STORAGE_KEY = "dev-prep-benchmark-runs-v1";
 // The default buffer (250) could fill with basemap requests before the overlay data is read back.
 export const BENCHMARK_RESOURCE_BUFFER = 1000;
+// Details panel hints: runs needed for a meaningful median, and a startup delay that suggests a throttled page start.
+export const BENCHMARK_MIN_RUNS = 3;
+export const BENCHMARK_SLOW_STARTUP_MS = 2000;
 
 export const HCMC_URL = "./map/hcmc-boundary.geojson";
 

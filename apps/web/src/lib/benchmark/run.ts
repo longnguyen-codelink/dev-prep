@@ -63,6 +63,10 @@ export function createBenchmark(mode: RoadsMode) {
       bytes: served.reduce((sum, e) => sum + e.encodedBodySize, 0),
       requests: served.length,
       missingFiles: tagged.length - served.length,
+      files: served.map((e) => ({
+        url: e.name.split("?")[0]!.replace(window.location.origin, ""),
+        bytes: e.encodedBodySize,
+      })),
       startupDelayMs: firstStart === null ? null : firstStart - mountedAt,
       networkMs,
       afterDownloadMs,
