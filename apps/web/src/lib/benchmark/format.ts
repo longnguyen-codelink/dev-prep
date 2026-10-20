@@ -35,8 +35,7 @@ export function summarize(runs: BenchmarkRun[]): ModeSummary {
 
 // Before = raw GeoJSON, after = vector tiles.
 export function toMarkdownTable(before: ModeSummary, after: ModeSummary): string {
-  const row = (label: string, pick: (s: ModeSummary) => string) =>
-    `| ${label} | ${pick(before)} | ${pick(after)} |`;
+  const row = (label: string, pick: (s: ModeSummary) => string) => `| ${label} | ${pick(before)} | ${pick(after)} |`;
   return [
     "| Metric (median of ok runs) | Before (GeoJSON) | After (tiles) |",
     "| --- | --- | --- |",

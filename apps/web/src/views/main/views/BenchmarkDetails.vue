@@ -1,14 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import {
-  BASEMAP_STYLE,
-  BENCHMARK_MAP_HEIGHT,
-  BENCHMARK_MAP_WIDTH,
-  ROAD_TILES_URL,
-  BIG_ROADS_URL,
-  START_ZOOM,
-} from "@/constants";
+import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, ROAD_TILES_URL, BIG_ROADS_URL, START_ZOOM } from "@/constants";
 import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
 import type { RoadsMode } from "@/lib/map-layers";
 
@@ -18,9 +11,7 @@ const { live, win, sizeOk, startCenter } = props.spec;
 const other = computed<RoadsMode>(() => (props.mode === "tiles" ? "geojson" : "tiles"));
 const label = (mode: RoadsMode) => (mode === "tiles" ? "Tiles" : "GeoJSON");
 
-const source = computed(() =>
-  props.mode === "tiles" ? `vector tiles, ${ROAD_TILES_URL}` : `GeoJSON, ${BIG_ROADS_URL}`,
-);
+const source = computed(() => (props.mode === "tiles" ? `vector tiles, ${ROAD_TILES_URL}` : `GeoJSON, ${BIG_ROADS_URL}`));
 
 function runsOf(mode: RoadsMode) {
   void runsVersion.value;

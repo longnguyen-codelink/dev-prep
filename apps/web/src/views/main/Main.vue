@@ -73,7 +73,11 @@ function startRun() {
 <template>
   <main class="relative flex h-full w-full">
     <!-- MapView -->
-    <div class="relative flex flex-col" :class="isBenchmark ? 'shrink-0' : 'w-full'" :style="isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px` } : undefined">
+    <div
+      class="relative flex flex-col"
+      :class="isBenchmark ? 'shrink-0' : 'w-full'"
+      :style="isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px` } : undefined"
+    >
       <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
         <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
           <section class="flex items-center">
@@ -86,7 +90,7 @@ function startRun() {
                 <SelectItem value="geojson">GeoJSON</SelectItem>
               </SelectContent>
             </Select>
-            <LoaderCircle v-if="busy" class="text-muted-foreground ml-2 size-4 animate-spin" aria-label="Loading" />
+            <LoaderCircle v-if="busy" class="ml-2 size-4 animate-spin text-muted-foreground" aria-label="Loading" />
           </section>
 
           <section class="flex items-center">

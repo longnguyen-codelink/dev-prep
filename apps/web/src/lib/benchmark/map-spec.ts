@@ -56,8 +56,7 @@ export function useMapSpec(map: Ref<Map | null>) {
   const sizeOk = computed(() => live.value.width === BENCHMARK_MAP_WIDTH && live.value.height === BENCHMARK_MAP_HEIGHT);
   const movedFromStart = computed(
     () =>
-      live.value.width > 0 &&
-      (Math.abs(live.value.zoom - START_ZOOM) > 0.01 || live.value.center !== formatCenter(startCenter[0], startCenter[1])),
+      live.value.width > 0 && (Math.abs(live.value.zoom - START_ZOOM) > 0.01 || live.value.center !== formatCenter(startCenter[0], startCenter[1])),
   );
 
   return { live, win, sizeOk, movedFromStart, startCenter };

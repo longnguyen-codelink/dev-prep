@@ -3,16 +3,7 @@ import { computed, ref } from "vue";
 
 import { Button } from "@/components/ui/button";
 import { BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_MIN_RUNS, BENCHMARK_SLOW_STARTUP_MS } from "@/constants";
-import {
-  clearRuns,
-  formatBytes,
-  formatMs,
-  loadRuns,
-  runsVersion,
-  summarize,
-  toMarkdownTable,
-  type MapSpec,
-} from "@/lib/benchmark";
+import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toMarkdownTable, type MapSpec } from "@/lib/benchmark";
 import type { RoadsMode } from "@/lib/map-layers";
 
 const props = defineProps<{ mode: RoadsMode; spec: MapSpec; running: boolean; busy: boolean }>();
@@ -40,20 +31,27 @@ const otherLabel = computed(() => (other.value === "tiles" ? "Tiles" : "GeoJSON"
 const hints = computed(() => {
   const list: { warn: boolean; text: string }[] = [];
   if (live.value.width > 0 && !sizeOk.value)
-    list.push({ warn: true, text: `Map is ${live.value.width} x ${live.value.height}, not ${BENCHMARK_MAP_WIDTH} x ${BENCHMARK_MAP_HEIGHT}: widen the window so the box is not clipped, then press Run.` });
-  if (movedFromStart.value)
-    list.push({ warn: true, text: "The camera moved from the start view; press Run again to start from a clean load." });
+    list.push({
+      warn: true,
+      text: `Map is ${live.value.width} x ${live.value.height}, not ${BENCHMARK_MAP_WIDTH} x ${BENCHMARK_MAP_HEIGHT}: widen the window so the box is not clipped, then press Run.`,
+    });
+  if (movedFromStart.value) list.push({ warn: true, text: "The camera moved from the start view; press Run again to start from a clean load." });
   if (current.value.okRuns < BENCHMARK_MIN_RUNS)
-    list.push({ warn: false, text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here, ${otherSummary.value.okRuns} in ${otherLabel.value}).` });
+    list.push({
+      warn: false,
+      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here, ${otherSummary.value.okRuns} in ${otherLabel.value}).`,
+    });
   if (latest.value && latest.value.visibility !== "visible")
     list.push({ warn: true, text: "The latest run had a hidden tab: timers and rendering were throttled, so discard it." });
   if (latest.value?.startupDelayMs != null && latest.value.startupDelayMs > BENCHMARK_SLOW_STARTUP_MS)
-    list.push({ warn: false, text: `The latest page start was slow (${formatMs(latest.value.startupDelayMs)}); it is not in the comparison, but the browser may be busy.` });
+    list.push({
+      warn: false,
+      text: `The latest page start was slow (${formatMs(latest.value.startupDelayMs)}); it is not in the comparison, but the browser may be busy.`,
+    });
   if (latest.value && latest.value.missingFiles > 0 && props.mode === "geojson")
     list.push({ warn: true, text: "The GeoJSON file was reported missing; check the link in public/map." });
   const conditions = new Set(runs.value.map((run) => `${run.viewport.width}x${run.viewport.height}|${run.userAgent}`));
-  if (conditions.size > 1)
-    list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
+  if (conditions.size > 1) list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
   if (win.value.ratio !== 1)
     list.push({ warn: false, text: `Device pixel ratio is ${win.value.ratio}: it changes drawing work, not bytes. Keep it the same across runs.` });
   list.push({ warn: false, text: "The dev server does not compress, so bytes are as served; gzipped sizes are reported separately." });
@@ -72,16 +70,12 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
 </script>
 
 <template>
-  <aside
-    class="h-screen min-w-0 flex-1 space-y-3 overflow-y-auto border-l bg-background p-3 text-xs"
-  >
+  <aside class="h-screen min-w-0 flex-1 space-y-3 overflow-y-auto border-l bg-background p-3 text-xs">
     <header class="flex items-center justify-between">
       <h2 class="text-sm font-semibold">Benchmark: {{ mode }}</h2>
       <div class="flex gap-2">
         <Button size="xs" :disabled="running || busy" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
-        <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(mode)">
-          Clear
-        </Button>
+        <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(mode)"> Clear </Button>
       </div>
     </header>
 
@@ -95,9 +89,7 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
         <dt>Requests, median</dt>
         <dd class="font-medium">{{ countText(current.requests) }}</dd>
       </dl>
-      <p class="mt-1 text-muted-foreground">
-        Based on {{ current.okRuns }} ok run(s); {{ current.failedRuns }} failed (not counted)
-      </p>
+      <p class="mt-1 text-muted-foreground">Based on {{ current.okRuns }} ok run(s); {{ current.failedRuns }} failed (not counted)</p>
     </section>
 
     <section>
@@ -142,12 +134,9 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
       <ul class="max-h-32 space-y-0.5 overflow-y-auto">
         <li v-for="run in history" :key="run.id">
           <template v-if="run.status === 'ok'">
-            {{ formatTime(run.timestamp) }}: {{ formatMs(run.readyMs) }}, {{ formatBytes(run.bytes) }},
-            {{ run.requests }} req
+            {{ formatTime(run.timestamp) }}: {{ formatMs(run.readyMs) }}, {{ formatBytes(run.bytes) }}, {{ run.requests }} req
           </template>
-          <span v-else class="text-destructive">
-            {{ formatTime(run.timestamp) }}: failed, {{ run.reason }}
-          </span>
+          <span v-else class="text-destructive"> {{ formatTime(run.timestamp) }}: failed, {{ run.reason }} </span>
         </li>
       </ul>
     </section>

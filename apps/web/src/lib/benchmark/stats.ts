@@ -1,12 +1,6 @@
 import type { BenchmarkRun } from "./types";
 
-type NumericField =
-  | "bytes"
-  | "requests"
-  | "readyMs"
-  | "networkMs"
-  | "afterDownloadMs"
-  | "startupDelayMs";
+type NumericField = "bytes" | "requests" | "readyMs" | "networkMs" | "afterDownloadMs" | "startupDelayMs";
 
 export function median(values: number[]): number | null {
   if (values.length === 0) return null;

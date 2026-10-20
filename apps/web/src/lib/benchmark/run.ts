@@ -1,11 +1,6 @@
 import type { ErrorEvent, Map } from "maplibre-gl";
 
-import {
-  BENCHMARK_RESOURCE_BUFFER,
-  BENCHMARK_RUN_PARAM,
-  BENCHMARK_SAVE_ENDPOINT,
-  BENCHMARK_TIMEOUT_MS,
-} from "@/constants";
+import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS } from "@/constants";
 import { ROADS_SOURCE_ID, type RoadsMode } from "@/lib/map-layers";
 
 import { registerDataProtocol } from "./protocol";

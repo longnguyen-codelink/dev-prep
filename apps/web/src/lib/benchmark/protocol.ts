@@ -17,10 +17,7 @@ const toProtocolUrl = (url: string) => url.replace(/^\.?\//, PREFIX);
  * Serves the overlay data through the main thread, tagging every request with the run id so Resource Timing can pick it out.
  * A missing tile is normal (empty area), a missing GeoJSON or any other error is a failure.
  */
-export function registerDataProtocol(
-  runId: string,
-  onFailure: (reason: string) => void,
-): DataProtocol {
+export function registerDataProtocol(runId: string, onFailure: (reason: string) => void): DataProtocol {
   const missing = new Set<string>();
 
   addProtocol(BENCHMARK_PROTOCOL, async (params, abortController) => {
@@ -31,15 +28,12 @@ export function registerDataProtocol(
     try {
       response = await fetch(url, { signal: abortController.signal });
     } catch (error) {
-      if (!abortController.signal.aborted)
-        onFailure(`request failed: ${url.pathname} (${String(error)})`);
+      if (!abortController.signal.aborted) onFailure(`request failed: ${url.pathname} (${String(error)})`);
       throw error;
     }
 
     // The Vite dev server answers a missing file with index.html and status 200.
-    const isMissing =
-      response.status === 404 ||
-      (response.ok && response.headers.get("content-type")?.includes("text/html"));
+    const isMissing = response.status === 404 || (response.ok && response.headers.get("content-type")?.includes("text/html"));
     if (isMissing) {
       missing.add(url.href);
       await readBody(response, "arrayBuffer"); // Resource Timing only records the request once its body is read
