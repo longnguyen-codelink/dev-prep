@@ -34,6 +34,8 @@ export const BENCHMARK_TIMEOUT_MS = 120_000;
 export const BENCHMARK_STORAGE_KEY = "dev-prep-benchmark-runs-v1";
 // The default buffer (250) could fill with basemap requests before the overlay data is read back.
 export const BENCHMARK_RESOURCE_BUFFER = 1000;
+// In development every finished run is also POSTed here and appended to tmp/benchmark/runs.json by the Vite dev server.
+export const BENCHMARK_SAVE_ENDPOINT = "/__benchmark/runs";
 // Details panel hints: runs needed for a meaningful median, and a startup delay that suggests a throttled page start.
 export const BENCHMARK_MIN_RUNS = 3;
 export const BENCHMARK_SLOW_STARTUP_MS = 2000;

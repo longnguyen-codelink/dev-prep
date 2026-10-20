@@ -1,11 +1,28 @@
 import type { ErrorEvent, Map } from "maplibre-gl";
 
-import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_TIMEOUT_MS } from "@/constants";
+import {
+  BENCHMARK_RESOURCE_BUFFER,
+  BENCHMARK_RUN_PARAM,
+  BENCHMARK_SAVE_ENDPOINT,
+  BENCHMARK_TIMEOUT_MS,
+} from "@/constants";
 import { ROADS_SOURCE_ID, type RoadsMode } from "@/lib/map-layers";
 
 import { registerDataProtocol } from "./protocol";
 import { saveRun } from "./storage";
 import type { BenchmarkRun } from "./types";
+
+// Development only: the dev server appends the run to tmp/benchmark/runs.json. keepalive lets the request survive a
+// reload right after the run; a failure (no dev server, blocked) is ignored because the run is also in localStorage.
+function saveRunToDisk(run: BenchmarkRun): void {
+  if (!import.meta.env.DEV) return;
+  fetch(BENCHMARK_SAVE_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(run),
+    keepalive: true,
+  }).catch(() => {});
+}
 
 /**
  * Call once per page load, right after the map is created. Pass `toProtocolUrl` to addRoadsLayer. The run ends, and is
@@ -100,6 +117,7 @@ export function createBenchmark(mode: RoadsMode, map: Map) {
     cleanup();
     const result = buildRun(readyAt, failure);
     saveRun(result);
+    saveRunToDisk(result);
     window.__benchmarkRun = result;
     console.log("[benchmark]", result);
   }
