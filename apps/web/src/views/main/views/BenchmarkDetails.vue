@@ -3,12 +3,10 @@ import { computed } from "vue";
 
 import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_PIXEL_RATIO, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode, VARIANTS, type Variant } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { formatBytes, formatMs, loadRuns, runsVersion, summarize, variantOf, type MapSpec } from "@/lib/benchmark";
+import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec }>();
 const { live, win, sizeOk, startCenter } = props.spec;
-
-const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
 
 const source = computed(() => {
   if (props.mode !== MODES.TILES) return `GeoJSON, ${MAP_URLS.roadsGeoJson}`;
@@ -19,21 +17,27 @@ function runsOf(variant: Variant) {
   void runsVersion.value;
   return loadRuns(variant);
 }
-const currentVariant = computed(() => variantOf(props.mode, props.tileMode));
-const otherVariant = computed<Variant>(() => (currentVariant.value === VARIANTS.GEOJSON ? VARIANTS.FOLDER : VARIANTS.GEOJSON));
-const current = computed(() => summarize(runsOf(currentVariant.value)));
-const otherSummary = computed(() => summarize(runsOf(otherVariant.value)));
+const geojson = computed(() => summarize(runsOf(VARIANTS.GEOJSON)));
+const folder = computed(() => summarize(runsOf(VARIANTS.FOLDER)));
+const pmtiles = computed(() => summarize(runsOf(VARIANTS.PM_TILES)));
 
-// How the other mode compares, on medians of ok runs; the ratio is "this mode over the other".
+// Medians of ok runs per variant; the ratios are "tile variant over GeoJSON".
 const comparison = computed(() => {
-  const a = current.value;
-  const b = otherSummary.value;
+  const [g, f, p] = [geojson.value, folder.value, pmtiles.value];
   const rows = [
-    { name: "Ready", a: formatMs(a.readyMs), b: formatMs(b.readyMs), ratio: ratio(a.readyMs, b.readyMs) },
-    { name: "Bytes", a: formatBytes(a.bytes), b: formatBytes(b.bytes), ratio: ratio(a.bytes, b.bytes) },
-    { name: "Requests", a: String(a.requests ?? "-"), b: String(b.requests ?? "-"), ratio: ratio(a.requests, b.requests) },
+    { name: "Ready", g: formatMs(g.readyMs), f: formatMs(f.readyMs), p: formatMs(p.readyMs), fRatio: ratio(f.readyMs, g.readyMs), pRatio: ratio(p.readyMs, g.readyMs) },
+    { name: "Bytes", g: formatBytes(g.bytes), f: formatBytes(f.bytes), p: formatBytes(p.bytes), fRatio: ratio(f.bytes, g.bytes), pRatio: ratio(p.bytes, g.bytes) },
+    {
+      name: "Requests",
+      g: String(g.requests ?? "-"),
+      f: String(f.requests ?? "-"),
+      p: String(p.requests ?? "-"),
+      fRatio: ratio(f.requests, g.requests),
+      pRatio: ratio(p.requests, g.requests),
+    },
   ];
-  return { ready: a.okRuns > 0 && b.okRuns > 0, rows };
+  const variantsWithRuns = [g, f, p].filter((s) => s.okRuns > 0).length;
+  return { ready: variantsWithRuns >= 2, rows };
 });
 function ratio(a: number | null, b: number | null): string {
   if (a === null || b === null || a === 0 || b === 0) return "-";
@@ -67,25 +71,29 @@ function ratio(a: number | null, b: number | null): string {
     </div>
 
     <div class="space-y-3">
-      <h3 class="text-sm font-semibold">{{ mode }} vs {{ other }}</h3>
+      <h3 class="text-sm font-semibold">Comparison</h3>
       <p v-if="!comparison.ready" class="text-muted-foreground">
-        Record at least one ok run in each mode to compare (switch mode, then press Run a few times).
+        Record at least one ok run in two of the three variants to compare (switch mode or tile mode, then press Run a few times).
       </p>
       <table v-else class="w-full">
         <thead>
           <tr class="text-left text-muted-foreground">
             <th></th>
-            <th>{{ mode }}</th>
-            <th>{{ other }}</th>
-            <th>{{ mode }} vs {{ other }}</th>
+            <th>GeoJSON</th>
+            <th>Tiles (Folder)</th>
+            <th>Tiles (PM Tiles)</th>
+            <th>Folder vs GeoJSON</th>
+            <th>PM Tiles vs GeoJSON</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in comparison.rows" :key="row.name">
             <td>{{ row.name }}</td>
-            <td>{{ row.a }}</td>
-            <td>{{ row.b }}</td>
-            <td>{{ row.ratio }}</td>
+            <td>{{ row.g }}</td>
+            <td>{{ row.f }}</td>
+            <td>{{ row.p }}</td>
+            <td>{{ row.fRatio }}</td>
+            <td>{{ row.pRatio }}</td>
           </tr>
         </tbody>
       </table>

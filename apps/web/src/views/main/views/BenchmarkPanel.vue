@@ -37,15 +37,12 @@ function runsOf(variant: Variant) {
 const currentVariant = computed(() => variantOf(props.mode, props.tileMode));
 const runs = computed(() => runsOf(currentVariant.value));
 const geojson = computed(() => summarize(runsOf(VARIANTS.GEOJSON)));
-const tiles = computed(() => summarize(runsOf(VARIANTS.FOLDER)));
+const folder = computed(() => summarize(runsOf(VARIANTS.FOLDER)));
+const pmtiles = computed(() => summarize(runsOf(VARIANTS.PM_TILES)));
 
 const current = computed(() => summarize(runs.value));
 const history = computed(() => [...runs.value].reverse());
 const latest = computed(() => history.value[0]);
-
-const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
-const otherVariant = computed<Variant>(() => (currentVariant.value === VARIANTS.GEOJSON ? VARIANTS.FOLDER : VARIANTS.GEOJSON));
-const otherSummary = computed(() => summarize(runsOf(otherVariant.value)));
 
 // The tile mode only applies to Tiles, so it is shown in the heading only there.
 const title = computed(() => (props.mode === MODES.TILES ? `${props.mode} (${props.tileMode})` : props.mode));
@@ -62,7 +59,7 @@ const hints = computed(() => {
   if (current.value.okRuns < BENCHMARK_MIN_RUNS)
     list.push({
       warn: false,
-      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here, ${otherSummary.value.okRuns} in ${other.value}).`,
+      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here).`,
     });
   if (latest.value && latest.value.visibility !== "visible")
     list.push({ warn: true, text: "The latest run had a hidden tab: timers and rendering were throttled, so discard it." });
@@ -81,7 +78,7 @@ const hints = computed(() => {
 
 const copied = ref(false);
 async function copyTable() {
-  await navigator.clipboard.writeText(toMarkdownTable(geojson.value, tiles.value));
+  await navigator.clipboard.writeText(toMarkdownTable({ geojson: geojson.value, folder: folder.value, pmtiles: pmtiles.value }));
   copied.value = true;
   setTimeout(() => (copied.value = false), 1500);
 }
@@ -169,29 +166,34 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
           <tr class="text-left text-muted-foreground">
             <th></th>
             <th>GeoJSON</th>
-            <th>Tiles</th>
+            <th>Tiles (Folder)</th>
+            <th>Tiles (PM Tiles)</th>
           </tr>
         </thead>
         <tbody>
           <tr>
             <td>Ready</td>
             <td>{{ formatMs(geojson.readyMs) }}</td>
-            <td>{{ formatMs(tiles.readyMs) }}</td>
+            <td>{{ formatMs(folder.readyMs) }}</td>
+            <td>{{ formatMs(pmtiles.readyMs) }}</td>
           </tr>
           <tr>
             <td>Bytes</td>
             <td>{{ formatBytes(geojson.bytes) }}</td>
-            <td>{{ formatBytes(tiles.bytes) }}</td>
+            <td>{{ formatBytes(folder.bytes) }}</td>
+            <td>{{ formatBytes(pmtiles.bytes) }}</td>
           </tr>
           <tr>
             <td>Requests</td>
             <td>{{ countText(geojson.requests) }}</td>
-            <td>{{ countText(tiles.requests) }}</td>
+            <td>{{ countText(folder.requests) }}</td>
+            <td>{{ countText(pmtiles.requests) }}</td>
           </tr>
           <tr>
             <td>Runs</td>
             <td>{{ geojson.okRuns }}</td>
-            <td>{{ tiles.okRuns }}</td>
+            <td>{{ folder.okRuns }}</td>
+            <td>{{ pmtiles.okRuns }}</td>
           </tr>
         </tbody>
       </table>

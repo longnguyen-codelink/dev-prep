@@ -33,12 +33,13 @@ export function summarize(runs: BenchmarkRun[]): ModeSummary {
   };
 }
 
-// Before = raw GeoJSON, after = vector tiles.
-export function toMarkdownTable(before: ModeSummary, after: ModeSummary): string {
-  const row = (label: string, pick: (s: ModeSummary) => string) => `| ${label} | ${pick(before)} | ${pick(after)} |`;
+// One column per variant; a variant with no ok runs shows "-" (its Runs cell shows 0).
+export function toMarkdownTable(summaries: { geojson: ModeSummary; folder: ModeSummary; pmtiles: ModeSummary }): string {
+  const columns = [summaries.geojson, summaries.folder, summaries.pmtiles];
+  const row = (label: string, pick: (s: ModeSummary) => string) => `| ${label} | ${columns.map((s) => pick(s)).join(" | ")} |`;
   return [
-    "| Metric (median of ok runs) | Before (GeoJSON) | After (tiles) |",
-    "| --- | --- | --- |",
+    "| Metric (median of ok runs) | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |",
+    "| --- | --- | --- | --- |",
     row("Ready (from first data request)", (s) => formatMs(s.readyMs)),
     row("Bytes transferred", (s) => formatBytes(s.bytes)),
     row("Requests", (s) => (s.requests === null ? "-" : String(s.requests))),
