@@ -8,18 +8,18 @@ import { parseArgs } from "node:util";
 import { ENV_CONFIG_OUTPUT_PATH, RUNTIME_ENV_KEYS } from "../src/constants/index.ts";
 import { buildEnvConfigScript } from "../vite-plugins/build-env-config-script.ts";
 
+// Accepts an https origin, optionally followed by a path prefix; trailing slashes are dropped.
 // Throws with a message that names the rule, never the value, so a bad URL with a token cannot reach the log.
 function normaliseMapHost(raw: string): string {
   let url: URL;
   try {
     url = new URL(raw);
   } catch {
-    throw new Error("MAP_HOST must be an absolute https URL");
+    throw new Error("MAP_HOST must be an absolute https URL (an origin, optionally followed by a path prefix)");
   }
   if (url.protocol !== "https:") throw new Error("MAP_HOST must use https://");
-  if (url.pathname !== "/") throw new Error("MAP_HOST must be an origin with no path");
   if (url.search || url.hash) throw new Error("MAP_HOST must not contain a query or hash");
-  return url.origin;
+  return (url.origin + url.pathname).replace(/\/+$/, "");
 }
 
 function checkBasemapStyleUrl(raw: string): void {

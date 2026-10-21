@@ -34,11 +34,13 @@ export function readEnv(raw: unknown = windowEnv()): RuntimeEnv {
 export function resolveMapHost(host?: string): string {
   const value = host?.trim() ?? "";
   if (!value) return "";
-  const invalid = new Error(`MAP_HOST must be an http(s) origin like https://maps.example.com, got "${value}"`);
-  if (!isHttpUrl(value) || value.includes("?") || value.includes("#")) throw invalid;
+  const invalid = new Error(
+    `MAP_HOST must be an http(s) URL (an origin, optionally followed by a path prefix, no query or hash) like https://maps.example.com or https://host/prefix, got "${value}"`,
+  );
+  if (!isHttpUrl(value)) throw invalid;
   const url = new URL(value);
-  if (url.pathname !== "/") throw invalid;
-  return url.origin;
+  if (url.search || url.hash) throw invalid;
+  return (url.origin + url.pathname).replace(/\/+$/, "");
 }
 
 export function buildMapUrls(mapHost: string) {
