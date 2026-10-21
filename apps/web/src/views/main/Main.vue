@@ -48,8 +48,7 @@ function reloadWith(update: (params: URLSearchParams) => void) {
   window.location.href = url.toString();
 }
 
-function switchMode(next: unknown) {
-  if (next !== MODES.TILES && next !== MODES.GEOJSON) return;
+function switchMode(next: Mode) {
   if (next === mode) return;
   switching.value = true;
   reloadWith((p) => p.set("mode", next));

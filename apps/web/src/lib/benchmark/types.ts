@@ -2,7 +2,7 @@ import type { Mode } from "@/constants";
 
 export type BenchmarkRun = {
   id: string;
-  mode: Mode;
+  mode: Mode | Lowercase<Mode>; // older stored runs hold the lower-cased value; only the lower-cased mode is used for the storage key
   timestamp: number; // Date.now() when the run finished
   status: "ok" | "failed";
   reason?: string;
