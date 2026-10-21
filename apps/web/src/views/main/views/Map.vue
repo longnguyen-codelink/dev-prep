@@ -50,7 +50,7 @@ onMounted(() => {
   emit("map", map);
 
   const created = map;
-  benchmark = props.record ? createBenchmark(props.mode, created) : null;
+  benchmark = props.record ? createBenchmark(props.mode, props.tileMode, created) : null;
   // Ready = the roads source is loaded and everything is rendered (the first such idle).
   const onIdle = () => {
     if (!created.getSource(ROADS_SOURCE_ID) || !created.isSourceLoaded(ROADS_SOURCE_ID)) return;

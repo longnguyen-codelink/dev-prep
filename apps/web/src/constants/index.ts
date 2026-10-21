@@ -16,6 +16,10 @@ export const TILE_MODES = {
 } as const;
 export type TileMode = (typeof TILE_MODES)[keyof typeof TILE_MODES];
 
+// What is benchmarked: GeoJSON, tiles from a folder, or tiles from a PM Tiles archive.
+export const VARIANTS = { GEOJSON: "geojson", FOLDER: "folder", PM_TILES: "pmtiles" } as const;
+export type Variant = (typeof VARIANTS)[keyof typeof VARIANTS];
+
 export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 // [lng, lat] (kinh do, vi do): central Ho Chi Minh City
@@ -42,7 +46,7 @@ export const BENCHMARK_RUN_PARAM = "benchmark-run";
 export const BENCHMARK_VIEW_PARAM = "benchmark";
 export const BENCHMARK_RECORD_PARAM = "run";
 export const BENCHMARK_TIMEOUT_MS = 120_000;
-// Runs are stored per mode under "<key>-<mode>"; bump the version when the run shape changes.
+// Runs are stored per variant under "<key>-<variant>"; bump the version when the run shape changes.
 export const BENCHMARK_STORAGE_KEY = "dev-prep-benchmark-runs-v1";
 // The default buffer (250) could fill with basemap requests before the overlay data is read back.
 export const BENCHMARK_RESOURCE_BUFFER = 1000;

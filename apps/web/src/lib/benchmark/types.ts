@@ -1,8 +1,9 @@
-import type { Mode } from "@/constants";
+import type { Mode, Variant } from "@/constants";
 
 export type BenchmarkRun = {
   id: string;
   mode: Mode | Lowercase<Mode>; // older stored runs hold the lower-cased value; only the lower-cased mode is used for the storage key
+  variant?: Variant; // absent in runs stored before PM Tiles was benchmarked: GeoJSON by mode, otherwise folder
   timestamp: number; // Date.now() when the run finished
   status: "ok" | "failed";
   reason?: string;

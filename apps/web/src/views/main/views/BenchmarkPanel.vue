@@ -11,28 +11,42 @@ import {
   type Mode,
   TILE_MODES,
   type TileMode,
+  VARIANTS,
+  type Variant,
 } from "@/constants";
-import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toMarkdownTable, type MapSpec } from "@/lib/benchmark";
+import {
+  clearRuns,
+  formatBytes,
+  formatMs,
+  loadRuns,
+  runsVersion,
+  summarize,
+  toMarkdownTable,
+  variantOf,
+  type MapSpec,
+} from "@/lib/benchmark";
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
 const { live, sizeOk, movedFromStart } = props.spec;
 
 // Reading runsVersion makes these recompute when a run is saved or cleared.
-function runsOf(mode: Mode) {
+function runsOf(variant: Variant) {
   void runsVersion.value;
-  return loadRuns(mode);
+  return loadRuns(variant);
 }
-const runs = computed(() => runsOf(props.mode));
-const geojson = computed(() => summarize(runsOf(MODES.GEOJSON)));
-const tiles = computed(() => summarize(runsOf(MODES.TILES)));
+const currentVariant = computed(() => variantOf(props.mode, props.tileMode));
+const runs = computed(() => runsOf(currentVariant.value));
+const geojson = computed(() => summarize(runsOf(VARIANTS.GEOJSON)));
+const tiles = computed(() => summarize(runsOf(VARIANTS.FOLDER)));
 
 const current = computed(() => summarize(runs.value));
 const history = computed(() => [...runs.value].reverse());
 const latest = computed(() => history.value[0]);
 
 const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
-const otherSummary = computed(() => summarize(runsOf(other.value)));
+const otherVariant = computed<Variant>(() => (currentVariant.value === VARIANTS.GEOJSON ? VARIANTS.FOLDER : VARIANTS.GEOJSON));
+const otherSummary = computed(() => summarize(runsOf(otherVariant.value)));
 
 // The tile mode only applies to Tiles, so it is shown in the heading only there.
 const title = computed(() => (props.mode === MODES.TILES ? `${props.mode} (${props.tileMode})` : props.mode));
@@ -86,7 +100,7 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
       <h2 class="text-sm font-semibold">Benchmark: {{ title }}</h2>
       <div class="flex gap-2">
         <Button size="xs" :disabled="running || busy || pmtilesPending" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
-        <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(mode)"> Clear </Button>
+        <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(currentVariant)"> Clear </Button>
       </div>
     </header>
     <p v-if="pmtilesPending" class="text-muted-foreground">PM Tiles benchmark: coming next</p>

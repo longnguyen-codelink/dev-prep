@@ -1,10 +1,10 @@
 import type { ErrorEvent, Map } from "maplibre-gl";
 
-import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS, type Mode } from "@/constants";
+import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS, type Mode, type TileMode } from "@/constants";
 import { ROADS_SOURCE_ID } from "@/lib/map-layers";
 
 import { registerDataProtocol } from "./protocol";
-import { saveRun } from "./storage";
+import { saveRun, variantOf } from "./storage";
 import type { BenchmarkRun } from "./types";
 
 // Development only: the dev server appends the run to tmp/benchmark/runs.json. keepalive lets the request survive a
@@ -24,7 +24,7 @@ function saveRunToDisk(run: BenchmarkRun): void {
  * stored, when the roads source is loaded and the map is idle, or on a failure, or after the timeout; call `fail` if
  * adding the layers throws and `dispose` when the map is torn down.
  */
-export function createBenchmark(mode: Mode, map: Map) {
+export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
   const id = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const mountedAt = performance.now();
   let finished = false;
@@ -66,6 +66,7 @@ export function createBenchmark(mode: Mode, map: Map) {
     return {
       id,
       mode,
+      variant: variantOf(mode, tileMode),
       timestamp: Date.now(),
       status,
       ...(reason ? { reason } : {}),

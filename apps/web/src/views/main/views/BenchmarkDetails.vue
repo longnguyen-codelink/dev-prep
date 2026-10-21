@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_PIXEL_RATIO, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode } from "@/constants";
+import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_PIXEL_RATIO, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode, VARIANTS, type Variant } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
+import { formatBytes, formatMs, loadRuns, runsVersion, summarize, variantOf, type MapSpec } from "@/lib/benchmark";
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec }>();
 const { live, win, sizeOk, startCenter } = props.spec;
@@ -15,12 +15,14 @@ const source = computed(() => {
   return props.tileMode === TILE_MODES.PM_TILES ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.roadPmtiles}` : `vector tiles (folder), ${MAP_URLS.roadTiles}`;
 });
 
-function runsOf(mode: Mode) {
+function runsOf(variant: Variant) {
   void runsVersion.value;
-  return loadRuns(mode);
+  return loadRuns(variant);
 }
-const current = computed(() => summarize(runsOf(props.mode)));
-const otherSummary = computed(() => summarize(runsOf(other.value)));
+const currentVariant = computed(() => variantOf(props.mode, props.tileMode));
+const otherVariant = computed<Variant>(() => (currentVariant.value === VARIANTS.GEOJSON ? VARIANTS.FOLDER : VARIANTS.GEOJSON));
+const current = computed(() => summarize(runsOf(currentVariant.value)));
+const otherSummary = computed(() => summarize(runsOf(otherVariant.value)));
 
 // How the other mode compares, on medians of ok runs; the ratio is "this mode over the other".
 const comparison = computed(() => {
