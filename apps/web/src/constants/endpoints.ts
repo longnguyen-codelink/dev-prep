@@ -1,5 +1,5 @@
 // MAP_HOST comes from /env-config.js at runtime: an http(s) origin, optionally followed by a path prefix
-// (e.g. https://storage.longngphuc.id.vn/public/dev-challenge-gis). Empty = same origin (dev: public/map).
+// (e.g. https://example.com/public/dev-challenge-gis). Empty = same origin (dev: public/map).
 const mapHost = (window.__ENV__?.MAP_HOST ?? "").replace(/\/+$/, "");
 
 export const MAP_URLS = {
