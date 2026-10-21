@@ -10,6 +10,9 @@ FIXTURE_URL="https://download.geofabrik.de/europe/${FIXTURE_NAME}"
 echo "init: marking $REPO_ROOT as a safe git directory"
 git config --global --add safe.directory "$REPO_ROOT"
 
+# Make the Vite+ cache directory writable for the current user.
+sudo chown -R vp:vp ~/.vite-plus
+
 mkdir -p "$DATA_DIR"
 
 # The pnpm-store named volume is mounted at this path (see devcontainer.json).
@@ -53,3 +56,4 @@ curl -fsSL --retry 3 -o "$tmp/$FIXTURE_NAME.md5" "$FIXTURE_URL.md5"
 mv "$tmp/$FIXTURE_NAME" "$DATA_DIR/$FIXTURE_NAME"
 echo "init: saved $DATA_DIR/$FIXTURE_NAME"
 echo "init: OpenStreetMap data (c) OpenStreetMap contributors, ODbL. Extract by Geofabrik."
+
