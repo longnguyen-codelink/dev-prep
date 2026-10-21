@@ -37,6 +37,30 @@ jobs:
         env:
           VITE_BASE_PATH: /${{ env.APP_PREFIX }}/
 
+      # env-config.js is generated here from the repository variable MAP_HOST (the map data host). That host must send
+      # CORS, Timing-Allow-Origin and Range headers.
+      - name: Generate runtime env-config.js
+        env:
+          MAP_HOST: ${{ vars.MAP_HOST }}
+          BASEMAP_STYLE_URL: ${{ vars.BASEMAP_STYLE_URL }}
+        run: |
+          set -euo pipefail
+          node apps/web/scripts/generate-env-config.ts apps/web/dist/env-config.js --require-map-host
+
+          file=apps/web/dist/env-config.js
+          if [ ! -f "$file" ]; then
+            echo "::error::$file is missing" >&2
+            exit 1
+          fi
+          if grep -q 'placeholder' "$file"; then
+            echo "::error::$file still contains the placeholder" >&2
+            exit 1
+          fi
+          if ! grep -q '"MAP_HOST"' "$file"; then
+            echo "::error::$file does not set MAP_HOST" >&2
+            exit 1
+          fi
+
       - uses: actions/upload-artifact@v4
         with:
           name: web-dist

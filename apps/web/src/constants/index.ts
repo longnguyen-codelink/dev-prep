@@ -45,6 +45,8 @@ export const TILES_METADATA_TIMEOUT_MS = 5_000;
 // Runtime config: /env-config.js sets window.__ENV__ to these keys only (served in dev by vite-plugins/env-config.ts).
 export const ENV_CONFIG_PATH = "/env-config.js";
 export const RUNTIME_ENV_KEYS = ["MAP_HOST", "BASEMAP_STYLE_URL"] as const;
+// Where the deploy script writes the runtime config (relative to apps/web); the workflow overwrites the placeholder there.
+export const ENV_CONFIG_OUTPUT_PATH = "dist/env-config.js";
 
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
