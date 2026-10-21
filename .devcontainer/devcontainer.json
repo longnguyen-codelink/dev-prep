@@ -1,6 +1,10 @@
 {
   "name": "gis-dev-prep",
   "image": "ghcr.io/voidzero-dev/vite-plus:latest",
+  "runArgs": [
+    "--env-file",
+    ".env"
+  ],
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2.7.1": {
       "username": "vp",
@@ -43,5 +47,6 @@
       ]
     }
   },
+  "initializeCommand": "bash .devcontainer/commands/setup.sh",
   "postCreateCommand": "bash .devcontainer/commands/init.sh"
 }

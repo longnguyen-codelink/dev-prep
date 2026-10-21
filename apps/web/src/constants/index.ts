@@ -42,6 +42,10 @@ export const MAP_PATHS = {
 } as const;
 export const TILES_METADATA_TIMEOUT_MS = 5_000;
 
+// Runtime config: /env-config.js sets window.__ENV__ to these keys only (served in dev by vite-plugins/env-config.ts).
+export const ENV_CONFIG_PATH = "/env-config.js";
+export const RUNTIME_ENV_KEYS = ["MAP_HOST", "BASEMAP_STYLE_URL"] as const;
+
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
 export const MAP_READY_TIMEOUT_MS = 60_000;

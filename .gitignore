@@ -30,3 +30,4 @@ tmp
 .DS_Store
 .docs
 apps/web/public/map
+.env
