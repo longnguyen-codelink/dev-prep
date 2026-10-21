@@ -3,11 +3,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 import { SelectMode } from "./components/select-mode";
+import { SelectTileMode } from "./components/select-tilemode";
 
 import type { Map } from "maplibre-gl";
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 
-import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM, MAP_READY_TIMEOUT_MS, MODES, type Mode } from "@/constants";
+import {
+  BENCHMARK_MAP_WIDTH,
+  BENCHMARK_RECORD_PARAM,
+  BENCHMARK_VIEW_PARAM,
+  MAP_READY_TIMEOUT_MS,
+  MODES,
+  type Mode,
+  type TileMode,
+  TILE_MODES,
+} from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
@@ -26,6 +36,10 @@ if (params.has(BENCHMARK_RECORD_PARAM)) {
   url.searchParams.delete(BENCHMARK_RECORD_PARAM);
   window.history.replaceState(null, "", url);
 }
+
+const tileModeParam = params.get("tileMode")?.toLowerCase();
+const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
+
 const running = ref(record);
 watch(runsVersion, () => (running.value = false));
 const map = shallowRef<Map | null>(null);
@@ -54,6 +68,12 @@ function switchMode(next: Mode) {
   reloadWith((p) => p.set("mode", next));
 }
 
+function switchTileMode(next: TileMode) {
+  if (next === tileMode) return;
+  switching.value = true;
+  reloadWith((p) => p.set("tileMode", next));
+}
+
 // Opening the benchmark view does not reload the page; the URL is kept in sync so F5 restores the view.
 function switchBenchmark(on: boolean) {
   isBenchmark.value = on;
@@ -80,8 +100,9 @@ function startRun() {
     >
       <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
         <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
-          <section class="flex items-center">
+          <section class="flex items-center gap-4">
             <SelectMode :mode="mode" :busy="busy" :switchMode="switchMode" />
+            <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="switchTileMode" :isDisabled="mode != MODES.TILES" />
           </section>
 
           <section class="flex items-center">

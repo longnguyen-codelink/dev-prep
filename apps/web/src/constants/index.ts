@@ -9,6 +9,13 @@ export const MODES = {
 } as const;
 export type Mode = (typeof MODES)[keyof typeof MODES];
 
+// TileMode constants and URLs
+export const TILE_MODES = {
+  FOLDER: "Folder",
+  PM_TILES: "PM Tiles",
+} as const;
+export type TileMode = (typeof TILE_MODES)[keyof typeof TILE_MODES];
+
 export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 // [lng, lat] (kinh do, vi do): central Ho Chi Minh City

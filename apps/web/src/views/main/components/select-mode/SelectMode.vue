@@ -17,7 +17,7 @@ function onSelect(value: unknown) {
   <section class="flex flex-col gap-2">
     <Label for="datasource">Data source</Label>
     <Select id="datasource" :model-value="mode" :disabled="busy" @update:model-value="onSelect">
-      <SelectTrigger class="flex w-full max-w-45 items-center gap-2">
+      <SelectTrigger class="flex w-full min-w-30 max-w-45 items-center gap-2">
         <LoaderCircle v-if="busy" class="ml-2 size-4 animate-spin text-muted-foreground" aria-label="Loading" />
         <SelectValue placeholder="Data source" />
       </SelectTrigger>
