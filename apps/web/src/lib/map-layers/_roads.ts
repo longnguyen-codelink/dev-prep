@@ -5,6 +5,8 @@ import { cssVariableMap, MODES, type Mode, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOO
 import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba } from "@/lib/utils";
 
+import { createPmtilesSource } from "./_pmtiles-source";
+
 export const ROADS_SOURCE_ID = "roads";
 
 const MAJOR_ROADS = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"];
@@ -66,13 +68,15 @@ let pmtilesRegistered = false;
 
 // One PM Tiles archive read with HTTP range requests; the zoom range comes from the archive header.
 // `toPmtilesSource` lets the benchmark supply a source whose range requests are tagged.
+// The archive is read through our own source so range reads bypass the browser cache.
 function addPmtilesSource(map: Map, toPmtilesSource?: (url: string) => Source) {
   if (!pmtilesRegistered) {
     addProtocol("pmtiles", pmtilesProtocol.tile);
     pmtilesRegistered = true;
   }
   const archiveUrl = new URL(MAP_URLS.roadPmtiles, window.location.href).href;
-  if (toPmtilesSource) pmtilesProtocol.add(new PMTiles(toPmtilesSource(archiveUrl)));
+  const source = toPmtilesSource ? toPmtilesSource(archiveUrl) : createPmtilesSource(archiveUrl);
+  pmtilesProtocol.add(new PMTiles(source));
   map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${archiveUrl}` });
 }
 

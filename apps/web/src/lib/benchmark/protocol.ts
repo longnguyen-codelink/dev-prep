@@ -2,6 +2,7 @@ import { addProtocol, AJAXError, removeProtocol, type AddProtocolAction } from "
 import type { Source } from "pmtiles";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
+import { fetchRange } from "@/lib/map-layers";
 
 const PROTOCOLS = [`${BENCHMARK_PROTOCOL}-http`, `${BENCHMARK_PROTOCOL}-https`];
 const PREFIX = `${BENCHMARK_PROTOCOL}-`;
@@ -66,6 +67,7 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
   }
 
   // The library's default fetch would send untagged requests, so PM Tiles range requests are made here instead.
+  // Range reads still go through fetchRange, the same code the app uses, so they cannot drift apart.
   const toPmtilesSource = (url: string): Source => ({
     getKey: () => url, // untagged: the protocol looks the archive up by the source URL
     getBytes: async (offset, length, signal) => {
@@ -74,7 +76,7 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
 
       let response: Response;
       try {
-        response = await fetch(tagged, { signal, headers: { range: `bytes=${offset}-${offset + length - 1}` } });
+        response = await fetchRange(tagged, offset, length, signal);
       } catch (error) {
         if (!signal?.aborted) onFailure(`request failed: ${tagged.pathname} (${String(error)})`);
         throw error;
