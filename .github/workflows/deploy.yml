@@ -38,14 +38,19 @@ jobs:
           VITE_BASE_PATH: /${{ env.APP_PREFIX }}/
 
       # Writes env-config.js from the MAP_HOST repository variable (the map host needs CORS, Timing-Allow-Origin and Range).
+      # BUILD_COMMIT and BUILD_REPO_URL come from the GitHub context and show the deployed commit in the app.
       - name: Generate runtime env-config.js
         env:
           MAP_HOST: ${{ vars.MAP_HOST }}
+          BUILD_COMMIT: ${{ github.sha }}
+          BUILD_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           set -euo pipefail
           : "${MAP_HOST:?MAP_HOST repository variable is not set}"
-          node -e 'require("node:fs").writeFileSync("apps/web/dist/env-config.js", "window.__ENV__ = " + JSON.stringify({ MAP_HOST: process.env.MAP_HOST }) + ";\n")'
+          node -e 'require("node:fs").writeFileSync("apps/web/dist/env-config.js", "window.__ENV__ = " + JSON.stringify({ MAP_HOST: process.env.MAP_HOST, BUILD_COMMIT: process.env.BUILD_COMMIT, BUILD_REPO_URL: process.env.BUILD_REPO_URL }) + ";\n")'
           grep -q '"MAP_HOST"' apps/web/dist/env-config.js
+          grep -q '"BUILD_COMMIT"' apps/web/dist/env-config.js
+          grep -q '"BUILD_REPO_URL"' apps/web/dist/env-config.js
 
       - uses: actions/upload-artifact@v4
         with:

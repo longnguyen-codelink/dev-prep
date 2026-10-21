@@ -37,7 +37,9 @@ export default defineConfig({
           const env = loadEnv(server.config.mode, server.config.envDir, "");
           res.setHeader("Content-Type", "application/javascript");
           res.setHeader("Cache-Control", "no-store");
-          res.end(`window.__ENV__ = ${JSON.stringify({ MAP_HOST: env.MAP_HOST })};\n`);
+          res.end(
+            `window.__ENV__ = ${JSON.stringify({ MAP_HOST: env.MAP_HOST, BUILD_COMMIT: env.BUILD_COMMIT, BUILD_REPO_URL: env.BUILD_REPO_URL })};\n`,
+          );
         });
       },
     },
