@@ -2,17 +2,7 @@
 import { computed, ref } from "vue";
 
 import { Button } from "@/components/ui/button";
-import {
-  BENCHMARK_MAP_HEIGHT,
-  BENCHMARK_MAP_WIDTH,
-  BENCHMARK_MIN_RUNS,
-  BENCHMARK_SLOW_STARTUP_MS,
-  MODES,
-  type Mode,
-  type TileMode,
-  VARIANTS,
-  type Variant,
-} from "@/constants";
+import { MODES, type Mode, type TileMode, VARIANTS, type Variant } from "@/constants";
 import {
   clearRuns,
   formatBytes,
@@ -27,7 +17,6 @@ import {
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
-const { live, sizeOk, movedFromStart } = props.spec;
 
 // Reading runsVersion makes these recompute when a run is saved or cleared.
 function runsOf(variant: Variant) {
@@ -46,35 +35,6 @@ const latest = computed(() => history.value[0]);
 
 // The tile mode only applies to Tiles, so it is shown in the heading only there.
 const title = computed(() => (props.mode === MODES.TILES ? `${props.mode} (${props.tileMode})` : props.mode));
-
-// Hints about the conditions of the runs, not about the map data.
-const hints = computed(() => {
-  const list: { warn: boolean; text: string }[] = [];
-  if (live.value.width > 0 && !sizeOk.value)
-    list.push({
-      warn: true,
-      text: `Map is ${live.value.width} x ${live.value.height}, not ${BENCHMARK_MAP_WIDTH} x ${BENCHMARK_MAP_HEIGHT}: widen the window so the box is not clipped, then press Run.`,
-    });
-  if (movedFromStart.value) list.push({ warn: true, text: "The camera moved from the start view; press Run again to start from a clean load." });
-  if (current.value.okRuns < BENCHMARK_MIN_RUNS)
-    list.push({
-      warn: false,
-      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here).`,
-    });
-  if (latest.value && latest.value.visibility !== "visible")
-    list.push({ warn: true, text: "The latest run had a hidden tab: timers and rendering were throttled, so discard it." });
-  if (latest.value?.startupDelayMs != null && latest.value.startupDelayMs > BENCHMARK_SLOW_STARTUP_MS)
-    list.push({
-      warn: false,
-      text: `The latest page start was slow (${formatMs(latest.value.startupDelayMs)}); it is not in the comparison, but the browser may be busy.`,
-    });
-  if (latest.value && latest.value.missingFiles > 0 && props.mode === MODES.GEOJSON)
-    list.push({ warn: true, text: "The GeoJSON file was reported missing; check the link in public/map." });
-  const conditions = new Set(runs.value.map((run) => `${run.viewport.width}x${run.viewport.height}|${run.userAgent}`));
-  if (conditions.size > 1) list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
-  list.push({ warn: false, text: "The dev server does not compress, so bytes are as served; gzipped sizes are reported separately." });
-  return list;
-});
 
 const copied = ref(false);
 async function copyTable() {
@@ -108,15 +68,6 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
         <dd class="font-medium">{{ countText(current.requests) }}</dd>
       </dl>
       <p class="mt-1 text-muted-foreground">Based on {{ current.okRuns }} ok run(s); {{ current.failedRuns }} failed (not counted)</p>
-    </section>
-
-    <section>
-      <h3 class="font-semibold">Recommendations</h3>
-      <ul class="space-y-1">
-        <li v-for="hint in hints" :key="hint.text" :class="hint.warn ? 'text-destructive' : 'text-muted-foreground'">
-          {{ hint.warn ? "Warning: " : "" }}{{ hint.text }}
-        </li>
-      </ul>
     </section>
 
     <section v-if="latest">
