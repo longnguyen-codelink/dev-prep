@@ -32,6 +32,8 @@ export const MAP_READY_TIMEOUT_MS = 60_000;
 
 export const BENCHMARK_MAP_WIDTH = 1280;
 export const BENCHMARK_MAP_HEIGHT = 720;
+// The canvas is drawn at this pixel ratio in the benchmark view, whatever the display or browser zoom says.
+export const BENCHMARK_PIXEL_RATIO = 1;
 
 // Overlay data goes through this MapLibre protocol so its requests run on the main thread (visible to Resource Timing).
 export const BENCHMARK_PROTOCOL = "bench";

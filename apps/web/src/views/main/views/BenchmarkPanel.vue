@@ -16,7 +16,7 @@ import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toM
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
-const { live, win, sizeOk, movedFromStart } = props.spec;
+const { live, sizeOk, movedFromStart } = props.spec;
 
 // Reading runsVersion makes these recompute when a run is saved or cleared.
 function runsOf(mode: Mode) {
@@ -62,8 +62,6 @@ const hints = computed(() => {
     list.push({ warn: true, text: "The GeoJSON file was reported missing; check the link in public/map." });
   const conditions = new Set(runs.value.map((run) => `${run.viewport.width}x${run.viewport.height}|${run.userAgent}`));
   if (conditions.size > 1) list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
-  if (win.value.ratio !== 1)
-    list.push({ warn: false, text: `Device pixel ratio is ${win.value.ratio}: it changes drawing work, not bytes. Keep it the same across runs.` });
   list.push({ warn: false, text: "The dev server does not compress, so bytes are as served; gzipped sizes are reported separately." });
   return list;
 });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode } from "@/constants";
+import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_PIXEL_RATIO, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
 import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
 
@@ -50,7 +50,7 @@ function ratio(a: number | null, b: number | null): string {
           {{ live.width }} x {{ live.height }} (target {{ BENCHMARK_MAP_WIDTH }} x {{ BENCHMARK_MAP_HEIGHT }})
         </dd>
         <dt class="text-muted-foreground">Window</dt>
-        <dd>{{ win.width }} x {{ win.height }}, pixel ratio {{ win.ratio }}</dd>
+        <dd>{{ win.width }} x {{ win.height }}, pixel ratio {{ win.ratio }} (map drawn at {{ BENCHMARK_PIXEL_RATIO }})</dd>
         <dt class="text-muted-foreground">View</dt>
         <dd>zoom {{ live.zoom.toFixed(2) }}, center {{ live.center }}</dd>
         <dt class="text-muted-foreground">Start view</dt>

@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, watch } from "vue";
 import { Map, NavigationControl, setWorkerUrl } from "maplibre-gl";
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, START_CENTER, START_ZOOM, type Mode, type TileMode } from "@/constants";
+import {
+  BASEMAP_STYLE,
+  BENCHMARK_MAP_HEIGHT,
+  BENCHMARK_MAP_WIDTH,
+  BENCHMARK_PIXEL_RATIO,
+  START_CENTER,
+  START_ZOOM,
+  type Mode,
+  type TileMode,
+} from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
 import { addRoadsLayer, addHCMCLayer, ROADS_SOURCE_ID } from "@/lib/map-layers";
 
@@ -23,12 +32,19 @@ watch(
   () => props.benchmark,
   async () => {
     await nextTick();
+    map?.setPixelRatio(props.benchmark ? BENCHMARK_PIXEL_RATIO : window.devicePixelRatio);
     map?.resize();
   },
 );
 
 onMounted(() => {
-  map = new Map({ container: "map", style: BASEMAP_STYLE, center: START_CENTER, zoom: START_ZOOM });
+  map = new Map({
+    container: "map",
+    style: BASEMAP_STYLE,
+    center: START_CENTER,
+    zoom: START_ZOOM,
+    pixelRatio: props.benchmark ? BENCHMARK_PIXEL_RATIO : undefined,
+  });
 
   map.addControl(new NavigationControl(), "top-right");
   emit("map", map);
