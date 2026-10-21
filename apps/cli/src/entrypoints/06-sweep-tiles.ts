@@ -3,7 +3,6 @@ import { rm, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
 import {
-  DATA_DIR,
   INITIAL_VIEW,
   MAX_TILE_GZIP_BYTES,
   ROADS_GEOJSON_NAME,
@@ -11,6 +10,7 @@ import {
   SWEEP_USAGE,
   SWEEP_VARIANTS,
   TILES_DIR,
+  WEB_MAP_DIR,
 } from "../helpers/constants.ts";
 import { Logger } from "../helpers/logger.ts";
 import { assertTools } from "../helpers/shell-tools.ts";
@@ -25,7 +25,7 @@ type Row = { name: string; change: string; cells: string[] };
 export async function run(args: string[] = process.argv.slice(2)) {
   const { values } = parseArgs({ args, options: { input: { type: "string" }, only: { type: "string" }, keep: { type: "boolean" } } });
 
-  const input = resolve(values.input ?? resolve(DATA_DIR, ROADS_GEOJSON_NAME));
+  const input = resolve(values.input ?? resolve(WEB_MAP_DIR, ROADS_GEOJSON_NAME));
   const only = values.only?.split(",");
   const unknown = only?.filter((name) => !SWEEP_VARIANTS.some((variant) => variant.name === name)) ?? [];
   if (unknown.length > 0) {
@@ -67,7 +67,7 @@ function failedCells(error: Error): string[] {
 }
 
 async function measureVariant(input: string, name: string, change: Partial<TileSettings>) {
-  const built = await buildTiles(input, name, { ...SWEEP_BASE, ...change });
+  const built = await buildTiles(input, name, { ...SWEEP_BASE, ...change }, resolve(TILES_DIR, name));
   const tiles = await withGzipSizes(await listTiles(built.dir));
 
   const gzip = tiles.reduce((sum, tile) => sum + tile.gzipBytes, 0);

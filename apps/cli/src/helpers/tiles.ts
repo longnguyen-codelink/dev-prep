@@ -1,6 +1,6 @@
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
-import { mkdir, rm, stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { lstat, mkdir, rm, stat } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -15,7 +15,8 @@ import {
   TILE_LAYER_NAME,
   TILE_MAX_ZOOM,
   TILE_MIN_ZOOM,
-  TILES_DIR,
+  WEB_MAP_DIR,
+  WEB_TILES_DIR,
 } from "./constants.ts";
 import { Logger } from "./logger.ts";
 import { runTool } from "./shell-tools.ts";
@@ -119,8 +120,15 @@ type PreparedRun = { features: number; prepareMs: number; tippecanoeMs: number }
  */
 async function prepareAndTile(input: string, name: string, settings: TileSettings, output: TileOutput): Promise<PreparedRun> {
   const prepared = resolve(DATA_DIR, `${name}.prepared.geojsonl`);
-  await mkdir(TILES_DIR, { recursive: true });
+  await mkdir(DATA_DIR, { recursive: true });
+
+  // A leftover symlink would send the output to another folder, so stop instead of following it.
+  const existing = await lstat(output.path).catch(() => null);
+  if (existing?.isSymbolicLink()) {
+    throw new Error(`the output is a symlink, remove it first: ${output.path}`);
+  }
   await rm(output.path, { recursive: true, force: true });
+  await mkdir(dirname(output.path), { recursive: true });
 
   const prepareStarted = performance.now();
   const { features } = await prepareFeatures(input, prepared, settings);
@@ -141,9 +149,16 @@ export type BuildResult = {
   largestBytes: number;
 };
 
-/** Prepares the features, runs tippecanoe into `tiles/<name>/`, and measures the folder. */
-export async function buildTiles(input: string, name: string, settings: TileSettings): Promise<BuildResult> {
-  const dir = resolve(TILES_DIR, name);
+/**
+ * Prepares the features, runs tippecanoe into `dir` (the published tile folder by default; `sweep tiles`
+ * passes an experiment folder), and measures the folder. A re-run replaces the previous folder.
+ */
+export async function buildTiles(
+  input: string,
+  name: string,
+  settings: TileSettings,
+  dir = WEB_TILES_DIR,
+): Promise<BuildResult> {
   const { features, prepareMs, tippecanoeMs } = await prepareAndTile(input, name, settings, { kind: "folder", path: dir });
 
   const tiles = await listTiles(dir);
@@ -162,9 +177,9 @@ export async function buildTiles(input: string, name: string, settings: TileSett
 
 export type PmtilesResult = PreparedRun & { name: string; file: string; bytes: number };
 
-/** Same preparation and tippecanoe settings as `buildTiles`, written as one PMTiles archive `tiles/<name>.pmtiles`. */
+/** Same preparation and tippecanoe settings as `buildTiles`, written as one PMTiles archive `public/map/<name>.pmtiles`. */
 export async function buildPmtiles(input: string, name: string, settings: TileSettings): Promise<PmtilesResult> {
-  const file = resolve(TILES_DIR, `${name}.pmtiles`);
+  const file = resolve(WEB_MAP_DIR, `${name}.pmtiles`);
   const run = await prepareAndTile(input, name, settings, { kind: "pmtiles", path: file });
 
   if (!existsSync(file)) throw new Error(`tippecanoe produced no archive at ${file}`);
@@ -220,7 +235,7 @@ export function parseTileBuildArgs(args: string[], usage: string): TileBuildArgs
     simplification: numberOption(values.simplification, null, "--simplification", usage),
     dropDensest: !values["no-drop"],
   };
-  const input = resolve(values.input ?? resolve(DATA_DIR, ROADS_GEOJSON_NAME));
+  const input = resolve(values.input ?? resolve(WEB_MAP_DIR, ROADS_GEOJSON_NAME));
 
   return { name: values.name, input, settings };
 }

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { CHECK_TILES_USAGE, INITIAL_VIEW, INITIAL_VIEW_BUDGET_BYTES, MAX_TILE_GZIP_BYTES, TILES_DIR } from "../helpers/constants.ts";
+import { CHECK_TILES_USAGE, INITIAL_VIEW, INITIAL_VIEW_BUDGET_BYTES, MAX_TILE_GZIP_BYTES, TILES_DIR, WEB_TILES_DIR } from "../helpers/constants.ts";
 import { Logger } from "../helpers/logger.ts";
 import { listTiles, withGzipSizes, type SizedTile } from "../helpers/tile-folder.ts";
 import { tilesCoveringView, type View } from "../helpers/tile-math.ts";
@@ -25,11 +25,6 @@ export async function run(args: string[] = process.argv.slice(2)) {
     options: { name: { type: "string" }, limit: { type: "string" }, view: { type: "string" } },
   });
 
-  if (!values.name) {
-    Logger.error(CHECK_TILES_USAGE);
-    process.exit(1);
-  }
-
   const limit = values.limit === undefined ? MAX_TILE_GZIP_BYTES : Number(values.limit);
   if (!Number.isFinite(limit) || limit <= 0) {
     Logger.error(`--limit must be a positive number of bytes, got "${values.limit}"`);
@@ -37,7 +32,8 @@ export async function run(args: string[] = process.argv.slice(2)) {
   }
 
   const view = parseView(values.view);
-  const dir = resolve(TILES_DIR, values.name);
+  // Without --name, check the published tiles; with it, an experiment folder from `sweep tiles`.
+  const dir = values.name ? resolve(TILES_DIR, values.name) : WEB_TILES_DIR;
   const { data: ok, error } = await tryCatch<boolean, Error>(checkTiles(dir, limit, view));
   if (error) {
     Logger.error(`Failed to check the tiles: ${error.message}`);

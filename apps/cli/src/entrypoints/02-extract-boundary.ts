@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { parseArgs } from "node:util";
-import { ADMIN_PBF_NAME, DATA_DIR, HCMC_BOUNDARY_NAME, HCMC_RELATION_ID, VIETNAM_OSM_PBF_NAME } from "../helpers/constants.ts";
+import { ADMIN_PBF_NAME, DATA_DIR, HCMC_BOUNDARY_NAME, HCMC_RELATION_ID, VIETNAM_OSM_PBF_NAME, WEB_MAP_DIR } from "../helpers/constants.ts";
 import { Logger } from "../helpers/logger.ts";
 import { assertTools, runTool } from "../helpers/shell-tools.ts";
 import { formatDuration, tryCatch } from "../helpers/utils.ts";
@@ -24,7 +24,7 @@ export async function run(args: string[] = process.argv.slice(2)) {
   }
 
   const pbf = resolve(values.pbf ?? resolve(DATA_DIR, VIETNAM_OSM_PBF_NAME));
-  const out = resolve(values.out ?? resolve(DATA_DIR, HCMC_BOUNDARY_NAME));
+  const out = resolve(values.out ?? resolve(WEB_MAP_DIR, HCMC_BOUNDARY_NAME));
 
   const { error } = await tryCatch(buildBoundary(relationId, pbf, out));
   if (error) {

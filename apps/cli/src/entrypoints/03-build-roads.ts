@@ -10,6 +10,7 @@ import {
   FEATURE_LINE_PREFIX,
   HIGHWAYS_PBF_NAME,
   VIETNAM_OSM_PBF_NAME,
+  WEB_MAP_DIR,
 } from "../helpers/constants.ts";
 import { countLinesStartingWith, gzippedSize } from "../helpers/files.ts";
 import { Logger } from "../helpers/logger.ts";
@@ -62,10 +63,11 @@ async function buildRoads(boundary: string, name: string, pbf: string, strategy:
   if (!existsSync(pbf)) throw new Error(`PBF not found: ${pbf} (run \`pnpm cli fetch base-file\` first)`);
   await assertTools();
   await mkdir(DATA_DIR, { recursive: true });
+  await mkdir(WEB_MAP_DIR, { recursive: true });
 
   const highways = resolve(DATA_DIR, HIGHWAYS_PBF_NAME);
   const clipped = resolve(DATA_DIR, `${name}.osm.pbf`);
-  const output = resolve(DATA_DIR, `${name}.geojson`);
+  const output = resolve(WEB_MAP_DIR, `${name}.geojson`);
   const temp = `${output}.tmp`;
   await rm(temp, { force: true });
 

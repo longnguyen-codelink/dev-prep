@@ -14,8 +14,10 @@ export const HCMC_BOUNDARY_NAME = "hcmc-boundary.geojson";
 // OSM relation of Ho Chi Minh City in the pinned snapshot (the merged city).
 export const HCMC_RELATION_ID = "1973756";
 
-// Where the web app reads its data files from in development (gitignored).
+// Where the published artifacts are written and the web app reads them from in development (gitignored).
 export const WEB_MAP_DIR = resolve(import.meta.dirname, "../../../web/public/map");
+// The published tile folder, read by the web app as /map/tiles/{z}/{x}/{y}.pbf.
+export const WEB_TILES_DIR = resolve(WEB_MAP_DIR, "tiles");
 
 // External command-line programs the pipeline needs; `assertTools()` checks they are installed.
 export const REQUIRED_TOOLS = ["osmium", "ogr2ogr", "tippecanoe"] as const;
@@ -33,6 +35,7 @@ export const DEFAULT_EXTRACT_STRATEGY = "simple";
 export const FEATURE_LINE_PREFIX = '{ "type": "Feature"';
 
 // --- Vector tiles (Week 2) ---
+// Sweep and experiment builds only (`sweep tiles`, `check tiles --name`); the published tiles are in WEB_TILES_DIR.
 export const TILES_DIR = resolve(DATA_DIR, "tiles");
 export const TILE_LAYER_NAME = "roads";
 export const ROADS_GEOJSON_NAME = "hcmc-roads.geojson";
@@ -56,7 +59,7 @@ export const HIGHWAY_MIN_ZOOM: Record<string, number> = {
 export const DEFAULT_HIGHWAY_MIN_ZOOM = 15; // footway, path, track, pedestrian, steps, cycleway, others
 
 export const TILES_USAGE =
-  "usage: pnpm cli build tiles --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
+  "usage: pnpm cli build tiles --name <name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
   "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
 
 export const BUILD_PMTILES_USAGE =
@@ -88,7 +91,7 @@ export const SWEEP_VARIANTS: { name: string; change: string; settings: Partial<T
 ];
 
 export const CHECK_TILES_USAGE =
-  "usage: pnpm cli check tiles --name <folder name> [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
+  "usage: pnpm cli check tiles [--name <experiment folder>] [--limit <max gzipped tile bytes>] [--view lng,lat,zoom,width,height]";
 
 // Budgets from the track: every compressed tile at most 500 KB; the initial view at most about 3 MB.
 export const MAX_TILE_GZIP_BYTES = 500_000;
