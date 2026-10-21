@@ -1,4 +1,5 @@
 import { addProtocol, AJAXError, removeProtocol, type AddProtocolAction } from "maplibre-gl";
+import type { Source } from "pmtiles";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
 
@@ -7,6 +8,7 @@ const PREFIX = `${BENCHMARK_PROTOCOL}-`;
 
 export type DataProtocol = {
   toProtocolUrl: (url: string) => string;
+  toPmtilesSource: (url: string) => Source; // a PM Tiles source whose range requests carry the run tag
   missing: Set<string>; // absolute URLs (with the run tag) the server did not have
   dispose: () => void;
 };
@@ -63,5 +65,39 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
     }
   }
 
-  return { toProtocolUrl, missing, dispose: () => PROTOCOLS.forEach(removeProtocol) };
+  // The library's default fetch would send untagged requests, so PM Tiles range requests are made here instead.
+  const toPmtilesSource = (url: string): Source => ({
+    getKey: () => url, // untagged: the protocol looks the archive up by the source URL
+    getBytes: async (offset, length, signal) => {
+      const tagged = new URL(url);
+      tagged.searchParams.set(BENCHMARK_RUN_PARAM, runId);
+
+      let response: Response;
+      try {
+        response = await fetch(tagged, { signal, headers: { range: `bytes=${offset}-${offset + length - 1}` } });
+      } catch (error) {
+        if (!signal?.aborted) onFailure(`request failed: ${tagged.pathname} (${String(error)})`);
+        throw error;
+      }
+
+      // A 200 means the server ignored Range and sent the whole file: fail the run, never count it.
+      if (response.status !== 206) {
+        await readBody(response, "arrayBuffer", signal);
+        const reason = `HTTP ${response.status} for a range request (expected 206): ${tagged.pathname}`;
+        if (!signal?.aborted) onFailure(reason);
+        throw new Error(reason);
+      }
+
+      const data = await readBody(response, "arrayBuffer", signal);
+      const etag = response.headers.get("ETag");
+      return {
+        data,
+        etag: etag === null || etag.startsWith("W/") ? undefined : etag,
+        cacheControl: response.headers.get("Cache-Control") ?? undefined,
+        expires: response.headers.get("Expires") ?? undefined,
+      };
+    },
+  });
+
+  return { toProtocolUrl, toPmtilesSource, missing, dispose: () => PROTOCOLS.forEach(removeProtocol) };
 }

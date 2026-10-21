@@ -124,5 +124,5 @@ export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
     protocol.dispose();
   }
 
-  return { toProtocolUrl: protocol.toProtocolUrl, fail: (reason: string) => finish(null, reason), dispose };
+  return { toProtocolUrl: protocol.toProtocolUrl, toPmtilesSource: protocol.toPmtilesSource, fail: (reason: string) => finish(null, reason), dispose };
 }

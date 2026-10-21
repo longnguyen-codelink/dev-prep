@@ -33,9 +33,7 @@ const tileModeParam = params.get("tileMode")?.toLowerCase();
 const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
 
 // ?run makes this page load record one run; drop it so a manual reload only shows the view.
-// PM Tiles has no benchmark yet (the bench protocol only wraps the folder and GeoJSON URLs), so never record it.
-const isPmTilesBenchmark = mode === MODES.TILES && tileMode === TILE_MODES.PM_TILES;
-const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM) && !isPmTilesBenchmark;
+const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
 if (params.has(BENCHMARK_RECORD_PARAM)) {
   const url = new URL(window.location.href);
   url.searchParams.delete(BENCHMARK_RECORD_PARAM);

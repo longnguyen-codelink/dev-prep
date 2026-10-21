@@ -61,7 +61,7 @@ onMounted(() => {
   created.on("load", () => {
     try {
       addHCMCLayer(created);
-      addRoadsLayer(created, props.mode, props.tileMode, benchmark?.toProtocolUrl);
+      addRoadsLayer(created, props.mode, props.tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
     } catch (error) {
       benchmark?.fail(`could not add the layers: ${String(error)}`);
     }

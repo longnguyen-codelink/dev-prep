@@ -9,7 +9,6 @@ import {
   BENCHMARK_SLOW_STARTUP_MS,
   MODES,
   type Mode,
-  TILE_MODES,
   type TileMode,
   VARIANTS,
   type Variant,
@@ -80,9 +79,6 @@ const hints = computed(() => {
   return list;
 });
 
-// The bench protocol only wraps the folder and GeoJSON URLs, so a PM Tiles run would be recorded with the wrong data.
-const pmtilesPending = computed(() => props.mode === MODES.TILES && props.tileMode === TILE_MODES.PM_TILES);
-
 const copied = ref(false);
 async function copyTable() {
   await navigator.clipboard.writeText(toMarkdownTable(geojson.value, tiles.value));
@@ -99,11 +95,10 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
     <header class="flex items-center justify-between">
       <h2 class="text-sm font-semibold">Benchmark: {{ title }}</h2>
       <div class="flex gap-2">
-        <Button size="xs" :disabled="running || busy || pmtilesPending" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
+        <Button size="xs" :disabled="running || busy" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
         <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(currentVariant)"> Clear </Button>
       </div>
     </header>
-    <p v-if="pmtilesPending" class="text-muted-foreground">PM Tiles benchmark: coming next</p>
 
     <section>
       <p v-if="current.okRuns === 0" class="text-muted-foreground">No runs yet</p>

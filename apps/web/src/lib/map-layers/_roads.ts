@@ -1,5 +1,5 @@
 import { addProtocol, type LineLayerSpecification, type Map } from "maplibre-gl";
-import { Protocol } from "pmtiles";
+import { PMTiles, Protocol, type Source } from "pmtiles";
 
 import { cssVariableMap, MODES, type Mode, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, TILE_MODES, type TileMode } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
@@ -61,21 +61,31 @@ function addFolderTilesSource(map: Map, toSourceUrl: (url: string) => string) {
   });
 }
 
+const pmtilesProtocol = new Protocol();
 let pmtilesRegistered = false;
 
 // One PM Tiles archive read with HTTP range requests; the zoom range comes from the archive header.
-function addPmtilesSource(map: Map) {
+// `toPmtilesSource` lets the benchmark supply a source whose range requests are tagged.
+function addPmtilesSource(map: Map, toPmtilesSource?: (url: string) => Source) {
   if (!pmtilesRegistered) {
-    addProtocol("pmtiles", new Protocol().tile);
+    addProtocol("pmtiles", pmtilesProtocol.tile);
     pmtilesRegistered = true;
   }
-  map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${new URL(MAP_URLS.roadPmtiles, window.location.href).href}` });
+  const archiveUrl = new URL(MAP_URLS.roadPmtiles, window.location.href).href;
+  if (toPmtilesSource) pmtilesProtocol.add(new PMTiles(toPmtilesSource(archiveUrl)));
+  map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${archiveUrl}` });
 }
 
-// `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
-export function addRoadsLayer(map: Map, mode: Mode, tileMode: TileMode, toSourceUrl: (url: string) => string = (url) => url): Map {
+// `toSourceUrl` and `toPmtilesSource` let the benchmark route the data through its protocol; by default URLs are used as is.
+export function addRoadsLayer(
+  map: Map,
+  mode: Mode,
+  tileMode: TileMode,
+  toSourceUrl: (url: string) => string = (url) => url,
+  toPmtilesSource?: (url: string) => Source,
+): Map {
   if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(MAP_URLS.roadsGeoJson) });
-  else if (tileMode === TILE_MODES.PM_TILES) addPmtilesSource(map);
+  else if (tileMode === TILE_MODES.PM_TILES) addPmtilesSource(map, toPmtilesSource);
   else addFolderTilesSource(map, toSourceUrl);
 
   for (const layer of roadLayers(mode === MODES.TILES ? "roads" : undefined)) map.addLayer(layer);
