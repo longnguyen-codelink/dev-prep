@@ -1,5 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, join } from "node:path";
 import { defineConfig, lazyPlugins, loadEnv } from "vite-plus";
 
 import { benchmarkRuns } from "./vite-plugins/benchmark-runs.ts";
@@ -11,6 +14,19 @@ export default defineConfig({
     vue(),
     tailwindcss(),
     benchmarkRuns(),
+    {
+      // MapLibre 6 loads maplibre-gl-worker.mjs as a sibling of the script holding it; the bundle drops it, so ship it.
+      name: "emit-maplibre-worker",
+      apply: "build",
+      generateBundle() {
+        const dist = join(dirname(createRequire(import.meta.url).resolve("maplibre-gl/package.json")), "dist");
+        this.emitFile({
+          type: "asset",
+          fileName: "assets/maplibre-gl-worker.mjs",
+          source: readFileSync(join(dist, "maplibre-gl-worker.mjs")),
+        });
+      },
+    },
     {
       // Dev only: answers /env-config.js from the environment (or .env files); in production CI writes it.
       name: "inject-runtime-env",
