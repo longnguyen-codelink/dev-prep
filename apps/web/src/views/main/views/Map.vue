@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, watch } from "vue";
-import { Map, NavigationControl } from "maplibre-gl";
+import { Map, NavigationControl, setWorkerUrl } from "maplibre-gl";
 import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, START_CENTER, START_ZOOM, type Mode, type TileMode } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
 import { addRoadsLayer, addHCMCLayer, ROADS_SOURCE_ID } from "@/lib/map-layers";
+
+// The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
+if (import.meta.env.PROD) setWorkerUrl(`${import.meta.env.BASE_URL}assets/maplibre-gl-worker.js`);
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean }>();
 const emit = defineEmits<{ map: [map: Map]; ready: [] }>();

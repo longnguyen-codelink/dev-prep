@@ -16,13 +16,14 @@ export default defineConfig({
     benchmarkRuns(),
     {
       // MapLibre 6 loads maplibre-gl-worker.mjs as a sibling of the script holding it; the bundle drops it, so ship it.
+      // Emitted as .js because the host serves .mjs as application/octet-stream, which browsers reject for module workers.
       name: "emit-maplibre-worker",
       apply: "build",
       generateBundle() {
         const dist = join(dirname(createRequire(import.meta.url).resolve("maplibre-gl/package.json")), "dist");
         this.emitFile({
           type: "asset",
-          fileName: "assets/maplibre-gl-worker.mjs",
+          fileName: "assets/maplibre-gl-worker.js",
           source: readFileSync(join(dist, "maplibre-gl-worker.mjs")),
         });
       },
