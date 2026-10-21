@@ -85,9 +85,11 @@ function startRun() {
           </section>
 
           <section class="flex items-center">
-            <div class="flex items-center">
-              <Label for="benchmark-switch" class="mr-2">Benchmark</Label>
-              <Switch id="benchmark-switch" :model-value="isBenchmark" :disabled="busy" @update:model-value="switchBenchmark" />
+            <div class="flex flex-col gap-2">
+              <Label for="benchmark-switch">Benchmark</Label>
+              <div class="flex h-9 items-center">
+                <Switch id="benchmark-switch" :model-value="isBenchmark" :disabled="busy" @update:model-value="switchBenchmark" />
+              </div>
             </div>
           </section>
         </div>
