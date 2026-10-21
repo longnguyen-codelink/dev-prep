@@ -1,8 +1,9 @@
-import { addProtocol, AJAXError, removeProtocol } from "maplibre-gl";
+import { addProtocol, AJAXError, removeProtocol, type AddProtocolAction } from "maplibre-gl";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
 
-const PREFIX = `${BENCHMARK_PROTOCOL}://`;
+const PROTOCOLS = [`${BENCHMARK_PROTOCOL}-http`, `${BENCHMARK_PROTOCOL}-https`];
+const PREFIX = `${BENCHMARK_PROTOCOL}-`;
 
 export type DataProtocol = {
   toProtocolUrl: (url: string) => string;
@@ -10,8 +11,10 @@ export type DataProtocol = {
   dispose: () => void;
 };
 
-// "./map/x" and "/map/x" both become "bench://map/x".
-const toProtocolUrl = (url: string) => url.replace(/^\.?\//, PREFIX);
+// The scheme becomes the protocol name, so any origin works: "https://h/x" -> "bench-https://h/x", "/map/x" -> "bench-http://localhost:5173/map/x".
+// The URL is not parsed because a tile template's {z}/{x}/{y} must stay as written.
+const toProtocolUrl = (url: string) =>
+  /^https?:\/\//.test(url) ? PREFIX + url : `${PREFIX}${window.location.protocol.slice(0, -1)}://${window.location.host}${url.replace(/^\.\//, "/")}`;
 
 /**
  * Serves the overlay data through the main thread, tagging every request with the run id so Resource Timing can pick it out.
@@ -20,8 +23,8 @@ const toProtocolUrl = (url: string) => url.replace(/^\.?\//, PREFIX);
 export function registerDataProtocol(runId: string, onFailure: (reason: string) => void): DataProtocol {
   const missing = new Set<string>();
 
-  addProtocol(BENCHMARK_PROTOCOL, async (params, abortController) => {
-    const url = new URL(`/${params.url.slice(PREFIX.length)}`, window.location.origin);
+  const handler: AddProtocolAction = async (params, abortController) => {
+    const url = new URL(params.url.slice(PREFIX.length));
     url.searchParams.set(BENCHMARK_RUN_PARAM, runId);
 
     let response: Response;
@@ -47,7 +50,8 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
     }
 
     return { data: await readBody(response, params.type === "json" ? "json" : "arrayBuffer", abortController.signal) };
-  });
+  };
+  for (const name of PROTOCOLS) addProtocol(name, handler);
 
   // A truncated or malformed body fails the run at once instead of waiting for the timeout.
   async function readBody(response: Response, kind: "json" | "arrayBuffer", signal?: AbortSignal) {
@@ -59,5 +63,5 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
     }
   }
 
-  return { toProtocolUrl, missing, dispose: () => removeProtocol(BENCHMARK_PROTOCOL) };
+  return { toProtocolUrl, missing, dispose: () => PROTOCOLS.forEach(removeProtocol) };
 }
