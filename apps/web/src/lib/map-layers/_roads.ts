@@ -1,6 +1,18 @@
-import type { LineLayerSpecification, Map } from "maplibre-gl";
+import { addProtocol, type LineLayerSpecification, type Map } from "maplibre-gl";
+import { Protocol } from "pmtiles";
 
-import { BIG_ROADS_URL, cssVariableMap, MODES, type Mode, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, ROAD_TILES_URL } from "@/constants";
+import {
+  BIG_ROADS_URL,
+  cssVariableMap,
+  MODES,
+  type Mode,
+  ROAD_PMTILES_URL,
+  ROAD_TILE_MAX_ZOOM,
+  ROAD_TILE_MIN_ZOOM,
+  ROAD_TILES_URL,
+  TILE_MODES,
+  type TileMode,
+} from "@/constants";
 import { cssVarToRgba } from "@/lib/utils";
 
 export const ROADS_SOURCE_ID = "roads";
@@ -49,17 +61,32 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
   ];
 }
 
-// `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
-export function addRoadsLayer(map: Map, mode: Mode, toSourceUrl: (url: string) => string = (url) => url): Map {
-  if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
-  else {
-    map.addSource(ROADS_SOURCE_ID, {
-      type: "vector",
-      tiles: [toSourceUrl(ROAD_TILES_URL)],
-      minzoom: ROAD_TILE_MIN_ZOOM,
-      maxzoom: ROAD_TILE_MAX_ZOOM,
-    });
+// Z/x/y folder of .pbf files; `toSourceUrl` lets the benchmark route the URL through its protocol.
+function addFolderTilesSource(map: Map, toSourceUrl: (url: string) => string) {
+  map.addSource(ROADS_SOURCE_ID, {
+    type: "vector",
+    tiles: [toSourceUrl(ROAD_TILES_URL)],
+    minzoom: ROAD_TILE_MIN_ZOOM,
+    maxzoom: ROAD_TILE_MAX_ZOOM,
+  });
+}
+
+let pmtilesRegistered = false;
+
+// One PM Tiles archive read with HTTP range requests; the zoom range comes from the archive header.
+function addPmtilesSource(map: Map) {
+  if (!pmtilesRegistered) {
+    addProtocol("pmtiles", new Protocol().tile);
+    pmtilesRegistered = true;
   }
+  map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${new URL(ROAD_PMTILES_URL, window.location.href).href}` });
+}
+
+// `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
+export function addRoadsLayer(map: Map, mode: Mode, tileMode: TileMode, toSourceUrl: (url: string) => string = (url) => url): Map {
+  if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
+  else if (tileMode === TILE_MODES.PM_TILES) addPmtilesSource(map);
+  else addFolderTilesSource(map, toSourceUrl);
 
   for (const layer of roadLayers(mode === MODES.TILES ? "roads" : undefined)) map.addLayer(layer);
 

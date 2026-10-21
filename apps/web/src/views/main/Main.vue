@@ -29,16 +29,18 @@ const params = new URLSearchParams(window.location.search);
 const modeParam = params.get("mode")?.toLowerCase();
 const mode: Mode = modeParam === MODES.GEOJSON.toLowerCase() ? MODES.GEOJSON : MODES.TILES;
 const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
+const tileModeParam = params.get("tileMode")?.toLowerCase();
+const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
+
 // ?run makes this page load record one run; drop it so a manual reload only shows the view.
-const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
+// PM Tiles has no benchmark yet (the bench protocol only wraps the folder and GeoJSON URLs), so never record it.
+const isPmTilesBenchmark = mode === MODES.TILES && tileMode === TILE_MODES.PM_TILES;
+const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM) && !isPmTilesBenchmark;
 if (params.has(BENCHMARK_RECORD_PARAM)) {
   const url = new URL(window.location.href);
   url.searchParams.delete(BENCHMARK_RECORD_PARAM);
   window.history.replaceState(null, "", url);
 }
-
-const tileModeParam = params.get("tileMode")?.toLowerCase();
-const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
 
 const running = ref(record);
 watch(runsVersion, () => (running.value = false));
@@ -116,9 +118,17 @@ function startRun() {
         </div>
       </div>
 
-      <MapView ref="mapView" :mode="mode" :benchmark="isBenchmark" :record="record" @map="(m) => (map = m)" @ready="ready = true" />
+      <MapView
+        ref="mapView"
+        :mode="mode"
+        :tileMode="tileMode"
+        :benchmark="isBenchmark"
+        :record="record"
+        @map="(m) => (map = m)"
+        @ready="ready = true"
+      />
       <BenchmarkDetails v-if="isBenchmark" :mode="mode" :spec="spec" />
     </div>
-    <BenchmarkPanel v-if="isBenchmark" :mode="mode" :spec="spec" :running="running" :busy="busy" @run="startRun" />
+    <BenchmarkPanel v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" :running="running" :busy="busy" @run="startRun" />
   </main>
 </template>

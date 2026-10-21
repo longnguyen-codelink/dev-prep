@@ -17,6 +17,7 @@
     "cn": "^0.5.0",
     "lucide-vue-next": "^1.0.0",
     "maplibre-gl": "^6.14.0",
+    "pmtiles": "^4.5.0",
     "reka-ui": "^2.11.0",
     "tailwind-merge": "^3.7.0",
     "tw-animate-css": "^1.4.0",

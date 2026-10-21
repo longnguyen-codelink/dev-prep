@@ -29,6 +29,18 @@ export const BIG_ROADS_URL = "./map/hcmc-roads.geojson";
 export const ROAD_TILES_URL = "/map/tiles/{z}/{x}/{y}.pbf";
 export const ROAD_TILE_MIN_ZOOM = 8;
 export const ROAD_TILE_MAX_ZOOM = 16;
+// The same tiles as one PM Tiles archive (tmp/data/tiles/hcmc-roads.pmtiles, linked into public/map in development).
+export const ROAD_PMTILES_URL = "/map/hcmc-roads.pmtiles";
+
+// Fixed paths under the map data host (MAP_HOST, see src/config); a leading / is the root of that host, not the app base.
+export const MAP_PATHS = {
+  roadsGeoJson: "/map/hcmc-roads.geojson",
+  boundaryGeoJson: "/map/hcmc-boundary.geojson",
+  roadTiles: "/map/tiles/{z}/{x}/{y}.pbf",
+  tilesMetadata: "/map/tiles/metadata.json",
+  roadPmtiles: "/map/hcmc-roads.pmtiles",
+} as const;
+export const TILES_METADATA_TIMEOUT_MS = 5_000;
 
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.

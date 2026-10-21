@@ -2,10 +2,19 @@
 import { computed, ref } from "vue";
 
 import { Button } from "@/components/ui/button";
-import { BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_MIN_RUNS, BENCHMARK_SLOW_STARTUP_MS, MODES, type Mode } from "@/constants";
+import {
+  BENCHMARK_MAP_HEIGHT,
+  BENCHMARK_MAP_WIDTH,
+  BENCHMARK_MIN_RUNS,
+  BENCHMARK_SLOW_STARTUP_MS,
+  MODES,
+  type Mode,
+  TILE_MODES,
+  type TileMode,
+} from "@/constants";
 import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toMarkdownTable, type MapSpec } from "@/lib/benchmark";
 
-const props = defineProps<{ mode: Mode; spec: MapSpec; running: boolean; busy: boolean }>();
+const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
 const { live, win, sizeOk, movedFromStart } = props.spec;
 
@@ -24,6 +33,9 @@ const latest = computed(() => history.value[0]);
 
 const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
 const otherSummary = computed(() => summarize(runsOf(other.value)));
+
+// The tile mode only applies to Tiles, so it is shown in the heading only there.
+const title = computed(() => (props.mode === MODES.TILES ? `${props.mode} (${props.tileMode})` : props.mode));
 
 // Hints about the conditions of the runs, not about the map data.
 const hints = computed(() => {
@@ -56,6 +68,9 @@ const hints = computed(() => {
   return list;
 });
 
+// The bench protocol only wraps the folder and GeoJSON URLs, so a PM Tiles run would be recorded with the wrong data.
+const pmtilesPending = computed(() => props.mode === MODES.TILES && props.tileMode === TILE_MODES.PM_TILES);
+
 const copied = ref(false);
 async function copyTable() {
   await navigator.clipboard.writeText(toMarkdownTable(geojson.value, tiles.value));
@@ -70,12 +85,13 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
 <template>
   <aside class="h-screen min-w-0 flex-1 space-y-3 overflow-y-auto border-l bg-background p-3 text-xs">
     <header class="flex items-center justify-between">
-      <h2 class="text-sm font-semibold">Benchmark: {{ mode }}</h2>
+      <h2 class="text-sm font-semibold">Benchmark: {{ title }}</h2>
       <div class="flex gap-2">
-        <Button size="xs" :disabled="running || busy" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
+        <Button size="xs" :disabled="running || busy || pmtilesPending" @click="emit('run')">{{ running ? "Running..." : "Run" }}</Button>
         <Button size="xs" variant="outline" :disabled="runs.length === 0" @click="clearRuns(mode)"> Clear </Button>
       </div>
     </header>
+    <p v-if="pmtilesPending" class="text-muted-foreground">PM Tiles benchmark: coming next</p>
 
     <section>
       <p v-if="current.okRuns === 0" class="text-muted-foreground">No runs yet</p>
