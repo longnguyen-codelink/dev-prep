@@ -59,8 +59,8 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.HOMELAB_SSH_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.HOMELAB_SSH_KNOWN_HOSTS }}
-          SSH_HOST: ${{ vars.HOMELAB_SSH_HOST }}
-          SSH_USER: ${{ vars.HOMELAB_SSH_USER }}
+          SSH_HOST: ${{ secrets.HOMELAB_SSH_HOST }}
+          SSH_USER: ${{ secrets.HOMELAB_SSH_USER }}
         run: |
           set -euo pipefail
           install -d -m 700 ~/.ssh
