@@ -1,0 +1,93 @@
+name: Deploy to homelab
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-homelab
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  APP_PREFIX: dev-challenge-gis
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 12.11.2
+          run_install: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm --filter @dev-prep/web build
+        env:
+          VITE_BASE_PATH: /${{ env.APP_PREFIX }}/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-dist
+          path: apps/web/dist
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: web-dist
+          path: dist
+
+      - uses: AnimMouse/setup-cloudflared@v2
+
+      - run: cloudflared --version
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.HOMELAB_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.HOMELAB_SSH_KNOWN_HOSTS }}
+          SSH_HOST: ${{ vars.HOMELAB_SSH_HOST }}
+          SSH_USER: ${{ vars.HOMELAB_SSH_USER }}
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/homelab
+          chmod 600 ~/.ssh/homelab
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host homelab
+            HostName $SSH_HOST
+            User $SSH_USER
+            IdentityFile ~/.ssh/homelab
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+          ssh homelab true
+
+      - name: Copy build to homelab
+        env:
+          MOUNT_PATH: ${{ vars.BASE_MOUNT_PATH }}
+        run: |
+          set -euo pipefail
+          : "${MOUNT_PATH:?BASE_MOUNT_PATH variable is not set}"
+          target="${MOUNT_PATH%/}/${APP_PREFIX}"
+          q_target=$(printf '%q' "$target")
+
+          ssh homelab "mkdir -p $q_target"
+          rsync -az --delete dist/ "homelab:$target/"
+          ssh homelab "test -f $q_target/index.html"
+          echo "Deployed to https://landing-stage.longngphuc.id.vn/${APP_PREFIX}/"
