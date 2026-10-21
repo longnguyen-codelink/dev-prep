@@ -6,6 +6,7 @@ import { benchmarkRuns } from "./vite-plugins/benchmark-runs.ts";
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: process.env.VITE_BASE_PATH || "/",
   plugins: lazyPlugins(() => [vue(), tailwindcss(), benchmarkRuns()]),
   server: {
     port: 5173,
