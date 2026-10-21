@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+import { SelectMode } from "./components/select-mode";
 
 import type { Map } from "maplibre-gl";
-import { LoaderCircle } from "@lucide/vue";
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 
-import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM, MAP_READY_TIMEOUT_MS } from "@/constants";
+import { BENCHMARK_MAP_WIDTH, BENCHMARK_RECORD_PARAM, BENCHMARK_VIEW_PARAM, MAP_READY_TIMEOUT_MS, MODES, type Mode } from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
-import type { RoadsMode } from "@/lib/map-layers";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";
 import MapView from "./views/Map.vue";
 
 const params = new URLSearchParams(window.location.search);
-const mode: RoadsMode = params.get("mode") === "geojson" ? "geojson" : "tiles";
+// Case-insensitive so old links (?mode=geojson, ?mode=tiles) still work; anything else means Tiles.
+const modeParam = params.get("mode")?.toLowerCase();
+const mode: Mode = modeParam === MODES.GEOJSON.toLowerCase() ? MODES.GEOJSON : MODES.TILES;
 const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
 // ?run makes this page load record one run; drop it so a manual reload only shows the view.
 const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
@@ -48,7 +49,7 @@ function reloadWith(update: (params: URLSearchParams) => void) {
 }
 
 function switchMode(next: unknown) {
-  if (next !== "tiles" && next !== "geojson") return;
+  if (next !== MODES.TILES && next !== MODES.GEOJSON) return;
   if (next === mode) return;
   switching.value = true;
   reloadWith((p) => p.set("mode", next));
@@ -81,16 +82,7 @@ function startRun() {
       <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
         <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
           <section class="flex items-center">
-            <Select :model-value="mode" :disabled="busy" @update:model-value="switchMode">
-              <SelectTrigger class="w-full max-w-30">
-                <SelectValue placeholder="Data source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tiles">Tiles</SelectItem>
-                <SelectItem value="geojson">GeoJSON</SelectItem>
-              </SelectContent>
-            </Select>
-            <LoaderCircle v-if="busy" class="ml-2 size-4 animate-spin text-muted-foreground" aria-label="Loading" />
+            <SelectMode :mode="mode" :busy="busy" :switchMode="switchMode" />
           </section>
 
           <section class="flex items-center">

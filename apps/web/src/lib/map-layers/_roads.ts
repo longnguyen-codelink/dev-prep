@@ -1,9 +1,8 @@
 import type { LineLayerSpecification, Map } from "maplibre-gl";
 
-import { BIG_ROADS_URL, cssVariableMap, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, ROAD_TILES_URL } from "@/constants";
+import { BIG_ROADS_URL, cssVariableMap, MODES, type Mode, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, ROAD_TILES_URL } from "@/constants";
 import { cssVarToRgba } from "@/lib/utils";
 
-export type RoadsMode = "tiles" | "geojson";
 export const ROADS_SOURCE_ID = "roads";
 
 const MAJOR_ROADS = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"];
@@ -51,8 +50,8 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
 }
 
 // `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
-export function addRoadsLayer(map: Map, mode: RoadsMode, toSourceUrl: (url: string) => string = (url) => url): Map {
-  if (mode !== "tiles") map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
+export function addRoadsLayer(map: Map, mode: Mode, toSourceUrl: (url: string) => string = (url) => url): Map {
+  if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
   else {
     map.addSource(ROADS_SOURCE_ID, {
       type: "vector",
@@ -62,7 +61,7 @@ export function addRoadsLayer(map: Map, mode: RoadsMode, toSourceUrl: (url: stri
     });
   }
 
-  for (const layer of roadLayers(mode === "tiles" ? "roads" : undefined)) map.addLayer(layer);
+  for (const layer of roadLayers(mode === MODES.TILES ? "roads" : undefined)) map.addLayer(layer);
 
   return map;
 }

@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, ROAD_TILES_URL, BIG_ROADS_URL, START_ZOOM } from "@/constants";
+import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, ROAD_TILES_URL, BIG_ROADS_URL, START_ZOOM, MODES, type Mode } from "@/constants";
 import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
-import type { RoadsMode } from "@/lib/map-layers";
 
-const props = defineProps<{ mode: RoadsMode; spec: MapSpec }>();
+const props = defineProps<{ mode: Mode; spec: MapSpec }>();
 const { live, win, sizeOk, startCenter } = props.spec;
 
-const other = computed<RoadsMode>(() => (props.mode === "tiles" ? "geojson" : "tiles"));
-const label = (mode: RoadsMode) => (mode === "tiles" ? "Tiles" : "GeoJSON");
+const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
 
-const source = computed(() => (props.mode === "tiles" ? `vector tiles, ${ROAD_TILES_URL}` : `GeoJSON, ${BIG_ROADS_URL}`));
+const source = computed(() => (props.mode === MODES.TILES ? `vector tiles, ${ROAD_TILES_URL}` : `GeoJSON, ${BIG_ROADS_URL}`));
 
-function runsOf(mode: RoadsMode) {
+function runsOf(mode: Mode) {
   void runsVersion.value;
   return loadRuns(mode);
 }
@@ -63,7 +61,7 @@ function ratio(a: number | null, b: number | null): string {
     </div>
 
     <div class="space-y-3">
-      <h3 class="text-sm font-semibold">{{ label(mode) }} vs {{ label(other) }}</h3>
+      <h3 class="text-sm font-semibold">{{ mode }} vs {{ other }}</h3>
       <p v-if="!comparison.ready" class="text-muted-foreground">
         Record at least one ok run in each mode to compare (switch mode, then press Run a few times).
       </p>
@@ -71,9 +69,9 @@ function ratio(a: number | null, b: number | null): string {
         <thead>
           <tr class="text-left text-muted-foreground">
             <th></th>
-            <th>{{ label(mode) }}</th>
-            <th>{{ label(other) }}</th>
-            <th>{{ label(mode) }} vs {{ label(other) }}</th>
+            <th>{{ mode }}</th>
+            <th>{{ other }}</th>
+            <th>{{ mode }} vs {{ other }}</th>
           </tr>
         </thead>
         <tbody>

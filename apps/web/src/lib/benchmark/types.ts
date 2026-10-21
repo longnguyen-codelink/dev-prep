@@ -1,8 +1,8 @@
-import type { RoadsMode } from "@/lib/map-layers";
+import type { Mode } from "@/constants";
 
 export type BenchmarkRun = {
   id: string;
-  mode: RoadsMode;
+  mode: Mode;
   timestamp: number; // Date.now() when the run finished
   status: "ok" | "failed";
   reason?: string;

@@ -2,6 +2,13 @@
 
 import type { LngLatLike } from "maplibre-gl";
 
+// Mode values double as the display labels and the ?mode= URL values.
+export const MODES = {
+  TILES: "Tiles",
+  GEOJSON: "GeoJSON",
+} as const;
+export type Mode = (typeof MODES)[keyof typeof MODES];
+
 export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 // [lng, lat] (kinh do, vi do): central Ho Chi Minh City

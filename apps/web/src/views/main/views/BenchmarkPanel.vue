@@ -2,30 +2,28 @@
 import { computed, ref } from "vue";
 
 import { Button } from "@/components/ui/button";
-import { BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_MIN_RUNS, BENCHMARK_SLOW_STARTUP_MS } from "@/constants";
+import { BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_MIN_RUNS, BENCHMARK_SLOW_STARTUP_MS, MODES, type Mode } from "@/constants";
 import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toMarkdownTable, type MapSpec } from "@/lib/benchmark";
-import type { RoadsMode } from "@/lib/map-layers";
 
-const props = defineProps<{ mode: RoadsMode; spec: MapSpec; running: boolean; busy: boolean }>();
+const props = defineProps<{ mode: Mode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
 const { live, win, sizeOk, movedFromStart } = props.spec;
 
 // Reading runsVersion makes these recompute when a run is saved or cleared.
-function runsOf(mode: RoadsMode) {
+function runsOf(mode: Mode) {
   void runsVersion.value;
   return loadRuns(mode);
 }
 const runs = computed(() => runsOf(props.mode));
-const geojson = computed(() => summarize(runsOf("geojson")));
-const tiles = computed(() => summarize(runsOf("tiles")));
+const geojson = computed(() => summarize(runsOf(MODES.GEOJSON)));
+const tiles = computed(() => summarize(runsOf(MODES.TILES)));
 
 const current = computed(() => summarize(runs.value));
 const history = computed(() => [...runs.value].reverse());
 const latest = computed(() => history.value[0]);
 
-const other = computed<RoadsMode>(() => (props.mode === "tiles" ? "geojson" : "tiles"));
+const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
 const otherSummary = computed(() => summarize(runsOf(other.value)));
-const otherLabel = computed(() => (other.value === "tiles" ? "Tiles" : "GeoJSON"));
 
 // Hints about the conditions of the runs, not about the map data.
 const hints = computed(() => {
@@ -39,7 +37,7 @@ const hints = computed(() => {
   if (current.value.okRuns < BENCHMARK_MIN_RUNS)
     list.push({
       warn: false,
-      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here, ${otherSummary.value.okRuns} in ${otherLabel.value}).`,
+      text: `Press Run until you have at least ${BENCHMARK_MIN_RUNS} ok runs per mode (now ${current.value.okRuns} here, ${otherSummary.value.okRuns} in ${other.value}).`,
     });
   if (latest.value && latest.value.visibility !== "visible")
     list.push({ warn: true, text: "The latest run had a hidden tab: timers and rendering were throttled, so discard it." });
@@ -48,7 +46,7 @@ const hints = computed(() => {
       warn: false,
       text: `The latest page start was slow (${formatMs(latest.value.startupDelayMs)}); it is not in the comparison, but the browser may be busy.`,
     });
-  if (latest.value && latest.value.missingFiles > 0 && props.mode === "geojson")
+  if (latest.value && latest.value.missingFiles > 0 && props.mode === MODES.GEOJSON)
     list.push({ warn: true, text: "The GeoJSON file was reported missing; check the link in public/map." });
   const conditions = new Set(runs.value.map((run) => `${run.viewport.width}x${run.viewport.height}|${run.userAgent}`));
   if (conditions.size > 1) list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
