@@ -15,6 +15,7 @@ env:
 
 jobs:
   build:
+    if: github.ref == 'refs/heads/challenge/gis'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +44,7 @@ jobs:
           if-no-files-found: error
 
   deploy:
+    if: github.ref == 'refs/heads/challenge/gis'
     needs: build
     runs-on: ubuntu-latest
     steps:
