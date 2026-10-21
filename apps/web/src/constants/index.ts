@@ -22,31 +22,9 @@ export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 export const START_CENTER: LngLatLike = [106.7, 10.78];
 export const START_ZOOM = 12;
 
-// Raw baseline: all HCMC roads as one GeoJSON file (loaded in GeoJSON mode).
-export const BIG_ROADS_URL = "./map/hcmc-roads.geojson";
-
-// Vector tiles built by apps/cli (tmp/data/tiles/hcmc-roads, linked into public/map/tiles in development).
-export const ROAD_TILES_URL = "/map/tiles/{z}/{x}/{y}.pbf";
+// Zoom range of the tile build (same as apps/cli TILE_MIN_ZOOM / TILE_MAX_ZOOM).
 export const ROAD_TILE_MIN_ZOOM = 8;
 export const ROAD_TILE_MAX_ZOOM = 16;
-// The same tiles as one PM Tiles archive (tmp/data/tiles/hcmc-roads.pmtiles, linked into public/map in development).
-export const ROAD_PMTILES_URL = "/map/hcmc-roads.pmtiles";
-
-// Fixed paths under the map data host (MAP_HOST, see src/config); a leading / is the root of that host, not the app base.
-export const MAP_PATHS = {
-  roadsGeoJson: "/map/hcmc-roads.geojson",
-  boundaryGeoJson: "/map/hcmc-boundary.geojson",
-  roadTiles: "/map/tiles/{z}/{x}/{y}.pbf",
-  tilesMetadata: "/map/tiles/metadata.json",
-  roadPmtiles: "/map/hcmc-roads.pmtiles",
-} as const;
-export const TILES_METADATA_TIMEOUT_MS = 5_000;
-
-// Runtime config: /env-config.js sets window.__ENV__ to these keys only (served in dev by vite-plugins/env-config.ts).
-export const ENV_CONFIG_PATH = "/env-config.js";
-export const RUNTIME_ENV_KEYS = ["MAP_HOST", "BASEMAP_STYLE_URL"] as const;
-// Where the deploy script writes the runtime config (relative to apps/web); the workflow overwrites the placeholder there.
-export const ENV_CONFIG_OUTPUT_PATH = "dist/env-config.js";
 
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
@@ -71,8 +49,6 @@ export const BENCHMARK_SAVE_ENDPOINT = "/__benchmark/runs";
 // Details panel hints: runs needed for a meaningful median, and a startup delay that suggests a throttled page start.
 export const BENCHMARK_MIN_RUNS = 3;
 export const BENCHMARK_SLOW_STARTUP_MS = 2000;
-
-export const HCMC_URL = "./map/hcmc-boundary.geojson";
 
 // shadcn color tokens from src/styles/global.css; resolve with cssVarToRgba() before handing to MapLibre.
 export const cssVariableMap = {

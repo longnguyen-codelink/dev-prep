@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, ROAD_TILES_URL, BIG_ROADS_URL, START_ZOOM, MODES, type Mode } from "@/constants";
+import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode } from "@/constants";
+import { MAP_URLS } from "@/constants/endpoints";
 import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
 
-const props = defineProps<{ mode: Mode; spec: MapSpec }>();
+const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec }>();
 const { live, win, sizeOk, startCenter } = props.spec;
 
 const other = computed<Mode>(() => (props.mode === MODES.TILES ? MODES.GEOJSON : MODES.TILES));
 
-const source = computed(() => (props.mode === MODES.TILES ? `vector tiles, ${ROAD_TILES_URL}` : `GeoJSON, ${BIG_ROADS_URL}`));
+const source = computed(() => {
+  if (props.mode !== MODES.TILES) return `GeoJSON, ${MAP_URLS.roadsGeoJson}`;
+  return props.tileMode === TILE_MODES.PM_TILES ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.roadPmtiles}` : `vector tiles (folder), ${MAP_URLS.roadTiles}`;
+});
 
 function runsOf(mode: Mode) {
   void runsVersion.value;

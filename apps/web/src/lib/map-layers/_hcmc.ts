@@ -1,12 +1,13 @@
 import type { Map } from "maplibre-gl";
 
-import { cssVariableMap, HCMC_URL } from "@/constants";
+import { cssVariableMap } from "@/constants";
+import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba } from "@/lib/utils";
 
 export function addHCMCLayer(map: Map): Map {
   map.addSource("hcmc", {
     type: "geojson",
-    data: HCMC_URL,
+    data: MAP_URLS.boundaryGeoJson,
   });
 
   map.addLayer({

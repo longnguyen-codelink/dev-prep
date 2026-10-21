@@ -1,18 +1,8 @@
 import { addProtocol, type LineLayerSpecification, type Map } from "maplibre-gl";
 import { Protocol } from "pmtiles";
 
-import {
-  BIG_ROADS_URL,
-  cssVariableMap,
-  MODES,
-  type Mode,
-  ROAD_PMTILES_URL,
-  ROAD_TILE_MAX_ZOOM,
-  ROAD_TILE_MIN_ZOOM,
-  ROAD_TILES_URL,
-  TILE_MODES,
-  type TileMode,
-} from "@/constants";
+import { cssVariableMap, MODES, type Mode, ROAD_TILE_MAX_ZOOM, ROAD_TILE_MIN_ZOOM, TILE_MODES, type TileMode } from "@/constants";
+import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba } from "@/lib/utils";
 
 export const ROADS_SOURCE_ID = "roads";
@@ -65,7 +55,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
 function addFolderTilesSource(map: Map, toSourceUrl: (url: string) => string) {
   map.addSource(ROADS_SOURCE_ID, {
     type: "vector",
-    tiles: [toSourceUrl(ROAD_TILES_URL)],
+    tiles: [toSourceUrl(MAP_URLS.roadTiles)],
     minzoom: ROAD_TILE_MIN_ZOOM,
     maxzoom: ROAD_TILE_MAX_ZOOM,
   });
@@ -79,12 +69,12 @@ function addPmtilesSource(map: Map) {
     addProtocol("pmtiles", new Protocol().tile);
     pmtilesRegistered = true;
   }
-  map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${new URL(ROAD_PMTILES_URL, window.location.href).href}` });
+  map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${new URL(MAP_URLS.roadPmtiles, window.location.href).href}` });
 }
 
 // `toSourceUrl` lets the benchmark route the data URLs through its protocol; by default URLs are used as is.
 export function addRoadsLayer(map: Map, mode: Mode, tileMode: TileMode, toSourceUrl: (url: string) => string = (url) => url): Map {
-  if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(BIG_ROADS_URL) });
+  if (mode !== MODES.TILES) map.addSource(ROADS_SOURCE_ID, { type: "geojson", data: toSourceUrl(MAP_URLS.roadsGeoJson) });
   else if (tileMode === TILE_MODES.PM_TILES) addPmtilesSource(map);
   else addFolderTilesSource(map, toSourceUrl);
 

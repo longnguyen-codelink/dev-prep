@@ -127,7 +127,7 @@ function startRun() {
         @map="(m) => (map = m)"
         @ready="ready = true"
       />
-      <BenchmarkDetails v-if="isBenchmark" :mode="mode" :spec="spec" />
+      <BenchmarkDetails v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" />
     </div>
     <BenchmarkPanel v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" :running="running" :busy="busy" @run="startRun" />
   </main>
