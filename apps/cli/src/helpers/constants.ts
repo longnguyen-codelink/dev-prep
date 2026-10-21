@@ -59,6 +59,10 @@ export const TILES_USAGE =
   "usage: pnpm cli build tiles --name <folder name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
   "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
 
+export const BUILD_PMTILES_USAGE =
+  "usage: pnpm cli build pmtiles --name <archive name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
+  "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
+
 export const SWEEP_USAGE = "usage: pnpm cli sweep tiles [--input <roads.geojson>] [--only name,name] [--keep]";
 
 // Settings sweep: every variant changes one thing from the base (all attributes, every class from the
@@ -118,6 +122,13 @@ export const COMMANDS: readonly { action: string; target: string; file: string; 
   },
   { action: "build", target: "roads", file: "03-build-roads.ts", description: "Build the roads GeoJSON inside a boundary", usage: BUILD_ROADS_USAGE },
   { action: "build", target: "tiles", file: "04-build-tiles.ts", description: "Prepare the features and run tippecanoe", usage: TILES_USAGE },
+  {
+    action: "build",
+    target: "pmtiles",
+    file: "07-build-pmtiles.ts",
+    description: "Build one PMTiles archive with the same tiles as the folder",
+    usage: BUILD_PMTILES_USAGE,
+  },
   {
     action: "check",
     target: "tiles",
