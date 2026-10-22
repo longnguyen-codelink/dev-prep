@@ -8,6 +8,7 @@ import { ChipBuildVersion } from "./components/chip-build-version";
 
 import type { Map } from "maplibre-gl";
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
+import { cn } from "cn";
 
 import {
   BENCHMARK_MAP_WIDTH,
@@ -95,15 +96,14 @@ function startRun() {
   <main class="relative flex h-full w-full">
     <!-- MapView -->
     <div
-      class="relative flex flex-col"
-      :class="isBenchmark ? 'shrink-0' : 'w-full'"
+      :class="cn('relative flex flex-col', isBenchmark ? 'shrink-0' : 'w-full')"
       :style="isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px` } : undefined"
     >
       <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
-        <div class="mx-auto flex w-1/3 justify-between rounded-lg bg-background p-2">
+        <div class="mx-auto flex w-160 justify-between rounded-lg bg-background p-2">
           <section class="flex items-center gap-4">
             <SelectMode :mode="mode" :busy="busy" :switchMode="switchMode" />
-            <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="switchTileMode" :isDisabled="mode != MODES.TILES" />
+            <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="switchTileMode" :isHidden="mode != MODES.TILES" />
           </section>
 
           <section class="flex items-center">
