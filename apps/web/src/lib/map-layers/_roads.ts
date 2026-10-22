@@ -2,7 +2,6 @@ import { addProtocol, type FilterSpecification, type LineLayerSpecification, typ
 import { PMTiles, Protocol, type Source } from "pmtiles";
 
 import {
-  cssVariableMap,
   DEFAULT_ROAD_MIN_ZOOM,
   LAYER_GROUPS,
   MODES,
@@ -14,9 +13,9 @@ import {
   type TileMode,
 } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { createPmtilesSource, cssVarToRgba } from "@/lib/utils";
+import { createPmtilesSource } from "@/lib/utils";
 
-import { layerMetadata } from "./_groups";
+import { entryColors, layerMetadata } from "./_groups";
 
 export const ROADS_SOURCE_ID = "roads";
 
@@ -33,17 +32,17 @@ function roadPaint(tier: RoadTier, root: HTMLElement): LineLayerSpecification["p
   switch (tier) {
     case "major":
       return {
-        "line-color": cssVarToRgba(cssVariableMap.chart1, root),
+        "line-color": entryColors("major", root)[0]!,
         "line-width": ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 10],
       };
     case "medium":
       return {
-        "line-color": cssVarToRgba(cssVariableMap.chart2, root),
+        "line-color": entryColors("medium", root)[0]!,
         "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 16, 6],
       };
     case "minor":
       return {
-        "line-color": cssVarToRgba(cssVariableMap.chart3, root),
+        "line-color": entryColors("minor", root)[0]!,
         "line-width": ["interpolate", ["linear"], ["zoom"], 13, 0.3, 16, 3],
       };
   }

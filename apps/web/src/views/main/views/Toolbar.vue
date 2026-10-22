@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { type LayerGroup, MODES, type Mode, type TileMode } from "@/constants";
 
+import { ActiveLayers } from "../components/active-layers";
 import { SelectLayers } from "../components/select-layers";
 import { SelectMode } from "../components/select-mode";
 import { SelectTileMode } from "../components/select-tilemode";
@@ -17,8 +18,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div id="toolbar" class="absolute top-5 z-10 min-h-12 left-1/3">
-    <div class="mx-auto flex w-160 justify-between rounded-lg bg-background p-2">
+  <div id="toolbar" class="absolute top-5 left-1/3 z-10 min-h-12 rounded-lg bg-background p-3">
+    <div class="mx-auto mb-3 flex w-160 justify-between">
       <section class="flex items-center gap-4">
         <SelectMode :mode="mode" :busy="busy" :switchMode="(next) => emit('switchMode', next)" />
         <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="(next) => emit('switchTileMode', next)" :isHidden="mode != MODES.TILES" />
@@ -40,5 +41,7 @@ const emit = defineEmits<{
         </div>
       </section>
     </div>
+
+    <ActiveLayers :layers="layers" />
   </div>
 </template>

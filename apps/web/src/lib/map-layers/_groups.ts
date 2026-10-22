@@ -1,6 +1,7 @@
 import type { Map } from "maplibre-gl";
 
-import { DEFAULT_LAYER_GROUPS, LAYER_GROUPS, type LayerGroup } from "@/constants";
+import { DEFAULT_LAYER_GROUPS, LAYER_ENTRIES, LAYER_GROUPS, type LayerEntryKey, type LayerGroup } from "@/constants";
+import { cssVarToRgba } from "@/lib/utils";
 
 // Put in a layer's `metadata` when it is added; applyVisibility() finds the layers of a group through it,
 // so no layer id is listed anywhere (the road layer ids differ between the GeoJSON and tile modes).
@@ -9,6 +10,11 @@ export const layerMetadata = (group: LayerGroup) => ({ group });
 function groupOf(metadata: unknown): LayerGroup | undefined {
   if (typeof metadata !== "object" || metadata === null || !("group" in metadata)) return undefined;
   return metadata.group as LayerGroup;
+}
+
+// The colours of a LAYER_ENTRIES entry as rgba strings (what MapLibre paints with and what the badges show).
+export function entryColors(key: LayerEntryKey, root: Element = document.documentElement): string[] {
+  return LAYER_ENTRIES.find((entry) => entry.key === key)!.colors.map((name) => cssVarToRgba(name, root));
 }
 
 // The id of the lowest layer of a group, to insert another layer below it (undefined when the group has no layers).

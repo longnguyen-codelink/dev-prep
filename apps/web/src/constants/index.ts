@@ -129,3 +129,22 @@ export const cssVariableMap = {
   sidebarBorder: "--sidebar-border",
   sidebarRing: "--sidebar-ring",
 } as const;
+
+// The drawn overlay layers, as the active-layers badges list them: one entry can be several map layers (the city
+// outline and fill, the three GeoJSON-mode layers of a road tier). `colors` are the CSS variables the layers are
+// painted with, so the badges and the map take their colours from the same place; a ward's fill is one of five.
+export const LAYER_ENTRIES = [
+  { key: "city", group: LAYER_GROUPS.BOUNDARY, label: "City boundary", colors: [cssVariableMap.chart1] },
+  {
+    key: "ward-fill",
+    group: LAYER_GROUPS.WARDS,
+    label: "Ward fill",
+    colors: [cssVariableMap.chart1, cssVariableMap.chart2, cssVariableMap.chart3, cssVariableMap.chart4, cssVariableMap.chart5],
+  },
+  { key: "ward-outline", group: LAYER_GROUPS.WARDS, label: "Ward outline", colors: [cssVariableMap.foreground] },
+  { key: "ward-names", group: LAYER_GROUPS.WARDS, label: "Ward names", colors: [cssVariableMap.foreground] },
+  { key: "major", group: LAYER_GROUPS.ROADS, label: "Major roads", colors: [cssVariableMap.chart1] },
+  { key: "medium", group: LAYER_GROUPS.ROADS, label: "Medium roads", colors: [cssVariableMap.chart2] },
+  { key: "minor", group: LAYER_GROUPS.ROADS, label: "Minor roads", colors: [cssVariableMap.chart3] },
+] as const;
+export type LayerEntryKey = (typeof LAYER_ENTRIES)[number]["key"];

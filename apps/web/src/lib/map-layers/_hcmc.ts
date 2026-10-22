@@ -1,12 +1,13 @@
 import type { Map } from "maplibre-gl";
 
-import { cssVariableMap, LAYER_GROUPS } from "@/constants";
+import { LAYER_GROUPS } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { cssVarToRgba } from "@/lib/utils";
 
-import { layerMetadata } from "./_groups";
+import { entryColors, layerMetadata } from "./_groups";
 
 export function addHCMCLayer(map: Map): Map {
+  const [color] = entryColors("city");
+
   map.addSource("hcmc", {
     type: "geojson",
     data: MAP_URLS.boundaryGeoJson,
@@ -18,7 +19,7 @@ export function addHCMCLayer(map: Map): Map {
     source: "hcmc",
     metadata: layerMetadata(LAYER_GROUPS.BOUNDARY),
     paint: {
-      "line-color": cssVarToRgba(cssVariableMap.chart1, document.documentElement),
+      "line-color": color,
       "line-width": 2,
     },
   });
@@ -29,7 +30,7 @@ export function addHCMCLayer(map: Map): Map {
     source: "hcmc",
     metadata: layerMetadata(LAYER_GROUPS.BOUNDARY),
     paint: {
-      "fill-color": cssVarToRgba(cssVariableMap.chart1, document.documentElement),
+      "fill-color": color,
       "fill-opacity": 0.1,
     },
   });

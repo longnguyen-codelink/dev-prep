@@ -4,7 +4,7 @@ import { cssVariableMap, LAYER_GROUPS, WARD_LABEL_MIN_ZOOM, WARD_OUTLINE_MIN_ZOO
 import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba } from "@/lib/utils";
 
-import { firstLayerOf, layerMetadata } from "./_groups";
+import { entryColors, firstLayerOf, layerMetadata } from "./_groups";
 
 export const WARDS_SOURCE_ID = "wards";
 const WARDS_FILL_ID = "wards-fill";
@@ -22,9 +22,7 @@ export function addWardsLayer(map: Map): Map {
   // Each ward is tinted with one of the five chart colours, picked from its OSM id, so neighbouring wards are mostly
   // told apart. The colour is not coordinated between neighbours: two adjacent wards can get the same tint.
   const roadsId = firstLayerOf(map, LAYER_GROUPS.ROADS);
-  const [tint0, tint1, tint2, tint3, tint4] = [cssVariableMap.chart1, cssVariableMap.chart2, cssVariableMap.chart3, cssVariableMap.chart4, cssVariableMap.chart5].map((name) =>
-    cssVarToRgba(name, root),
-  );
+  const [tint0, tint1, tint2, tint3, tint4] = entryColors("ward-fill", root) as [string, string, string, string, string];
   map.addLayer(
     {
       id: WARDS_FILL_ID,
@@ -49,7 +47,7 @@ export function addWardsLayer(map: Map): Map {
       minzoom: WARD_OUTLINE_MIN_ZOOM,
       paint: {
         // Dashed and dark: the chart colours blend into the basemap's yellow roads and the overlay roads.
-        "line-color": cssVarToRgba(cssVariableMap.foreground, root),
+        "line-color": entryColors("ward-outline", root)[0]!,
         "line-width": ["interpolate", ["linear"], ["zoom"], WARD_OUTLINE_MIN_ZOOM, 1.5, 16, 3],
         "line-dasharray": [3, 2],
         "line-opacity": 0.9,
@@ -71,7 +69,7 @@ export function addWardsLayer(map: Map): Map {
       "text-size": ["interpolate", ["linear"], ["zoom"], WARD_LABEL_MIN_ZOOM, 11, 16, 14],
     },
     paint: {
-      "text-color": cssVarToRgba(cssVariableMap.foreground, root),
+      "text-color": entryColors("ward-names", root)[0]!,
       "text-halo-color": cssVarToRgba(cssVariableMap.background, root),
       "text-halo-width": 1.5,
     },
