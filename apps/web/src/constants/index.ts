@@ -30,6 +30,20 @@ export const START_ZOOM = 12;
 export const ROAD_TILE_MIN_ZOOM = 8;
 export const ROAD_TILE_MAX_ZOOM = 16;
 
+// GeoJSON mode has no tile build, so it applies the same per-class zoom rules itself.
+// Mirrors apps/cli HIGHWAY_MIN_ZOOM / DEFAULT_HIGHWAY_MIN_ZOOM; keep them in step. A _link follows its parent class.
+export const ROAD_CLASS_MIN_ZOOM: Record<string, number> = {
+  motorway: 8,
+  trunk: 8,
+  primary: 8,
+  secondary: 10,
+  tertiary: 12,
+  residential: 13,
+  unclassified: 13,
+  service: 14,
+};
+export const DEFAULT_ROAD_MIN_ZOOM = 15;
+
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
 export const MAP_READY_TIMEOUT_MS = 60_000;
