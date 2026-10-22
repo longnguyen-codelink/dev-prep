@@ -5,6 +5,7 @@ const mapHost = (window.__ENV__?.MAP_HOST ?? "").replace(/\/+$/, "");
 export const MAP_URLS = {
   roadsGeoJson: `${mapHost}/map/hcmc-roads.geojson`,
   boundaryGeoJson: `${mapHost}/map/hcmc-boundary.geojson`,
+  wardsGeoJson: `${mapHost}/map/hcmc-wards.geojson`,
   roadTiles: `${mapHost}/map/tiles/{z}/{x}/{y}.pbf`,
   roadPmtiles: `${mapHost}/map/hcmc-roads.pmtiles`,
 } as const;

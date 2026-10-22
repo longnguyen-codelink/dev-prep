@@ -6,6 +6,7 @@ import {
   BENCHMARK_MAP_HEIGHT,
   BENCHMARK_MAP_WIDTH,
   BENCHMARK_PIXEL_RATIO,
+  LAYER_GROUPS,
   START_CENTER,
   START_ZOOM,
   type LayerGroup,
@@ -13,13 +14,13 @@ import {
   type TileMode,
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
-import { addRoadsLayer, addHCMCLayer, applyVisibility, ROADS_SOURCE_ID } from "@/lib/map-layers";
+import { addRoadsLayer, addHCMCLayer, addWardsLayer, applyVisibility, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
 if (import.meta.env.PROD) setWorkerUrl(`${import.meta.env.BASE_URL}assets/maplibre-gl-worker.js`);
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean; layers: readonly LayerGroup[] }>();
-const emit = defineEmits<{ map: [map: Map]; ready: [] }>();
+const emit = defineEmits<{ map: [map: Map]; ready: []; wardsError: [] }>();
 
 const mapSize = computed(() =>
   props.benchmark ? { width: `${BENCHMARK_MAP_WIDTH}px`, height: `${BENCHMARK_MAP_HEIGHT}px` } : { width: "100%", height: "100vh" },
@@ -27,6 +28,7 @@ const mapSize = computed(() =>
 
 let map: Map | null = null;
 let layersAdded = false;
+let wardsAdded = false;
 let benchmark: ReturnType<typeof createBenchmark> | null = null;
 
 // The benchmark view changes the map box without recreating the map, so tell it to pick up the new size.
@@ -39,11 +41,19 @@ watch(
   },
 );
 
+// Draws the selected groups. The ward data is only requested the first time Wards is selected, and never in the
+// benchmark view, so a benchmark run never fetches it.
+function syncLayers() {
+  if (!map || !layersAdded) return;
+  if (props.layers.includes(LAYER_GROUPS.WARDS) && !props.benchmark && !wardsAdded) {
+    addWardsLayer(map);
+    wardsAdded = true;
+  }
+  applyVisibility(map, props.layers);
+}
+
 // The layers select changes which groups are drawn; before the layers exist, the load handler applies the selection.
-watch(
-  () => props.layers,
-  (layers) => map && layersAdded && applyVisibility(map, layers),
-);
+watch(() => props.layers, syncLayers);
 
 onMounted(() => {
   map = new Map({
@@ -66,12 +76,19 @@ onMounted(() => {
     emit("ready");
   };
   created.on("idle", onIdle);
+  // A ward file that cannot be loaded (e.g. not uploaded to the data host yet) is taken out again, so selecting Wards retries.
+  created.on("error", (event) => {
+    if ((event as { sourceId?: string }).sourceId !== WARDS_SOURCE_ID) return;
+    removeWardsLayer(created);
+    wardsAdded = false;
+    emit("wardsError");
+  });
   created.on("load", () => {
     try {
       addHCMCLayer(created);
       addRoadsLayer(created, props.mode, props.tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
       layersAdded = true;
-      applyVisibility(created, props.layers);
+      syncLayers();
     } catch (error) {
       benchmark?.fail(`could not add the layers: ${String(error)}`);
     }

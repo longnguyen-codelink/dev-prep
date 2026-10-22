@@ -10,6 +10,7 @@ import {
   BENCHMARK_RECORD_PARAM,
   BENCHMARK_VIEW_PARAM,
   DEFAULT_LAYER_GROUPS,
+  LAYER_GROUPS,
   LAYERS_PARAM,
   type LayerGroup,
   MAP_READY_TIMEOUT_MS,
@@ -67,8 +68,16 @@ function reloadWith(update: (params: URLSearchParams) => void) {
   window.location.href = url.toString();
 }
 
+// Set when the ward file could not be loaded; Wards is then switched off again.
+const wardsError = ref(false);
+function onWardsError() {
+  switchLayers(layers.value.filter((group) => group !== LAYER_GROUPS.WARDS));
+  wardsError.value = true;
+}
+
 // Like the benchmark switch, this keeps the URL in sync without a reload, so a link restores the selection.
 function switchLayers(next: LayerGroup[]) {
+  wardsError.value = false;
   layers.value = next;
   const url = new URL(window.location.href);
   const param = toLayersParam(next);
@@ -125,6 +134,14 @@ function startRun() {
         @switchBenchmark="switchBenchmark"
       />
 
+      <p
+        v-if="wardsError"
+        role="status"
+        class="absolute top-24 left-1/2 z-10 -translate-x-1/2 rounded-md bg-background px-3 py-1.5 text-sm text-muted-foreground shadow"
+      >
+        Ward data is not available.
+      </p>
+
       <MapView
         ref="mapView"
         :mode="mode"
@@ -134,6 +151,7 @@ function startRun() {
         :layers="layers"
         @map="(m) => (map = m)"
         @ready="ready = true"
+        @wardsError="onWardsError"
       />
       <BenchmarkDetails v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" />
     </div>

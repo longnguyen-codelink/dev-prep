@@ -5,7 +5,7 @@ import { computed } from "vue";
 
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { LAYER_GROUP_LABELS, LAYER_GROUPS, type LayerGroup, UNAVAILABLE_LAYER_GROUPS } from "@/constants";
+import { LAYER_GROUP_LABELS, LAYER_GROUPS, type LayerGroup } from "@/constants";
 
 const { layers, switchLayers } = defineProps<Props>();
 
@@ -30,7 +30,7 @@ const onSelect = (value: unknown) => Array.isArray(value) && switchLayers(value 
         <SelectValue placeholder="Layers">{{ summary }}</SelectValue>
       </SelectTrigger>
       <SelectContent>
-        <SelectItem v-for="group in groups" :key="group" :value="group" :disabled="UNAVAILABLE_LAYER_GROUPS.includes(group)">
+        <SelectItem v-for="group in groups" :key="group" :value="group">
           {{ LAYER_GROUP_LABELS[group] }}
         </SelectItem>
       </SelectContent>

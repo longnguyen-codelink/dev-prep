@@ -34,8 +34,9 @@ export const LAYER_GROUP_LABELS: Record<LayerGroup, string> = {
   [LAYER_GROUPS.ROADS]: "Roads",
 };
 
-// Groups the layers select cannot switch on yet (no data for them).
-export const UNAVAILABLE_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.WARDS];
+// Ward outlines are drawn from this zoom, their names from WARD_LABEL_MIN_ZOOM (a layer is hidden below its minzoom).
+export const WARD_OUTLINE_MIN_ZOOM = 10;
+export const WARD_LABEL_MIN_ZOOM = 12;
 
 // URL parameter holding the difference from the defaults, e.g. ?layers=-roads,+wards.
 export const LAYERS_PARAM = "layers";

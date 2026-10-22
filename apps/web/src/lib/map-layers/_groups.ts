@@ -1,6 +1,6 @@
 import type { Map } from "maplibre-gl";
 
-import { DEFAULT_LAYER_GROUPS, LAYER_GROUPS, type LayerGroup, UNAVAILABLE_LAYER_GROUPS } from "@/constants";
+import { DEFAULT_LAYER_GROUPS, LAYER_GROUPS, type LayerGroup } from "@/constants";
 
 // Put in a layer's `metadata` when it is added; applyVisibility() finds the layers of a group through it,
 // so no layer id is listed anywhere (the road layer ids differ between the GeoJSON and tile modes).
@@ -9,6 +9,11 @@ export const layerMetadata = (group: LayerGroup) => ({ group });
 function groupOf(metadata: unknown): LayerGroup | undefined {
   if (typeof metadata !== "object" || metadata === null || !("group" in metadata)) return undefined;
   return metadata.group as LayerGroup;
+}
+
+// The id of the lowest layer of a group, to insert another layer below it (undefined when the group has no layers).
+export function firstLayerOf(map: Map, group: LayerGroup): string | undefined {
+  return map.getStyle().layers.find((layer) => groupOf(layer.metadata) === group)?.id;
 }
 
 // Shows the layers of the enabled groups and hides the other overlay layers; basemap layers have no group and are left alone.
@@ -29,7 +34,7 @@ export function parseLayersParam(value: string | null): LayerGroup[] {
     const group = token.trim().replace(/^[-+]/, "") as LayerGroup;
     if (!ALL_GROUPS.includes(group)) continue;
     if (token.trim().startsWith("-")) enabled.delete(group);
-    else if (!UNAVAILABLE_LAYER_GROUPS.includes(group)) enabled.add(group);
+    else enabled.add(group);
   }
   return ALL_GROUPS.filter((group) => enabled.has(group));
 }
