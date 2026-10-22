@@ -1,13 +1,19 @@
 <script setup lang="ts">
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MODES, type Mode, type TileMode } from "@/constants";
+import { type LayerGroup, MODES, type Mode, type TileMode } from "@/constants";
 
+import { SelectLayers } from "../components/select-layers";
 import { SelectMode } from "../components/select-mode";
 import { SelectTileMode } from "../components/select-tilemode";
 
-defineProps<{ mode: Mode; tileMode: TileMode; isBenchmark: boolean; busy: boolean }>();
-const emit = defineEmits<{ switchMode: [mode: Mode]; switchTileMode: [tileMode: TileMode]; switchBenchmark: [on: boolean] }>();
+defineProps<{ mode: Mode; tileMode: TileMode; layers: readonly LayerGroup[]; isBenchmark: boolean; busy: boolean }>();
+const emit = defineEmits<{
+  switchMode: [mode: Mode];
+  switchTileMode: [tileMode: TileMode];
+  switchLayers: [layers: LayerGroup[]];
+  switchBenchmark: [on: boolean];
+}>();
 </script>
 
 <template>
@@ -18,7 +24,9 @@ const emit = defineEmits<{ switchMode: [mode: Mode]; switchTileMode: [tileMode: 
         <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="(next) => emit('switchTileMode', next)" :isHidden="mode != MODES.TILES" />
       </section>
 
-      <section class="flex items-center">
+      <section class="flex items-center gap-4">
+        <!-- Not in the benchmark view: every benchmark run draws the default layers. -->
+        <SelectLayers v-if="!isBenchmark" :layers="layers" :switchLayers="(next) => emit('switchLayers', next)" />
         <div class="flex flex-col gap-2">
           <Label for="benchmark-switch">Benchmark</Label>
           <div class="flex h-9 items-center">

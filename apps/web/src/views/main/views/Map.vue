@@ -8,16 +8,17 @@ import {
   BENCHMARK_PIXEL_RATIO,
   START_CENTER,
   START_ZOOM,
+  type LayerGroup,
   type Mode,
   type TileMode,
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
-import { addRoadsLayer, addHCMCLayer, ROADS_SOURCE_ID } from "@/lib/map-layers";
+import { addRoadsLayer, addHCMCLayer, applyVisibility, ROADS_SOURCE_ID } from "@/lib/map-layers";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
 if (import.meta.env.PROD) setWorkerUrl(`${import.meta.env.BASE_URL}assets/maplibre-gl-worker.js`);
 
-const props = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean }>();
+const props = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean; layers: readonly LayerGroup[] }>();
 const emit = defineEmits<{ map: [map: Map]; ready: [] }>();
 
 const mapSize = computed(() =>
@@ -25,6 +26,7 @@ const mapSize = computed(() =>
 );
 
 let map: Map | null = null;
+let layersAdded = false;
 let benchmark: ReturnType<typeof createBenchmark> | null = null;
 
 // The benchmark view changes the map box without recreating the map, so tell it to pick up the new size.
@@ -35,6 +37,12 @@ watch(
     map?.setPixelRatio(props.benchmark ? BENCHMARK_PIXEL_RATIO : window.devicePixelRatio);
     map?.resize();
   },
+);
+
+// The layers select changes which groups are drawn; before the layers exist, the load handler applies the selection.
+watch(
+  () => props.layers,
+  (layers) => map && layersAdded && applyVisibility(map, layers),
 );
 
 onMounted(() => {
@@ -62,6 +70,8 @@ onMounted(() => {
     try {
       addHCMCLayer(created);
       addRoadsLayer(created, props.mode, props.tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
+      layersAdded = true;
+      applyVisibility(created, props.layers);
     } catch (error) {
       benchmark?.fail(`could not add the layers: ${String(error)}`);
     }

@@ -4,6 +4,7 @@ import { PMTiles, Protocol, type Source } from "pmtiles";
 import {
   cssVariableMap,
   DEFAULT_ROAD_MIN_ZOOM,
+  LAYER_GROUPS,
   MODES,
   type Mode,
   ROAD_CLASS_MIN_ZOOM,
@@ -15,7 +16,11 @@ import {
 import { MAP_URLS } from "@/constants/endpoints";
 import { createPmtilesSource, cssVarToRgba } from "@/lib/utils";
 
+import { layerMetadata } from "./_groups";
+
 export const ROADS_SOURCE_ID = "roads";
+
+const ROADS_METADATA = layerMetadata(LAYER_GROUPS.ROADS);
 
 const MAJOR_ROADS = ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"];
 const MEDIUM_ROADS = ["secondary", "secondary_link", "tertiary", "tertiary_link"];
@@ -54,6 +59,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
       type: "line",
       source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
+      metadata: ROADS_METADATA,
       filter: ["in", ["get", "highway"], ["literal", MAJOR_ROADS]],
       paint: roadPaint("major", root),
     },
@@ -62,6 +68,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
       type: "line",
       source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
+      metadata: ROADS_METADATA,
       filter: ["in", ["get", "highway"], ["literal", MEDIUM_ROADS]],
       paint: roadPaint("medium", root),
     },
@@ -70,6 +77,7 @@ function roadLayers(sourceLayer?: string): LineLayerSpecification[] {
       type: "line",
       source: ROADS_SOURCE_ID,
       ...sourceLayerProp,
+      metadata: ROADS_METADATA,
       filter: ["!", ["in", ["get", "highway"], ["literal", [...MAJOR_ROADS, ...MEDIUM_ROADS]]]],
       paint: roadPaint("minor", root),
     },
@@ -92,6 +100,7 @@ function roadLayer(tier: RoadTier, root: HTMLElement, minzoom: number, filter: F
     id: `roads-${tier}-z${minzoom}`,
     type: "line",
     source: ROADS_SOURCE_ID,
+    metadata: ROADS_METADATA,
     minzoom,
     filter,
     paint: roadPaint(tier, root),

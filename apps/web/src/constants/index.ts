@@ -20,7 +20,30 @@ export type TileMode = (typeof TILE_MODES)[keyof typeof TILE_MODES];
 export const VARIANTS = { GEOJSON: "geojson", FOLDER: "folder", PM_TILES: "pmtiles" } as const;
 export type Variant = (typeof VARIANTS)[keyof typeof VARIANTS];
 
-export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+// Overlay layer groups: each overlay layer carries one in its metadata, and the layers select switches whole groups.
+export const LAYER_GROUPS = {
+  BOUNDARY: "boundary",
+  WARDS: "wards",
+  ROADS: "roads",
+} as const;
+export type LayerGroup = (typeof LAYER_GROUPS)[keyof typeof LAYER_GROUPS];
+
+export const LAYER_GROUP_LABELS: Record<LayerGroup, string> = {
+  [LAYER_GROUPS.BOUNDARY]: "Boundary",
+  [LAYER_GROUPS.WARDS]: "Wards",
+  [LAYER_GROUPS.ROADS]: "Roads",
+};
+
+// Groups the layers select cannot switch on yet (no data for them).
+export const UNAVAILABLE_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.WARDS];
+
+// URL parameter holding the difference from the defaults, e.g. ?layers=-roads,+wards.
+export const LAYERS_PARAM = "layers";
+
+// Wards are off until asked for, so the default view is the same as before the groups existed.
+export const DEFAULT_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.BOUNDARY, LAYER_GROUPS.ROADS];
+
+export const BASEMAP_STYLE ="https://tiles.openfreemap.org/styles/liberty";
 
 // [lng, lat] (kinh do, vi do): central Ho Chi Minh City
 export const START_CENTER: LngLatLike = [106.7, 10.78];

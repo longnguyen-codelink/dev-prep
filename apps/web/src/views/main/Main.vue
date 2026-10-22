@@ -9,6 +9,9 @@ import {
   BENCHMARK_MAP_WIDTH,
   BENCHMARK_RECORD_PARAM,
   BENCHMARK_VIEW_PARAM,
+  DEFAULT_LAYER_GROUPS,
+  LAYERS_PARAM,
+  type LayerGroup,
   MAP_READY_TIMEOUT_MS,
   MODES,
   type Mode,
@@ -16,6 +19,7 @@ import {
   TILE_MODES,
 } from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
+import { parseLayersParam, toLayersParam } from "@/lib/map-layers";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";
@@ -29,6 +33,9 @@ const mode: Mode = modeParam === MODES.GEOJSON.toLowerCase() ? MODES.GEOJSON : M
 const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
 const tileModeParam = params.get("tileMode")?.toLowerCase();
 const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
+
+// Which layer groups are drawn; the benchmark view always draws the defaults, whatever ?layers says.
+const layers = ref<LayerGroup[]>(isBenchmark.value ? [...DEFAULT_LAYER_GROUPS] : parseLayersParam(params.get(LAYERS_PARAM)));
 
 // ?run makes this page load record one run; drop it so a manual reload only shows the view.
 const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
@@ -60,6 +67,16 @@ function reloadWith(update: (params: URLSearchParams) => void) {
   window.location.href = url.toString();
 }
 
+// Like the benchmark switch, this keeps the URL in sync without a reload, so a link restores the selection.
+function switchLayers(next: LayerGroup[]) {
+  layers.value = next;
+  const url = new URL(window.location.href);
+  const param = toLayersParam(next);
+  if (param) url.searchParams.set(LAYERS_PARAM, param);
+  else url.searchParams.delete(LAYERS_PARAM);
+  window.history.replaceState(null, "", url);
+}
+
 function switchMode(next: Mode) {
   if (next === mode) return;
   switching.value = true;
@@ -75,6 +92,7 @@ function switchTileMode(next: TileMode) {
 // Opening the benchmark view does not reload the page; the URL is kept in sync so F5 restores the view.
 function switchBenchmark(on: boolean) {
   isBenchmark.value = on;
+  if (on) layers.value = [...DEFAULT_LAYER_GROUPS]; // the benchmark view draws the default layers
   const url = new URL(window.location.href);
   if (on) url.searchParams.set(BENCHMARK_VIEW_PARAM, "");
   else url.searchParams.delete(BENCHMARK_VIEW_PARAM);
@@ -98,10 +116,12 @@ function startRun() {
       <Toolbar
         :mode="mode"
         :tileMode="tileMode"
+        :layers="layers"
         :isBenchmark="isBenchmark"
         :busy="busy"
         @switchMode="switchMode"
         @switchTileMode="switchTileMode"
+        @switchLayers="switchLayers"
         @switchBenchmark="switchBenchmark"
       />
 
@@ -111,6 +131,7 @@ function startRun() {
         :tileMode="tileMode"
         :benchmark="isBenchmark"
         :record="record"
+        :layers="layers"
         @map="(m) => (map = m)"
         @ready="ready = true"
       />
