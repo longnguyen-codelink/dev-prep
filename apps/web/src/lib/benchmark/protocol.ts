@@ -2,7 +2,7 @@ import { addProtocol, AJAXError, removeProtocol, type AddProtocolAction } from "
 import type { Source } from "pmtiles";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
-import { fetchRange } from "@/lib/map-layers";
+import { fetchRange } from "@/lib/utils";
 
 const PROTOCOLS = [`${BENCHMARK_PROTOCOL}-http`, `${BENCHMARK_PROTOCOL}-https`];
 const PREFIX = `${BENCHMARK_PROTOCOL}-`;

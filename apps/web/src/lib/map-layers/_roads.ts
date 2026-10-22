@@ -15,7 +15,7 @@ import {
 import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba } from "@/lib/utils";
 
-import { createPmtilesSource } from "./_pmtiles-source";
+import { createPmtilesSource } from "@/lib/utils";
 
 export const ROADS_SOURCE_ID = "roads";
 
