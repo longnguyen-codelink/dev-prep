@@ -26,8 +26,11 @@ export function addWardsLayer(map: Map): Map {
       metadata,
       minzoom: WARD_OUTLINE_MIN_ZOOM,
       paint: {
-        "line-color": cssVarToRgba(cssVariableMap.chart4, root),
-        "line-width": ["interpolate", ["linear"], ["zoom"], WARD_OUTLINE_MIN_ZOOM, 0.5, 16, 1.5],
+        // Dashed and dark: the chart colours blend into the basemap's yellow roads and the overlay roads.
+        "line-color": cssVarToRgba(cssVariableMap.foreground, root),
+        "line-width": ["interpolate", ["linear"], ["zoom"], WARD_OUTLINE_MIN_ZOOM, 0.75, 16, 1.5],
+        "line-dasharray": [3, 2],
+        "line-opacity": 0.7,
       },
     },
     firstLayerOf(map, LAYER_GROUPS.ROADS),
