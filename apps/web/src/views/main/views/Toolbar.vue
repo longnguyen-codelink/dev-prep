@@ -22,15 +22,20 @@ const emit = defineEmits<{
       <section class="flex items-center gap-4">
         <SelectMode :mode="mode" :busy="busy" :switchMode="(next) => emit('switchMode', next)" />
         <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="(next) => emit('switchTileMode', next)" :isHidden="mode != MODES.TILES" />
+        <!-- Not in the benchmark view: every benchmark run draws the default layers. -->
+        <SelectLayers v-if="!isBenchmark" :layers="layers" :switchLayers="(next) => emit('switchLayers', next)" />
       </section>
 
       <section class="flex items-center gap-4">
-        <!-- Not in the benchmark view: every benchmark run draws the default layers. -->
-        <SelectLayers v-if="!isBenchmark" :layers="layers" :switchLayers="(next) => emit('switchLayers', next)" />
         <div class="flex flex-col gap-2">
           <Label for="benchmark-switch">Benchmark</Label>
           <div class="flex h-9 items-center">
-            <Switch id="benchmark-switch" :model-value="isBenchmark" :disabled="busy" @update:model-value="(on) => emit('switchBenchmark', Boolean(on))" />
+            <Switch
+              id="benchmark-switch"
+              :model-value="isBenchmark"
+              :disabled="busy"
+              @update:model-value="(on) => emit('switchBenchmark', Boolean(on))"
+            />
           </div>
         </div>
       </section>

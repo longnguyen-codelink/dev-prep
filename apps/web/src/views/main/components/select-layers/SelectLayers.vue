@@ -10,7 +10,14 @@ import { LAYER_GROUP_LABELS, LAYER_GROUPS, type LayerGroup, UNAVAILABLE_LAYER_GR
 const { layers, switchLayers } = defineProps<Props>();
 
 const groups = Object.values(LAYER_GROUPS);
-const summary = computed(() => (layers.length > 0 ? groups.filter((group) => layers.includes(group)).map((group) => LAYER_GROUP_LABELS[group]).join(", ") : "None"));
+const summary = computed(() =>
+  layers.length > 0
+    ? groups
+        .filter((group) => layers.includes(group))
+        .map((group) => LAYER_GROUP_LABELS[group])
+        .join(", ")
+    : "None",
+);
 
 const onSelect = (value: unknown) => Array.isArray(value) && switchLayers(value as LayerGroup[]);
 </script>
@@ -19,7 +26,7 @@ const onSelect = (value: unknown) => Array.isArray(value) && switchLayers(value 
   <section class="flex flex-col gap-2">
     <Label for="layers">Layers</Label>
     <Select id="layers" multiple :model-value="[...layers]" @update:model-value="onSelect">
-      <SelectTrigger class="flex w-full max-w-45 min-w-30 items-center gap-2">
+      <SelectTrigger class="flex w-70 items-center gap-2">
         <SelectValue placeholder="Layers">{{ summary }}</SelectValue>
       </SelectTrigger>
       <SelectContent>
