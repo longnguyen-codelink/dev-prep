@@ -15,15 +15,22 @@ import {
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
 import { addRoadsLayer, addHCMCLayer, addWardsLayer, applyVisibility, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
+import { tryCatchSync } from "@/lib/utils";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
 if (import.meta.env.PROD) setWorkerUrl(`${import.meta.env.BASE_URL}assets/maplibre-gl-worker.js`);
 
-const props = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean; layers: readonly LayerGroup[] }>();
+const {
+  mode,
+  tileMode,
+  record,
+  layers,
+  benchmark: isBenchmark,
+} = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean; layers: readonly LayerGroup[] }>();
 const emit = defineEmits<{ map: [map: Map]; ready: []; wardsError: [] }>();
 
 const mapSize = computed(() =>
-  props.benchmark ? { width: `${BENCHMARK_MAP_WIDTH}px`, height: `${BENCHMARK_MAP_HEIGHT}px` } : { width: "100%", height: "100vh" },
+  isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px`, height: `${BENCHMARK_MAP_HEIGHT}px` } : { width: "100%", height: "100vh" },
 );
 
 let map: Map | null = null;
@@ -33,10 +40,10 @@ let benchmark: ReturnType<typeof createBenchmark> | null = null;
 
 // The benchmark view changes the map box without recreating the map, so tell it to pick up the new size.
 watch(
-  () => props.benchmark,
+  () => benchmark,
   async () => {
     await nextTick();
-    map?.setPixelRatio(props.benchmark ? BENCHMARK_PIXEL_RATIO : window.devicePixelRatio);
+    map?.setPixelRatio(isBenchmark ? BENCHMARK_PIXEL_RATIO : window.devicePixelRatio);
     map?.resize();
   },
 );
@@ -45,15 +52,15 @@ watch(
 // benchmark view, so a benchmark run never fetches it.
 function syncLayers() {
   if (!map || !layersAdded) return;
-  if (props.layers.includes(LAYER_GROUPS.WARDS) && !props.benchmark && !wardsAdded) {
+  if (layers.includes(LAYER_GROUPS.WARDS) && !isBenchmark && !wardsAdded) {
     addWardsLayer(map);
     wardsAdded = true;
   }
-  applyVisibility(map, props.layers);
+  applyVisibility(map, layers);
 }
 
 // The layers select changes which groups are drawn; before the layers exist, the load handler applies the selection.
-watch(() => props.layers, syncLayers);
+watch(() => layers, syncLayers);
 
 onMounted(() => {
   map = new Map({
@@ -61,14 +68,14 @@ onMounted(() => {
     style: BASEMAP_STYLE,
     center: START_CENTER,
     zoom: START_ZOOM,
-    pixelRatio: props.benchmark ? BENCHMARK_PIXEL_RATIO : undefined,
+    pixelRatio: isBenchmark ? BENCHMARK_PIXEL_RATIO : undefined,
   });
 
   map.addControl(new NavigationControl(), "top-right");
   emit("map", map);
 
   const created = map;
-  benchmark = props.record ? createBenchmark(props.mode, props.tileMode, created) : null;
+  benchmark = record ? createBenchmark(mode, tileMode, created) : null;
   // Ready = the roads source is loaded and everything is rendered (the first such idle).
   const onIdle = () => {
     if (!created.getSource(ROADS_SOURCE_ID) || !created.isSourceLoaded(ROADS_SOURCE_ID)) return;
@@ -84,14 +91,14 @@ onMounted(() => {
     emit("wardsError");
   });
   created.on("load", () => {
-    try {
+    const { error } = tryCatchSync(() => {
       addHCMCLayer(created);
-      addRoadsLayer(created, props.mode, props.tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
+      addRoadsLayer(created, mode, tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
       layersAdded = true;
       syncLayers();
-    } catch (error) {
-      benchmark?.fail(`could not add the layers: ${String(error)}`);
-    }
+    });
+
+    if (error) benchmark?.fail(`could not add the layers: ${String(error)}`);
   });
 });
 
