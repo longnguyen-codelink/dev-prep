@@ -17,7 +17,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
+  <div id="toolbar" class="absolute top-5 z-10 min-h-12 left-1/3">
     <div class="mx-auto flex w-160 justify-between rounded-lg bg-background p-2">
       <section class="flex items-center gap-4">
         <SelectMode :mode="mode" :busy="busy" :switchMode="(next) => emit('switchMode', next)" />
