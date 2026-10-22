@@ -30,7 +30,7 @@ vp install      # installs with the pnpm version pinned in devEngines (12.11.2)
 vp dev          # Vite+ dev server at http://localhost:5173
 ```
 
-The app needs the map data under `apps/web/public/map/` (gitignored). The CLI writes its published files (boundary, roads GeoJSON, tile folder, PMTiles archive) straight there, with no symlinks: build them as described in [The data pipeline](#the-data-pipeline-appscli), or set `MAP_HOST` to a host that already has them.
+The app needs the map data under `apps/web/public/map/` (gitignored). The CLI writes its published files (boundary, wards, roads GeoJSON, tile folder, PMTiles archive) straight there, with no symlinks: build them as described in [The data pipeline](#the-data-pipeline-appscli), or set `MAP_HOST` to a host that already has them.
 
 ### 3. URL parameters
 
@@ -38,6 +38,7 @@ The app needs the map data under `apps/web/public/map/` (gitignored). The CLI wr
 | --- | --- |
 | `?mode=tiles` (default) / `?mode=geojson` | Which roads source loads. Anything other than `geojson` means tiles. |
 | `?tileMode=folder` (default) / `?tileMode=pmtiles` | Tiles from the `{z}/{x}/{y}.pbf` folder, or from the PM Tiles archive. Only used in tiles mode. |
+| `?layers=-roads,+wards` | Which layer groups are drawn, as the difference from the defaults (boundary and roads on, wards off): `-` switches a default group off, `+` switches wards on. Written by the toolbar's Layers select; ignored in the benchmark view. See [Layers and wards](#layers-and-wards). |
 | `?benchmark` | Opens the benchmark view (fixed 1280 x 720 map box, pixel ratio pinned to 1, run panels). |
 | `?benchmark&run` | That page load records one benchmark run, then `run` is dropped from the URL so a manual reload does not record again. The "Run" button reloads the page with it. |
 
@@ -97,6 +98,7 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 | --- | --- |
 | Roads GeoJSON | `<MAP_HOST>/map/hcmc-roads.geojson` |
 | Boundary GeoJSON | `<MAP_HOST>/map/hcmc-boundary.geojson` |
+| Ward GeoJSON | `<MAP_HOST>/map/hcmc-wards.geojson` (only requested when Wards is switched on) |
 | Tile folder | `<MAP_HOST>/map/tiles/{z}/{x}/{y}.pbf` |
 | PMTiles archive | `<MAP_HOST>/map/hcmc-roads.pmtiles` |
 
@@ -125,6 +127,29 @@ How to read this:
 
 Full method, per-run numbers and caveats are in [Benchmark](#benchmark).
 
+## Layers and wards
+
+The overlay is drawn in three layer groups. A **Layers** multiselect in the toolbar switches whole groups; the **Active layers** row under it lists each drawn layer with the colour the map paints it in.
+
+| Group | Layers | Default |
+| --- | --- | --- |
+| Boundary | City boundary (outline and 10 % fill) | on |
+| Wards | Ward fill, ward outline, ward names | off |
+| Roads | Major, medium and minor roads (3 map layers in the tile modes, 6 in GeoJSON mode, which draws each class from its own zoom) | on |
+
+- **Groups are found by metadata, not by layer id.** Every overlay layer carries `metadata: { group }` and `applyVisibility()` sets `visibility` on the layers of the enabled groups, so the tile and GeoJSON road layer ids never have to be listed. The badge labels, group, colours and minimum zooms are the `LAYER_ENTRIES` registry in `apps/web/src/constants/index.ts`; the map layers take their colours from it, so the badges cannot drift from the map.
+- **A badge dims while the map is zoomed out below its layer's minimum zoom:** city boundary always; major roads from z8; medium roads z10; minor roads z13; ward fill and outline z10; ward names z12 (each value is inclusive: the layer is drawn at exactly that zoom).
+- **The benchmark view is untouched:** no Layers select, `?layers` is ignored (the default groups are drawn) and the ward file is never requested, so request counts and bytes of the three variants stay at 1 / 80,498,401, 11 / 372,346 and 13 / 206,973.
+
+### The ward layer
+
+A ward is an OSM relation that is a `subarea` member of the city relation `1973756` with `admin_level=6`. In the pinned snapshot that gives **168 wards: 113 phường, 54 xã and 1 đặc khu (Côn Đảo)**, all with a `name`. Membership is used rather than "inside the city polygon" because the same bounding box holds 357 level-6 areas of neighbouring provinces (for example Phường Trấn Biên in Biên Hòa). Côn Đảo is an island group about 180 km south, so the ward file's extent is much larger than the city core. Level 6 is the commune level since the 2025 reform; in an older snapshot it meant districts, so `extract wards` fails if a member is not level 6 or has no name.
+
+- **Data:** `pnpm cli extract wards` writes `apps/web/public/map/hcmc-wards.geojson` (939 KB, 234 KB gzipped, only `osm_id` and `name`). It reuses `tmp/data/vn-admin.osm.pbf` and takes about a second; the geometries are simplified per feature to about 5 m (`--simplify 0.00005`, 5 decimals), so a border shared by two wards can open a hairline gap that is invisible at map scale.
+- **Drawing:** from z10 each ward gets a fill (one of the five chart colours picked by `osm_id % 5`, 20 % opacity; neighbours can share a tint) and a dashed dark outline; from z12 the Vietnamese name in the basemap's own font. Fill and outline go below the roads, the names on top.
+- **Loading:** the file is requested only the first time Wards is selected (or `?layers=+wards`), never at load by default. If it cannot be loaded (for example it is not uploaded to the data host yet) the ward layers are removed, Wards is deselected and "Ward data is not available." is shown; selecting it again retries.
+- **Hosting:** like the other published files, `hcmc-wards.geojson` must be uploaded by hand to the data host under `<MAP_HOST>/map/`; until then Wards works only in development.
+
 ## The data pipeline (`apps/cli`)
 
 Commands are verb first, run through one root script, and have no program name:
@@ -137,6 +162,7 @@ pnpm cli <action> <target> [options]      # `pnpm cli` alone prints the list, ad
 | --- | --- | --- |
 | 1 | `pnpm cli fetch base-file` | Download the pinned Geofabrik Vietnam extract (`vietnam-260101.osm.pbf`, about 318 MB) with an md5 check. |
 | 2 | `pnpm cli extract boundary` | `osmium tags-filter` the administrative relations, then `ogr2ogr` the Ho Chi Minh City relation (OSM relation `1973756`) to `apps/web/public/map/hcmc-boundary.geojson`. |
+| 2b | `pnpm cli extract wards` | Read the city relation's `subarea` members from the same admin extract and `ogr2ogr` them (`admin_level` 6, 168 wards) to `apps/web/public/map/hcmc-wards.geojson`, simplified to about 5 m. See [The ward layer](#the-ward-layer). |
 | 3 | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, clip them to the boundary (`osmium extract`), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes. |
 | 4 | `pnpm cli build tiles --name hcmc-roads` | Prepare the features, then run tippecanoe into the published folder `apps/web/public/map/tiles/{z}/{x}/{y}.pbf` (21,304 tiles). |
 | 4b | `pnpm cli build pmtiles --name hcmc-roads` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads` for the archive the app expects. |
@@ -247,16 +273,16 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 
 ## Decisions and gotchas
 
-- **CLI grouping.** The pipeline was seven loose scripts run by path. They are now behind one entry, `pnpm cli <action> <target>`: verb first (reads like a sentence and matches the file names), no program name (a `bin` would need a built file; Node 24 runs the TypeScript directly), files named `<action>-<target>` and numbered by stage (`01-` to `07-`) so a directory listing reads in pipeline order. The command table maps names to files, so the numbers are never typed. The download is called the "base file" because it is the dataset every later step reads, not because it is Vietnam.
+- **CLI grouping.** The pipeline was seven loose scripts run by path. They are now behind one entry, `pnpm cli <action> <target>`: verb first (reads like a sentence and matches the file names), no program name (a `bin` would need a built file; Node 24 runs the TypeScript directly), files named `<action>-<target>` and numbered by stage (`01-` to `08-`, in command order) so a directory listing reads in pipeline order. The command table maps names to files, so the numbers are never typed. The download is called the "base file" because it is the dataset every later step reads, not because it is Vietnam.
 - **Runtime config instead of build-time env.** `MAP_HOST` is read from `/env-config.js` at runtime, not from a `VITE_*` variable, so one bundle serves any environment and the data location can change without a rebuild. `VITE_BASE_PATH` (the deploy sub-path) stays a build-time value.
-- **Published files go straight into `apps/web/public/map`.** The CLI writes the boundary, roads GeoJSON, tile folder and PMTiles archive there directly (no symlinks into `tmp/data`), and only intermediates stay in `tmp/data`. That folder is what the dev server serves and what gets uploaded to the data host.
+- **Published files go straight into `apps/web/public/map`.** The CLI writes the boundary, wards, roads GeoJSON, tile folder and PMTiles archive there directly (no symlinks into `tmp/data`), and only intermediates stay in `tmp/data`. That folder is what the dev server serves and what gets uploaded to the data host.
 - **Data is kept out of the bundle.** `apps/web/public/map` is gitignored; the data lives on a separate public host, which is why CORS, `Timing-Allow-Origin` and Range requirements apply.
 - **MapLibre worker shipped as `.js`.** MapLibre 6 loads `maplibre-gl-worker.mjs` as a sibling of the script and the bundle drops it, so a Vite plugin emits it. It is emitted as `assets/maplibre-gl-worker.js` because the host serves `.mjs` as `application/octet-stream`, which browsers reject for module workers.
 - **Folder tiles are uncompressed, PMTiles tiles are gzipped.** The folder is built with `--no-tile-compression` so any static host can serve it, and the host in front of it did not compress `.pbf`, so the 11 initial-view tiles cost 372,346 bytes on the wire, exactly their raw size. `check tiles` judges budgets on gzipped size (184 KB for the same view), which is what a compressing host would send. tippecanoe compresses tiles inside a PMTiles archive by default, so the archive is about 22.1 MB, close to the folder's gzipped total. That is why the same tiles are 372 KB as a folder and 207 KB as PM Tiles on the wire; keep that in mind when comparing bytes, it is a property of how each was built and served, not of the format.
 - **`simple` extract strategy.** `complete_ways` was killed above about 3.3 GiB on whole-Vietnam highways; `simple` needs about 47 MiB and loses about 0.2% of features (roads cut at the border).
 - **Fixed benchmark box and pixel ratio.** The viewport decides how many tiles load and the pixel ratio decides drawing work, so both are pinned. Mode switches reload the page so no warm heap or reused worker leaks into a run. The map is torn down (`map.remove()`) before a reload, because repeated 80 MB GeoJSON loads in one tab otherwise grew the renderer's memory.
 - **Dev server quirk.** Vite answers a missing file with `index.html` and status 200. In the normal (non-benchmark) view a missing tile can therefore be parsed as a tile and log an error; the benchmark protocol treats it as "missing".
-- **Roads only.** One layer, no points of interest. The city boundary is drawn in every mode but is not routed through the benchmark protocol, so it does not change the measured bytes.
+- **Roads are what is measured.** No points of interest. The city boundary is drawn in every mode but is not routed through the benchmark protocol, so it does not change the measured bytes; the ward layer is an optional extra that is loaded lazily and never in the benchmark view, for the same reason.
 
 ## Data and attribution
 
