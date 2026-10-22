@@ -1,5 +1,5 @@
-import { medianOfOkRuns } from "./stats";
-import type { BenchmarkRun } from "./types";
+import { medianOfOkRuns } from "./_stats";
+import type { BenchmarkRun } from "./_types";
 
 // Decimal units, like the CLI's formatBytes: 1 MB = 1,000,000 bytes.
 export function formatBytes(bytes: number | null): string {

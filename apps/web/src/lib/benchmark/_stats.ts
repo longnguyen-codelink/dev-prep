@@ -1,4 +1,4 @@
-import type { BenchmarkRun } from "./types";
+import type { BenchmarkRun } from "./_types";
 
 type NumericField = "bytes" | "requests" | "readyMs" | "networkMs" | "afterDownloadMs" | "startupDelayMs";
 
