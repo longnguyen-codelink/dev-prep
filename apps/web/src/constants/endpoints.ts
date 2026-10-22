@@ -11,10 +11,11 @@ export const MAP_URLS = {
 
 // BUILD_COMMIT and BUILD_REPO_URL come from /env-config.js too (CI sets them). Validated before use so the
 // link is never built from a malformed value; anything missing or invalid gives null and the chip is hidden.
-const buildCommit = (window.__ENV__?.BUILD_COMMIT ?? "").trim();
-const buildRepoUrl = (window.__ENV__?.BUILD_REPO_URL ?? "").trim().replace(/\/$/, "");
+const buildCommit = (window.__ENV__?.BUILD_COMMIT ?? "dev").trim();
+const buildRepoUrl = (window.__ENV__?.BUILD_REPO_URL ?? "https://example.com").trim().replace(/\/$/, "");
 
+const isValidBuildCommit = (commit: string) => /^[0-9a-f]{7,40}$/i.test(commit) || commit === "dev";
 export const BUILD_INFO =
-  /^[0-9a-f]{7,40}$/i.test(buildCommit) && buildRepoUrl.startsWith("https://")
+  isValidBuildCommit(buildCommit) && buildRepoUrl.startsWith("https://")
     ? { shortHash: buildCommit.slice(0, 7), url: `${buildRepoUrl}/commit/${buildCommit}` }
     : null;

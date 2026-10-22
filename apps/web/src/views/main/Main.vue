@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 
 import { SelectMode } from "./components/select-mode";
 import { SelectTileMode } from "./components/select-tilemode";
+import { ChipBuildVersion } from "./components/chip-build-version";
 
 import type { Map } from "maplibre-gl";
 import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
@@ -129,4 +130,5 @@ function startRun() {
     </div>
     <BenchmarkPanel v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" :running="running" :busy="busy" @run="startRun" />
   </main>
+  <ChipBuildVersion />
 </template>
