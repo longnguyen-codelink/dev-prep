@@ -30,7 +30,7 @@ vp install      # installs with the pnpm version pinned in devEngines (12.11.2)
 vp dev          # Vite+ dev server at http://localhost:5173
 ```
 
-The app needs the map data under `apps/web/public/map/` (gitignored). The CLI writes its published files (boundary, roads GeoJSON, tile folder, PMTiles archive) straight there, with no symlinks: build them as described in [The data pipeline](#the-data-pipeline-appscli), or set `MAP_HOST` to a host that already has them.
+The app needs the map data under `apps/web/public/map/` (gitignored). The CLI writes its published files (boundary, wards and roads GeoJSON, tile folder, PMTiles archive) straight there, with no symlinks: build them as described in [The data pipeline](#the-data-pipeline-appscli), or set `MAP_HOST` to a host that already has them.
 
 ### 3. URL parameters
 
@@ -51,8 +51,8 @@ The dev container only bundles the tools below. You can install them yourself on
 | --- | --- | --- |
 | Node 24 | web app and CLI | The CLI is TypeScript that Node 24 runs directly, so older Node will not work. |
 | Vite+ (`vp`) | `vp install`, `vp dev`, `vp check` | Install it following the Vite+ docs. It pins and downloads pnpm 12.11.2 from `devEngines`. |
-| `osmium` (osmium-tool) | `extract boundary`, `build roads` | |
-| `ogr2ogr` (GDAL) | `extract boundary`, `build roads` | GDAL needs the OSM driver, which the usual packages include. |
+| `osmium` (osmium-tool) | `extract boundary`, `extract wards`, `build roads` | |
+| `ogr2ogr` (GDAL) | `extract boundary`, `extract wards`, `build roads` | GDAL needs the OSM driver, which the usual packages include. |
 | `tippecanoe` | `build tiles`, `build pmtiles`, `sweep tiles` | Version 2.x; `build pmtiles` needs a build that can write `.pmtiles`. |
 | `jq` | optional | Only for inspecting data by hand. |
 
@@ -78,14 +78,14 @@ vp dev
 ## Project structure
 
 ```text
-apps/cli   data pipeline: OSM extract -> roads GeoJSON -> tiles (folder or PMTiles) -> checks
+apps/cli   data pipeline: OSM extract -> boundary, wards, roads GeoJSON -> tiles (folder or PMTiles) -> checks
 apps/web   Vue 3 + MapLibre GL JS app with a benchmark view
 data       hosted separately on an external host, read by the app at runtime
 ```
 
 - **`apps/cli`** is erasable TypeScript that Node 24 runs directly (no build step). It shells out to `osmium`, `ogr2ogr` and `tippecanoe`.
 - **`apps/web`** is Vue 3, MapLibre GL JS 6, Tailwind 4 and shadcn-vue, built with Vite+ (`vp`). The `pmtiles` npm package lets MapLibre read the archive.
-- **The map data is not in the repo and not in the deployed bundle.** It is generated locally by the CLI and uploaded by hand to a public bucket on an external host. The app finds it through `MAP_HOST` (below).
+- **The map data is not in the repo and not in the deployed bundle.** It is generated locally by the CLI and uploaded by hand to a public bucket on an external host (the files in `apps/web/public/map/` that the app reads, see the table below). The app finds it through `MAP_HOST` (below).
 - **Deploy:** a manual GitHub Actions workflow (`.github/workflows/deploy.yml`, `workflow_dispatch`, only from `challenge/gis`) builds `apps/web` on a GitHub runner, writes `env-config.js` into `dist/`, then `rsync`s `dist/` to an external host over SSH. The site is served at `/dev-challenge-gis/`, so the build sets `VITE_BASE_PATH`.
 - **Basemap:** OpenFreeMap "liberty" style. The roads and the wards are what is measured.
 
@@ -97,8 +97,9 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 | --- | --- |
 | Roads GeoJSON | `<MAP_HOST>/map/hcmc-roads.geojson` |
 | Boundary GeoJSON | `<MAP_HOST>/map/hcmc-boundary.geojson` |
-| Tile folder | `<MAP_HOST>/map/tiles/{z}/{x}/{y}.pbf` |
-| PMTiles archive | `<MAP_HOST>/map/hcmc-roads.pmtiles` |
+| Wards GeoJSON | `<MAP_HOST>/map/hcmc-wards.geojson` |
+| Tile folder (roads + wards) | `<MAP_HOST>/map/tiles-roads-wards/{z}/{x}/{y}.pbf` |
+| PMTiles archive (roads + wards) | `<MAP_HOST>/map/hcmc-roads-wards.pmtiles` |
 
 - `MAP_HOST` is an origin, optionally followed by a path prefix (production: a path prefix on the external data host). Unset means same origin, which is the local `apps/web/public/map` folder.
 - In development a Vite plugin answers `/env-config.js` from `MAP_HOST` in the environment or `.env` files (see `.env.example`). In CI the workflow overwrites `dist/env-config.js` from the `MAP_HOST` repository variable. One built bundle can therefore run against any data host.
@@ -137,37 +138,41 @@ pnpm cli <action> <target> [options]      # `pnpm cli` alone prints the list, ad
 | --- | --- | --- |
 | 1 | `pnpm cli fetch base-file` | Download the pinned Geofabrik Vietnam extract (`vietnam-260101.osm.pbf`, about 318 MB) with an md5 check. |
 | 2 | `pnpm cli extract boundary` | `osmium tags-filter` the administrative relations, then `ogr2ogr` the Ho Chi Minh City relation (OSM relation `1973756`) to `apps/web/public/map/hcmc-boundary.geojson`. |
-| 3 | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, clip them to the boundary (`osmium extract`), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes. |
-| 4 | `pnpm cli build tiles --name hcmc-roads` | Prepare the features, then run tippecanoe into the published folder `apps/web/public/map/tiles/{z}/{x}/{y}.pbf` (21,304 tiles). |
-| 4b | `pnpm cli build pmtiles --name hcmc-roads` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads` for the archive the app expects. |
-| 5 | `pnpm cli check tiles` | Gzip every tile of the published folder and check budgets: 500,000 bytes per tile, 3,000,000 bytes for the initial view. Exit 1 when over budget. |
-| 6 | `pnpm cli sweep tiles` | Optional: rebuild once per setting variant and write a size table (`tmp/data/tiles/sweep.md`); nothing is published. |
+| 3 | `pnpm cli extract wards` | Read the `subarea` members of the same relation (the wards: 168, with `admin_level=6` in this snapshot), `ogr2ogr` them with `-simplify` and 5 coordinate decimals, keep `osm_id` and `name`, write `apps/web/public/map/hcmc-wards.geojson` (938,850 bytes, 234,629 gzipped). Options: `--relation`, `--pbf`, `--out`, `--simplify <degrees>` (default 0.00005, about 5 m). |
+| 4 | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, clip them to the boundary (`osmium extract`), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes. |
+| 5 | `pnpm cli build tiles --name hcmc-roads-wards` | Prepare the roads and the wards, then run tippecanoe into the published folder `apps/web/public/map/tiles-roads-wards/{z}/{x}/{y}.pbf` (26,846 tiles), with the source-layers `roads` and `wards`. |
+| 6 | `pnpm cli build pmtiles --name hcmc-roads-wards` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads-wards` for the archive the app expects (25,345,738 bytes). |
+| 7 | `pnpm cli check tiles` | Gzip every tile of the published folder and check budgets: 500,000 bytes per tile, 3,000,000 bytes for the initial view. Exit 1 when over budget. |
+| 8 | `pnpm cli sweep tiles` | Optional: rebuild the roads once per setting variant (without the wards) and write a size table (`tmp/data/tiles/sweep.md`); nothing is published. |
 
-Published files go straight into `apps/web/public/map/` (gitignored), where the dev server and the upload to the data host read them. Intermediates stay in `tmp/data/` (also gitignored): the Vietnam PBF, filtered and clipped PBFs, and `<name>.prepared.geojsonl`. `build tiles` and `build pmtiles` default their input to `apps/web/public/map/hcmc-roads.geojson`.
+Steps 2 and 3 share one filtered file, `tmp/data/vn-admin.osm.pbf`; `extract wards` reuses it when it exists and rebuilds it only when it is missing or `--pbf` is given. `extract wards` fails if a ward is not a named polygon or has another `admin_level`, or if the feature count differs from the member count.
 
-`--name` for `build tiles` no longer names an output folder: the published folder is always `apps/web/public/map/tiles/`, and `--name` only names the prepared file and the log line, so a different `--name` replaces the published tiles. `check tiles --name X` reads an experiment folder `tmp/data/tiles/X` instead. `build tiles` and `build pmtiles` refuse to write through a leftover symlink. The command table is `COMMANDS` in `apps/cli/src/helpers/constants.ts`; each command is a numbered file in `apps/cli/src/entrypoints/`.
+Published files go straight into `apps/web/public/map/` (gitignored), where the dev server and the upload to the data host read them. Intermediates stay in `tmp/data/` (also gitignored): the Vietnam PBF, filtered and clipped PBFs, `<name>.prepared.geojsonl` and `<name>.prepared-wards.geojsonl`. `build tiles` and `build pmtiles` default their roads input to `apps/web/public/map/hcmc-roads.geojson` (`--input`) and their wards input to `apps/web/public/map/hcmc-wards.geojson` (`--wards`).
+
+`build tiles` and `build pmtiles` take the same options: `--name` (required), `--input`, `--wards <file>` or `--no-wards` (not both), `--min-zoom`, `--max-zoom`, `--full-detail`, `--simplification`, `--no-drop`, `--no-class-zoom`, `--all-attributes`. `--name` for `build tiles` does not name the published folder: with the wards the folder is always `apps/web/public/map/tiles-roads-wards/`, and `--name` only names the prepared files and the log line, so a different `--name` still replaces the published tiles. With `--no-wards` the roads-only tiles go to the experiment folder `tmp/data/tiles/<name>` instead. For `build pmtiles`, `--name` names the archive (`apps/web/public/map/<name>.pmtiles`, with or without wards). `check tiles` reads the published folder; `check tiles --name X` reads an experiment folder `tmp/data/tiles/X` instead. `build tiles` and `build pmtiles` refuse to write through a leftover symlink. The command table is `COMMANDS` in `apps/cli/src/helpers/constants.ts`; each command is a numbered file in `apps/cli/src/entrypoints/` (`01-fetch-base-file.ts` to `08-sweep-tiles.ts`, in the step order above).
 
 ### How the tiles are made
 
-1. **Prepare.** Stream the 80 MB GeoJSON line by line, keep only the attributes `highway` and `name` (dropping `osm_id`, `z_order` and the bulky `other_tags`), and add a per-feature `tippecanoe.minzoom` from the road class (below). The result is newline-delimited GeoJSON, 63.6 MB.
-2. **Tile.** tippecanoe cuts layer `roads` into zooms 8 to 16 with `--drop-densest-as-needed --extend-zooms-if-still-dropping --read-parallel`. The folder build adds `--output-to-directory --no-tile-compression`; the PMTiles build writes a `.pmtiles` file instead (tiles gzipped inside).
+1. **Prepare.** Stream the 80 MB roads GeoJSON line by line, keep only the attributes `highway` and `name` (dropping `osm_id`, `z_order` and the bulky `other_tags`), and add a per-feature `tippecanoe.minzoom` from the road class (below). The result is newline-delimited GeoJSON, 63.6 MB. The ward polygons are written the same way (one feature per line, 943,513 bytes), keeping only `name` and `osm_id` (the web app picks a ward's fill tint from the id) with `tippecanoe.minzoom` 10.
+2. **Tile.** tippecanoe cuts layer `roads` and layer `wards` (`-Lroads:... -Lwards:...`) into zooms 8 to 16 with `--drop-densest-as-needed --extend-zooms-if-still-dropping --read-parallel`. The wards run to the maximum zoom too, because MapLibre overzooms a whole source and a lower ward maximum would hide the wards at street level. The folder build adds `--output-to-directory --no-tile-compression`; the PMTiles build writes a `.pmtiles` file instead (tiles gzipped inside). `--no-wards` builds the roads alone as a single `--layer=roads`.
 3. **Check.** `check tiles` gzips each tile and compares against the budgets.
 
-Road class to first zoom: motorway, trunk, primary from 8; secondary from 10; tertiary from 12; residential and unclassified from 13; service from 14; everything else (footway, path, track, ...) from 15. A `_link` follows its parent class.
+Road class to first zoom: motorway, trunk, primary from 8; secondary from 10; tertiary from 12; residential and unclassified from 13; service from 14; everything else (footway, path, track, ...) from 15. A `_link` follows its parent class. Wards appear from zoom 10.
 
-Result of the default build:
+Result of the default build (roads and wards, measured with `check tiles` on the published folder):
 
 | Measure | Value |
 | --- | --- |
-| Tiles | 21,304 (3 at z8, 105 at z12, 15,106 at z16) |
-| Size | 33.9 MB raw, 22.1 MB gzipped (the PMTiles archive is 22,099,325 bytes) |
-| Largest tile | 65 KB gzipped (budget 500 KB) |
-| Initial view (z12, 1280 x 720) | 12 tiles requested, 11 exist, 184 KB gzipped (budget about 3 MB) |
-| tippecanoe time | about 34 s |
+| Tiles | 26,846 (3 at z8, 123 at z12, 19,679 at z16) |
+| Size | 37.9 MB raw, 25.7 MB gzipped (the PMTiles archive is 25,345,738 bytes) |
+| Largest tile | 76 KB gzipped (budget 500 KB) |
+| Initial view (z12, 1280 x 720) | 12 tiles requested, 12 exist, 208 KB gzipped (budget about 3 MB) |
+
+For comparison, the roads-only build measured earlier (before the wards, now `--no-wards`): 21,304 tiles (3 at z8, 105 at z12, 15,106 at z16), 33.9 MB raw, 22.1 MB gzipped (PMTiles 22,099,325 bytes), largest tile 65 KB, initial view 11 of 12 tiles existing, 184 KB gzipped, tippecanoe about 34 s. The tippecanoe time of the combined build was not measured.
 
 ### Settings sweep
 
-Each row is a real build that changes one thing from the base (all attributes, every class from z8, dropping on). `chosen` combines pruning and class-by-zoom.
+Each row is a real build that changes one thing from the base (all attributes, every class from z8, dropping on). `chosen` combines pruning and class-by-zoom. The sweep builds the roads only (no wards, into `tmp/data/tiles/sweep-<variant>`, deleted afterwards unless `--keep`), so the table is the roads-only numbers and its `chosen` row is the roads-only default build above.
 
 | Variant | Change | Tiles | Raw | Gzipped | Largest tile (gz) | Initial view (gz) |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -277,9 +282,9 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 
 ## Decisions and gotchas
 
-- **CLI grouping.** The pipeline was seven loose scripts run by path. They are now behind one entry, `pnpm cli <action> <target>`: verb first (reads like a sentence and matches the file names), no program name (a `bin` would need a built file; Node 24 runs the TypeScript directly), files named `<action>-<target>` and numbered by stage (`01-` to `07-`) so a directory listing reads in pipeline order. The command table maps names to files, so the numbers are never typed. The download is called the "base file" because it is the dataset every later step reads, not because it is Vietnam.
+- **CLI grouping.** The pipeline was seven loose scripts run by path. They are now behind one entry, `pnpm cli <action> <target>`: verb first (reads like a sentence and matches the file names), no program name (a `bin` would need a built file; Node 24 runs the TypeScript directly), files named `<action>-<target>` and numbered by stage (`01-` to `08-`) so a directory listing reads in pipeline order. The command table maps names to files, so the numbers are never typed. The download is called the "base file" because it is the dataset every later step reads, not because it is Vietnam.
 - **Runtime config instead of build-time env.** `MAP_HOST` is read from `/env-config.js` at runtime, not from a `VITE_*` variable, so one bundle serves any environment and the data location can change without a rebuild. `VITE_BASE_PATH` (the deploy sub-path) stays a build-time value.
-- **Published files go straight into `apps/web/public/map`.** The CLI writes the boundary, roads GeoJSON, tile folder and PMTiles archive there directly (no symlinks into `tmp/data`), and only intermediates stay in `tmp/data`. That folder is what the dev server serves and what gets uploaded to the data host.
+- **Published files go straight into `apps/web/public/map`.** The CLI writes the boundary, wards and roads GeoJSON, tile folder (`tiles-roads-wards/`) and PMTiles archive (`hcmc-roads-wards.pmtiles`) there directly (no symlinks into `tmp/data`), and only intermediates stay in `tmp/data`. That folder is what the dev server serves and what gets uploaded to the data host.
 - **Data is kept out of the bundle.** `apps/web/public/map` is gitignored; the data lives on a separate public host, which is why CORS, `Timing-Allow-Origin` and Range requirements apply.
 - **MapLibre worker shipped as `.js`.** MapLibre 6 loads `maplibre-gl-worker.mjs` as a sibling of the script and the bundle drops it, so a Vite plugin emits it. It is emitted as `assets/maplibre-gl-worker.js` because the host serves `.mjs` as `application/octet-stream`, which browsers reject for module workers.
 - **Folder tiles are uncompressed, PMTiles tiles are gzipped.** The folder is built with `--no-tile-compression` so any static host can serve it, and the host in front of it did not compress `.pbf`, so the 11 initial-view tiles cost 372,346 bytes on the wire, exactly their raw size. `check tiles` judges budgets on gzipped size (184 KB for the same view), which is what a compressing host would send. tippecanoe compresses tiles inside a PMTiles archive by default, so the archive is about 22.1 MB, close to the folder's gzipped total. That is why the same tiles are 372 KB as a folder and 207 KB as PM Tiles on the wire; keep that in mind when comparing bytes, it is a property of how each was built and served, not of the format. (Roads-only figures; with the wards in the tiles the same view is 402,849 B as a folder and 232,027 B as PM Tiles.)
