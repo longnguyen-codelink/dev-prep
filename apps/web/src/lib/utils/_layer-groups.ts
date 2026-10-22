@@ -22,6 +22,14 @@ export function firstLayerOf(map: Map, group: LayerGroup): string | undefined {
   return map.getStyle().layers.find((layer) => groupOf(layer.metadata) === group)?.id;
 }
 
+// The ids of all layers of a group, in style order (the road ids differ between the GeoJSON and tile modes).
+export function layerIdsOf(map: Map, group: LayerGroup): string[] {
+  return map
+    .getStyle()
+    .layers.filter((layer) => groupOf(layer.metadata) === group)
+    .map((layer) => layer.id);
+}
+
 // Shows the layers of the enabled groups and hides the other overlay layers; basemap layers have no group and are left alone.
 export function applyVisibility(map: Map, enabled: readonly LayerGroup[]): void {
   for (const layer of map.getStyle().layers) {

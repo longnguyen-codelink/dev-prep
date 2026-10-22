@@ -1,4 +1,4 @@
-import { addProtocol, type FilterSpecification, type LineLayerSpecification, type Map } from "maplibre-gl";
+import { addProtocol, type FilterSpecification, type LineLayerSpecification, type Map, Popup } from "maplibre-gl";
 import { PMTiles, Protocol, type Source } from "pmtiles";
 
 import {
@@ -7,13 +7,14 @@ import {
   MODES,
   type Mode,
   ROAD_CLASS_MIN_ZOOM,
+  ROAD_CLICK_TOLERANCE_PX,
   ROAD_TILE_MAX_ZOOM,
   ROAD_TILE_MIN_ZOOM,
   TILE_MODES,
   type TileMode,
 } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { createPmtilesSource, entryColors, layerMetadata } from "@/lib/utils";
+import { createPmtilesSource, entryColors, layerIdsOf, layerMetadata } from "@/lib/utils";
 
 export const ROADS_SOURCE_ID = "roads";
 
@@ -170,4 +171,48 @@ export function addRoadsLayer(
   for (const layer of layers) map.addLayer(layer);
 
   return map;
+}
+
+// The road features under a point, topmost first. A box, because roads are thin lines.
+function roadsAt(map: Map, layers: string[], x: number, y: number) {
+  const r = ROAD_CLICK_TOLERANCE_PX;
+  return map.queryRenderedFeatures([[x - r, y - r], [x + r, y + r]], { layers });
+}
+
+// Popup body. Built with textContent because the name and class come from data, never as HTML.
+function roadPopupContent(properties: Record<string, unknown>): HTMLElement {
+  const name = typeof properties.name === "string" ? properties.name.trim() : "";
+  const highway = typeof properties.highway === "string" && properties.highway ? properties.highway : "unknown";
+
+  const content = document.createElement("div");
+  const title = document.createElement("div");
+  title.className = "font-semibold";
+  title.textContent = name || "Unnamed road";
+  const detail = document.createElement("div");
+  detail.className = "text-xs text-muted-foreground";
+  detail.textContent = `Class: ${highway}`;
+  content.append(title, detail);
+  return content;
+}
+
+// One popup per map, moved to each clicked road. closeOnClick is off: MapLibre's close listener runs on every click,
+// including road clicks, and would close the popup it was just moved to. The click on empty map closes it below.
+export function addRoadsPopup(map: Map): void {
+  const popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: "240px", offset: 6 });
+  // Looked up once, after the road layers are added: map.getStyle() serialises the whole style, too slow for every mouse move.
+  const roadLayers = layerIdsOf(map, LAYER_GROUPS.ROADS);
+
+  map.on("click", (event) => {
+    const [feature] = roadsAt(map, roadLayers, event.point.x, event.point.y);
+    if (!feature) {
+      popup.remove();
+      return;
+    }
+    popup.setLngLat(event.lngLat).setDOMContent(roadPopupContent(feature.properties)).addTo(map);
+  });
+
+  // Empty string gives back the cursor from the stylesheet (MapLibre's grab cursor) rather than forcing an arrow.
+  map.on("mousemove", (event) => {
+    map.getCanvas().style.cursor = roadsAt(map, roadLayers, event.point.x, event.point.y).length > 0 ? "pointer" : "";
+  });
 }

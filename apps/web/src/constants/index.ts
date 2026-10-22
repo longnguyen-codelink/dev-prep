@@ -68,6 +68,9 @@ export const ROAD_CLASS_MIN_ZOOM: Record<string, number> = {
 };
 export const DEFAULT_ROAD_MIN_ZOOM = 15;
 
+// Roads are thin lines, so a click within this many pixels of a road counts as a hit on it.
+export const ROAD_CLICK_TOLERANCE_PX = 6;
+
 // Benchmark mode (?benchmark) renders the map in a fixed box so every run has the same viewport.
 // The toolbar stays disabled until the map reports ready; this unblocks it if the map never gets there.
 export const MAP_READY_TIMEOUT_MS = 60_000;

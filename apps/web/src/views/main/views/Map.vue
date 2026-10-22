@@ -14,7 +14,7 @@ import {
   type TileMode,
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
-import { addRoadsLayer, addHCMCLayer, addWardsLayer, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
+import { addRoadsLayer, addRoadsPopup, addHCMCLayer, addWardsLayer, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
 import { applyVisibility, tryCatchSync } from "@/lib/utils";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
@@ -94,6 +94,7 @@ onMounted(() => {
     const { error } = tryCatchSync(() => {
       addHCMCLayer(created);
       addRoadsLayer(created, mode, tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
+      addRoadsPopup(created);
       layersAdded = true;
       syncLayers();
     });
