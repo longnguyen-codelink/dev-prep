@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 <template>
   <div id="toolbar" class="absolute top-5 left-1/3 z-10 min-h-12 rounded-lg bg-background p-3">
-    <div class="mx-auto mb-3 flex w-160 justify-between">
+    <div class="mx-auto mb-3 flex min-w-160 justify-between">
       <section class="flex items-center gap-4">
         <SelectMode :mode="mode" :busy="busy" :switchMode="(next) => emit('switchMode', next)" />
         <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="(next) => emit('switchTileMode', next)" :isHidden="mode != MODES.TILES" />
