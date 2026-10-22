@@ -7,13 +7,14 @@ import { formatBytes, formatDuration, tryCatch } from "../helpers/utils.ts";
 
 // Same stage as `build tiles`, but one PMTiles archive instead of a folder of .pbf files.
 export async function run(args: string[] = process.argv.slice(2)) {
-  const { name, input, settings } = parseTileBuildArgs(args, BUILD_PMTILES_USAGE);
+  const { name, input, wards, settings } = parseTileBuildArgs(args, BUILD_PMTILES_USAGE);
 
   const { data, error } = await tryCatch<Awaited<ReturnType<typeof buildPmtiles>>, Error>(
     (async () => {
       if (!existsSync(input)) throw new Error(`input not found: ${input} (build it with \`pnpm cli build roads\`)`);
+      if (wards && !existsSync(wards)) throw new Error(`wards not found: ${wards} (build it with \`pnpm cli extract wards\`, or pass --no-wards)`);
       await assertTools();
-      return buildPmtiles(input, name, settings);
+      return buildPmtiles(input, name, settings, wards ?? undefined);
     })(),
   );
   if (error) {
@@ -21,7 +22,7 @@ export async function run(args: string[] = process.argv.slice(2)) {
     process.exit(1);
   }
 
-  Logger.info(`${data.name}: ${data.features} features -> ${data.file}`);
+  Logger.info(`${data.name}: ${data.features} road features${data.wards > 0 ? ` + ${data.wards} wards` : ""} -> ${data.file}`);
   Logger.info(
     `archive ${formatBytes(data.bytes)} (${data.bytes} bytes); ` +
       `build ${formatDuration(data.prepareMs + data.tippecanoeMs)} ` +

@@ -25,8 +25,8 @@ export const WARD_COORDINATE_PRECISION = 5;
 
 // Where the published artifacts are written and the web app reads them from in development (gitignored).
 export const WEB_MAP_DIR = resolve(import.meta.dirname, "../../../web/public/map");
-// The published tile folder, read by the web app as /map/tiles/{z}/{x}/{y}.pbf.
-export const WEB_TILES_DIR = resolve(WEB_MAP_DIR, "tiles");
+// The published tile folder (roads + wards in one set of tiles), read by the web app as /map/tiles-roads-wards/{z}/{x}/{y}.pbf.
+export const WEB_TILES_DIR = resolve(WEB_MAP_DIR, "tiles-roads-wards");
 
 // External command-line programs the pipeline needs; `assertTools()` checks they are installed.
 export const REQUIRED_TOOLS = ["osmium", "ogr2ogr", "tippecanoe"] as const;
@@ -67,13 +67,23 @@ export const HIGHWAY_MIN_ZOOM: Record<string, number> = {
 };
 export const DEFAULT_HIGHWAY_MIN_ZOOM = 15; // footway, path, track, pedestrian, steps, cycleway, others
 
+// The wards go into the same tiles as a second layer, from this zoom (mirrors the web app's WARD_OUTLINE_MIN_ZOOM; keep them in
+// step) up to the tiles' maximum zoom: MapLibre overzooms a whole source, so a lower ward maximum would hide the wards at street level.
+export const TILE_WARD_LAYER_NAME = "wards";
+export const TILE_WARD_MIN_ZOOM = 10;
+// name is the label; osm_id is what the web app picks a ward's fill tint from.
+export const TILE_WARD_ATTRIBUTES = ["name", "osm_id"] as const;
+
 export const TILES_USAGE =
-  "usage: pnpm cli build tiles --name <name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
-  "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
+  "usage: pnpm cli build tiles --name <name> [--input <roads.geojson>] [--wards <wards.geojson> | --no-wards] [--min-zoom N] [--max-zoom N] " +
+  "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]\n" +
+  "  Roads and wards are built into one set of tiles (wards from public/map/hcmc-wards.geojson by default). --no-wards builds " +
+  "roads only, into the experiment folder tmp/data/tiles/<name> instead of the published folder.";
 
 export const BUILD_PMTILES_USAGE =
-  "usage: pnpm cli build pmtiles --name <archive name> [--input <roads.geojson>] [--min-zoom N] [--max-zoom N] " +
-  "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]";
+  "usage: pnpm cli build pmtiles --name <archive name> [--input <roads.geojson>] [--wards <wards.geojson> | --no-wards] [--min-zoom N] [--max-zoom N] " +
+  "[--full-detail N] [--simplification N] [--no-drop] [--no-class-zoom] [--all-attributes]\n" +
+  "  Roads and wards are built into one archive (wards from public/map/hcmc-wards.geojson by default); --no-wards builds roads only.";
 
 export const SWEEP_USAGE = "usage: pnpm cli sweep tiles [--input <roads.geojson>] [--only name,name] [--keep]";
 

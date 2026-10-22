@@ -1,5 +1,5 @@
 import { createReadStream, createWriteStream, existsSync } from "node:fs";
-import { lstat, mkdir, rm, stat } from "node:fs/promises";
+import { lstat, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
@@ -9,12 +9,16 @@ import {
   DATA_DIR,
   DEFAULT_HIGHWAY_MIN_ZOOM,
   FEATURE_LINE_PREFIX,
+  HCMC_WARDS_NAME,
   HIGHWAY_MIN_ZOOM,
   ROADS_GEOJSON_NAME,
   TILE_ATTRIBUTES,
   TILE_LAYER_NAME,
   TILE_MAX_ZOOM,
   TILE_MIN_ZOOM,
+  TILE_WARD_ATTRIBUTES,
+  TILE_WARD_LAYER_NAME,
+  TILE_WARD_MIN_ZOOM,
   WEB_MAP_DIR,
   WEB_TILES_DIR,
 } from "./constants.ts";
@@ -88,10 +92,29 @@ export async function prepareFeatures(input: string, output: string, settings: T
   return result;
 }
 
+/**
+ * Turns the wards FeatureCollection into newline-delimited GeoJSON for tippecanoe (the same form as the roads, so
+ * `--read-parallel` works for both inputs), keeping only the tile attributes and adding the wards' minimum zoom.
+ */
+export async function prepareWards(input: string, output: string): Promise<number> {
+  const geojson = JSON.parse(await readFile(input, "utf8")) as { features?: Feature[] };
+  if (!Array.isArray(geojson.features) || geojson.features.length === 0) throw new Error(`no ward features in ${input}`);
+
+  const lines = geojson.features.map((feature, index) => {
+    const geometry = (feature.geometry as { type?: string } | null)?.type;
+    if (geometry !== "Polygon" && geometry !== "MultiPolygon") throw new Error(`ward feature ${index} in ${input} is not a polygon (${geometry})`);
+    const properties = Object.fromEntries(TILE_WARD_ATTRIBUTES.map((name) => [name, feature.properties[name]]));
+    return JSON.stringify({ type: "Feature", properties, geometry: feature.geometry, tippecanoe: { minzoom: TILE_WARD_MIN_ZOOM } });
+  });
+  await writeFile(output, `${lines.join("\n")}\n`);
+  return lines.length;
+}
+
 /** Where tippecanoe writes: a folder of plain .pbf files, or one PMTiles archive. */
 export type TileOutput = { kind: "folder"; path: string } | { kind: "pmtiles"; path: string };
 
-export function tippecanoeArgs(input: string, output: TileOutput, settings: TileSettings): string[] {
+/** `wardsInput` (the prepared wards) adds the wards as a second layer of the same tiles; without it the tiles hold the roads only. */
+export function tippecanoeArgs(input: string, output: TileOutput, settings: TileSettings, wardsInput?: string): string[] {
   const args =
     output.kind === "folder"
       ? [
@@ -100,7 +123,7 @@ export function tippecanoeArgs(input: string, output: TileOutput, settings: Tile
         ]
       : ["-o", output.path]; // PMTiles compresses each tile by default, the smaller form
   args.push(
-    `--layer=${TILE_LAYER_NAME}`,
+    ...(wardsInput ? [] : [`--layer=${TILE_LAYER_NAME}`]), // with several inputs each one is named by -L below
     `--minimum-zoom=${settings.minZoom}`,
     `--maximum-zoom=${settings.maxZoom}`,
     "--read-parallel", // the prepared file has one feature per line
@@ -108,17 +131,24 @@ export function tippecanoeArgs(input: string, output: TileOutput, settings: Tile
   if (settings.fullDetail !== null) args.push(`--full-detail=${settings.fullDetail}`);
   if (settings.simplification !== null) args.push(`--simplification=${settings.simplification}`);
   if (settings.dropDensest) args.push("--drop-densest-as-needed", "--extend-zooms-if-still-dropping");
-  args.push(input);
+  if (wardsInput) args.push(`-L${TILE_LAYER_NAME}:${input}`, `-L${TILE_WARD_LAYER_NAME}:${wardsInput}`);
+  else args.push(input);
   return args;
 }
 
-type PreparedRun = { features: number; prepareMs: number; tippecanoeMs: number };
+type PreparedRun = { features: number; wards: number; prepareMs: number; tippecanoeMs: number };
 
 /**
  * The part shared by the folder and the archive: removes the old output, prepares the features, and runs
  * tippecanoe into `output`. Both builds therefore get exactly the same tiles.
  */
-async function prepareAndTile(input: string, name: string, settings: TileSettings, output: TileOutput): Promise<PreparedRun> {
+async function prepareAndTile(
+  input: string,
+  name: string,
+  settings: TileSettings,
+  output: TileOutput,
+  wardsInput?: string,
+): Promise<PreparedRun> {
   const prepared = resolve(DATA_DIR, `${name}.prepared.geojsonl`);
   await mkdir(DATA_DIR, { recursive: true });
 
@@ -132,16 +162,23 @@ async function prepareAndTile(input: string, name: string, settings: TileSetting
 
   const prepareStarted = performance.now();
   const { features } = await prepareFeatures(input, prepared, settings);
+  let preparedWards: string | undefined;
+  let wards = 0;
+  if (wardsInput) {
+    preparedWards = resolve(DATA_DIR, `${name}.prepared-wards.geojsonl`);
+    wards = await prepareWards(wardsInput, preparedWards);
+  }
   const prepareMs = Math.round(performance.now() - prepareStarted);
 
-  const run = await runTool("tippecanoe", tippecanoeArgs(prepared, output, settings), { label: `tippecanoe ${name}` });
-  return { features, prepareMs, tippecanoeMs: run.ms };
+  const run = await runTool("tippecanoe", tippecanoeArgs(prepared, output, settings, preparedWards), { label: `tippecanoe ${name}` });
+  return { features, wards, prepareMs, tippecanoeMs: run.ms };
 }
 
 export type BuildResult = {
   name: string;
   dir: string;
   features: number;
+  wards: number;
   prepareMs: number;
   tippecanoeMs: number;
   tiles: number;
@@ -151,15 +188,17 @@ export type BuildResult = {
 
 /**
  * Prepares the features, runs tippecanoe into `dir` (the published tile folder by default; `sweep tiles`
- * passes an experiment folder), and measures the folder. A re-run replaces the previous folder.
+ * passes an experiment folder), and measures the folder. A re-run replaces the previous folder. `wardsInput` adds the
+ * wards as a second layer of the same tiles.
  */
 export async function buildTiles(
   input: string,
   name: string,
   settings: TileSettings,
   dir = WEB_TILES_DIR,
+  wardsInput?: string,
 ): Promise<BuildResult> {
-  const { features, prepareMs, tippecanoeMs } = await prepareAndTile(input, name, settings, { kind: "folder", path: dir });
+  const { features, wards, prepareMs, tippecanoeMs } = await prepareAndTile(input, name, settings, { kind: "folder", path: dir }, wardsInput);
 
   const tiles = await listTiles(dir);
   if (tiles.length === 0) throw new Error(`tippecanoe produced no tiles in ${dir}`);
@@ -167,6 +206,7 @@ export async function buildTiles(
     name,
     dir,
     features,
+    wards,
     prepareMs,
     tippecanoeMs,
     tiles: tiles.length,
@@ -178,15 +218,15 @@ export async function buildTiles(
 export type PmtilesResult = PreparedRun & { name: string; file: string; bytes: number };
 
 /** Same preparation and tippecanoe settings as `buildTiles`, written as one PMTiles archive `public/map/<name>.pmtiles`. */
-export async function buildPmtiles(input: string, name: string, settings: TileSettings): Promise<PmtilesResult> {
+export async function buildPmtiles(input: string, name: string, settings: TileSettings, wardsInput?: string): Promise<PmtilesResult> {
   const file = resolve(WEB_MAP_DIR, `${name}.pmtiles`);
-  const run = await prepareAndTile(input, name, settings, { kind: "pmtiles", path: file });
+  const run = await prepareAndTile(input, name, settings, { kind: "pmtiles", path: file }, wardsInput);
 
   if (!existsSync(file)) throw new Error(`tippecanoe produced no archive at ${file}`);
   return { ...run, name, file, bytes: (await stat(file)).size };
 }
 
-export type TileBuildArgs = { name: string; input: string; settings: TileSettings };
+export type TileBuildArgs = { name: string; input: string; wards: string | null; settings: TileSettings };
 
 function numberOption(value: string | undefined, fallback: number | null, flag: string, usage: string): number | null {
   if (value === undefined) return fallback;
@@ -205,6 +245,8 @@ export function parseTileBuildArgs(args: string[], usage: string): TileBuildArgs
     options: {
       name: { type: "string" },
       input: { type: "string" },
+      wards: { type: "string" },
+      "no-wards": { type: "boolean" },
       "min-zoom": { type: "string" },
       "max-zoom": { type: "string" },
       "full-detail": { type: "string" },
@@ -237,5 +279,11 @@ export function parseTileBuildArgs(args: string[], usage: string): TileBuildArgs
   };
   const input = resolve(values.input ?? resolve(WEB_MAP_DIR, ROADS_GEOJSON_NAME));
 
-  return { name: values.name, input, settings };
+  if (values.wards !== undefined && values["no-wards"]) {
+    Logger.error(`--wards and --no-wards cannot be used together. ${usage}`);
+    process.exit(1);
+  }
+  const wards = values["no-wards"] ? null : resolve(values.wards ?? resolve(WEB_MAP_DIR, HCMC_WARDS_NAME));
+
+  return { name: values.name, input, wards, settings };
 }
