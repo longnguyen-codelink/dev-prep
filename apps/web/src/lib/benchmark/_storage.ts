@@ -2,7 +2,7 @@ import { ref } from "vue";
 
 import { BENCHMARK_STORAGE_KEY, MODES, type Mode, TILE_MODES, type TileMode, VARIANTS, type Variant } from "@/constants";
 
-import type { BenchmarkRun } from "./types";
+import type { BenchmarkRun } from "./_types";
 
 // The variant a run is benchmarked as: GeoJSON mode, PM Tiles, or the folder tiles.
 export function variantOf(mode: Mode, tileMode: TileMode): Variant {

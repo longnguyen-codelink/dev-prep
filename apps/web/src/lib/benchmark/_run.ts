@@ -3,9 +3,9 @@ import type { ErrorEvent, Map } from "maplibre-gl";
 import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS, type Mode, type TileMode } from "@/constants";
 import { ROADS_SOURCE_ID } from "@/lib/map-layers";
 
-import { registerDataProtocol } from "./protocol";
-import { saveRun, variantOf } from "./storage";
-import type { BenchmarkRun } from "./types";
+import { registerDataProtocol } from "./_protocol";
+import { saveRun, variantOf } from "./_storage";
+import type { BenchmarkRun } from "./_types";
 
 // Development only: the dev server appends the run to tmp/benchmark/runs.json. keepalive lets the request survive a
 // reload right after the run; a failure (no dev server, blocked) is ignored because the run is also in localStorage.
