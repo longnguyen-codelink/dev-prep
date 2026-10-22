@@ -140,8 +140,8 @@ pnpm cli <action> <target> [options]      # `pnpm cli` alone prints the list, ad
 | 2 | `pnpm cli extract boundary` | `osmium tags-filter` the administrative relations, then `ogr2ogr` the Ho Chi Minh City relation (OSM relation `1973756`) to `apps/web/public/map/hcmc-boundary.geojson`. |
 | 3 | `pnpm cli extract wards` | Read the `subarea` members of the same relation (the wards: 168, with `admin_level=6` in this snapshot), `ogr2ogr` them with `-simplify` and 5 coordinate decimals, keep `osm_id` and `name`, write `apps/web/public/map/hcmc-wards.geojson` (938,850 bytes, 234,629 gzipped). Options: `--relation`, `--pbf`, `--out`, `--simplify <degrees>` (default 0.00005, about 5 m). |
 | 4 | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, clip them to the boundary (`osmium extract`), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes. |
-| 5 | `pnpm cli build tiles --name hcmc-roads-wards` | Prepare the roads and the wards, then run tippecanoe into the published folder `apps/web/public/map/tiles-roads-wards/{z}/{x}/{y}.pbf` (26,846 tiles), with the source-layers `roads` and `wards`. |
-| 6 | `pnpm cli build pmtiles --name hcmc-roads-wards` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads-wards` for the archive the app expects (25,345,738 bytes). |
+| 5 | `pnpm cli build tiles --name hcmc-roads-wards` | Prepare the roads and the wards, then run tippecanoe into the published folder `apps/web/public/map/tiles-roads-wards/{z}/{x}/{y}.pbf` (26,837 tiles), with the source-layers `roads` and `wards`. |
+| 6 | `pnpm cli build pmtiles --name hcmc-roads-wards` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads-wards` for the archive the app expects (24,923,360 bytes). |
 | 7 | `pnpm cli check tiles` | Gzip every tile of the published folder and check budgets: 500,000 bytes per tile, 3,000,000 bytes for the initial view. Exit 1 when over budget. |
 | 8 | `pnpm cli sweep tiles` | Optional: rebuild the roads once per setting variant (without the wards) and write a size table (`tmp/data/tiles/sweep.md`); nothing is published. |
 
@@ -154,25 +154,28 @@ Published files go straight into `apps/web/public/map/` (gitignored), where the 
 ### How the tiles are made
 
 1. **Prepare.** Stream the 80 MB roads GeoJSON line by line, keep only the attributes `highway` and `name` (dropping `osm_id`, `z_order` and the bulky `other_tags`), and add a per-feature `tippecanoe.minzoom` from the road class (below). The result is newline-delimited GeoJSON, 63.6 MB. The ward polygons are written the same way (one feature per line, 943,513 bytes), keeping only `name` and `osm_id` (the web app picks a ward's fill tint from the id) with `tippecanoe.minzoom` 10.
-2. **Tile.** tippecanoe cuts layer `roads` and layer `wards` (`-Lroads:... -Lwards:...`) into zooms 8 to 16 with `--drop-densest-as-needed --extend-zooms-if-still-dropping --read-parallel`. The wards run to the maximum zoom too, because MapLibre overzooms a whole source and a lower ward maximum would hide the wards at street level. The folder build adds `--output-to-directory --no-tile-compression`; the PMTiles build writes a `.pmtiles` file instead (tiles gzipped inside). `--no-wards` builds the roads alone as a single `--layer=roads`.
+2. **Tile.** tippecanoe cuts layer `roads` and layer `wards` (`-Lroads:... -Lwards:...`) with `--minimum-zoom=8 --maximum-zoom=16` (the first tile that exists is at zoom 10, see below), `--drop-densest-as-needed --extend-zooms-if-still-dropping --read-parallel`. The wards run to the maximum zoom too, because MapLibre overzooms a whole source and a lower ward maximum would hide the wards at street level. The folder build adds `--output-to-directory --no-tile-compression`; the PMTiles build writes a `.pmtiles` file instead (tiles gzipped inside). `--no-wards` builds the roads alone as a single `--layer=roads`.
 3. **Check.** `check tiles` gzips each tile and compares against the budgets.
 
-Road class to first zoom: motorway, trunk, primary from 8; secondary from 10; tertiary from 12; residential and unclassified from 13; service from 14; everything else (footway, path, track, ...) from 15. A `_link` follows its parent class. Wards appear from zoom 10.
+Road class to first zoom: motorway, trunk, primary, secondary and tertiary from 12; residential and unclassified from 13; service from 14; everything else (footway, path, track, ...) from 15. A `_link` follows its parent class. Wards appear from zoom 10. Below zoom 12 no road is drawn, so the map shows only the wards (from zoom 10) and the boundary at the city-wide zooms, and the tiles start at zoom 10 (the PMTiles header still says minimum zoom 8, from tippecanoe's `--minimum-zoom`, but no tile exists below 10).
 
 Result of the default build (roads and wards, measured with `check tiles` on the published folder):
 
 | Measure | Value |
 | --- | --- |
-| Tiles | 26,846 (3 at z8, 123 at z12, 19,679 at z16) |
-| Size | 37.9 MB raw, 25.7 MB gzipped (the PMTiles archive is 25,345,738 bytes) |
-| Largest tile | 76 KB gzipped (budget 500 KB) |
+| Tiles | 26,837 (z10 17, z11 41, z12 123, z13 402, z14 1,411, z15 5,164, z16 19,679; none at z8 or z9) |
+| Size | 36.8 MB raw (36,824,882 bytes), 25.3 MB gzipped (25,290,083 bytes); the PMTiles archive is 24,923,360 bytes |
+| Largest tile | 65 KB gzipped (65,235 bytes, tile 13/6522/3849; 13 % of the 500 KB budget) |
 | Initial view (z12, 1280 x 720) | 12 tiles requested, 12 exist, 208 KB gzipped (budget about 3 MB) |
+| Build time (this machine) | `build tiles` 70.8 s in tippecanoe (prepare 0.98 s); `build pmtiles` 69.4 s in total (prepare 1.7 s, tippecanoe 67.7 s) |
 
-For comparison, the roads-only build measured earlier (before the wards, now `--no-wards`): 21,304 tiles (3 at z8, 105 at z12, 15,106 at z16), 33.9 MB raw, 22.1 MB gzipped (PMTiles 22,099,325 bytes), largest tile 65 KB, initial view 11 of 12 tiles existing, 184 KB gzipped, tippecanoe about 34 s. The tippecanoe time of the combined build was not measured.
+For comparison, the roads-only build measured earlier (before the wards and before the roads moved to zoom 12, so the arteries still started at z8; now `--no-wards`): 21,304 tiles (3 at z8, 105 at z12, 15,106 at z16), 33.9 MB raw, 22.1 MB gzipped (PMTiles 22,099,325 bytes), largest tile 65 KB, initial view 11 of 12 tiles existing, 184 KB gzipped, tippecanoe about 34 s on an idle machine. That time is for the roads-only build and is not comparable with the 70.8 s of the combined build above.
 
 ### Settings sweep
 
-Each row is a real build that changes one thing from the base (all attributes, every class from z8, dropping on). `chosen` combines pruning and class-by-zoom. The sweep builds the roads only (no wards, into `tmp/data/tiles/sweep-<variant>`, deleted afterwards unless `--keep`), so the table is the roads-only numbers and its `chosen` row is the roads-only default build above.
+Each row is a real build that changes one thing from the base (all attributes, every class from z8, dropping on). `chosen` combines pruning and class-by-zoom. The sweep builds the roads only (no wards, into `tmp/data/tiles/sweep-<variant>`, deleted afterwards unless `--keep`), so the table is the roads-only numbers and its `chosen` row is the earlier roads-only default build (the one in the comparison above), not the current one.
+
+The sweep numbers were measured with the earlier class-zoom rule (motorway, trunk and primary from z8, secondary from z10); the `class-zoom` and `chosen` rows would differ now that all five main classes start at z12. The sweep has not been re-run since the roads moved to z12.
 
 | Variant | Change | Tiles | Raw | Gzipped | Largest tile (gz) | Initial view (gz) |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -185,7 +188,7 @@ Each row is a real build that changes one thing from the base (all attributes, e
 | max-zoom-14 | max zoom 14 | 1,818 | 35.5 MB | 15.8 MB | 177 KB | 927 KB |
 | chosen | prune + class zoom | 21,304 | 33.9 MB | 22.1 MB | 65 KB | 184 KB |
 
-Reading it: dropping features is required for this data. Attribute pruning is the biggest lever on total size (74.2 to 44.0 MB raw), class-by-zoom on the first screen (927 to 412 KB), and together they give 184 KB. `--full-detail` and `--simplification` change little. Max zoom 14 is much smaller but loses the detail of zooms 15 and 16. The sweep changes one factor at a time, so `chosen` is the only combined row. Pruning removes fields: a popup or filter that wants another OSM tag would need it kept.
+Reading it: dropping features is required for this data. Attribute pruning is the biggest lever on total size (74.2 to 44.0 MB raw), class-by-zoom on the first screen (927 to 412 KB), and together they gave 184 KB (with the earlier rule). `--full-detail` and `--simplification` change little. Max zoom 14 is much smaller but loses the detail of zooms 15 and 16. The sweep changes one factor at a time, so `chosen` is the only combined row. Pruning removes fields: a popup or filter that wants another OSM tag would need it kept.
 
 ## GIS concepts used
 
