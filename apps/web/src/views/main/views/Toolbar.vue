@@ -8,7 +8,7 @@ import { SelectLayers } from "../components/select-layers";
 import { SelectMode } from "../components/select-mode";
 import { SelectTileMode } from "../components/select-tilemode";
 
-defineProps<{ mode: Mode; tileMode: TileMode; layers: readonly LayerGroup[]; isBenchmark: boolean; busy: boolean }>();
+defineProps<{ mode: Mode; tileMode: TileMode; layers: readonly LayerGroup[]; zoom: number; isBenchmark: boolean; busy: boolean }>();
 const emit = defineEmits<{
   switchMode: [mode: Mode];
   switchTileMode: [tileMode: TileMode];
@@ -42,6 +42,6 @@ const emit = defineEmits<{
       </section>
     </div>
 
-    <ActiveLayers :layers="layers" />
+    <ActiveLayers :layers="layers" :zoom="zoom" />
   </div>
 </template>

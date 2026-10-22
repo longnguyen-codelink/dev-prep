@@ -20,7 +20,7 @@ import {
   TILE_MODES,
 } from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
-import { parseLayersParam, toLayersParam } from "@/lib/map-layers";
+import { parseLayersParam, toLayersParam, useMapZoom } from "@/lib/map-layers";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";
@@ -51,6 +51,7 @@ watch(runsVersion, () => (running.value = false));
 const map = shallowRef<Map | null>(null);
 const mapView = ref<InstanceType<typeof MapView> | null>(null);
 const spec = useMapSpec(map);
+const zoom = useMapZoom(map);
 
 // The toolbar is disabled while the map loads and renders, and from the moment a mode switch starts until the reload.
 const ready = ref(false);
@@ -126,6 +127,7 @@ function startRun() {
         :mode="mode"
         :tileMode="tileMode"
         :layers="layers"
+        :zoom="zoom"
         :isBenchmark="isBenchmark"
         :busy="busy"
         @switchMode="switchMode"

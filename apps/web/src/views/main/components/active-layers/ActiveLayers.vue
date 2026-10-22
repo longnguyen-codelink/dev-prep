@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { cn } from "cn";
 import { computed } from "vue";
 
 import { Badge } from "@/components/ui/badge";
@@ -6,13 +7,16 @@ import { Label } from "@/components/ui/label";
 import { LAYER_ENTRIES, type LayerGroup } from "@/constants";
 import { entryColors } from "@/lib/map-layers";
 
-const { layers } = defineProps<{ layers: readonly LayerGroup[] }>();
+const { layers, zoom } = defineProps<{ layers: readonly LayerGroup[]; zoom: number }>();
 
-// One badge per drawn layer of the selected groups, with the colour(s) the map draws it in.
+// One badge per layer of the selected groups, with the colour(s) the map draws it in. A badge is dimmed while the map
+// is zoomed out below the layer's minimum zoom: the layer is selected but not drawn yet.
 const entries = computed(() =>
   LAYER_ENTRIES.filter((entry) => layers.includes(entry.group)).map((entry) => ({
     key: entry.key,
     label: entry.label,
+    drawn: zoom >= entry.minZoom,
+    title: entry.minZoom > 0 ? `Drawn from zoom ${entry.minZoom}` : undefined,
     swatch: swatchOf(entryColors(entry.key)),
   })),
 );
@@ -28,7 +32,14 @@ function swatchOf(colors: string[]): string {
 <template>
   <div class="flex flex-wrap items-center gap-2">
     <Label>Active layers</Label>
-    <Badge v-for="entry in entries" :key="entry.key" variant="outline">
+    <Badge
+      v-for="entry in entries"
+      :key="entry.key"
+      variant="outline"
+      :title="entry.title"
+      :class="cn('transition-opacity', !entry.drawn && 'opacity-40')"
+      :data-drawn="entry.drawn"
+    >
       <span class="size-2.5 rounded-full border border-foreground/20" :style="{ background: entry.swatch }" aria-hidden="true"></span>
       {{ entry.label }}
     </Badge>

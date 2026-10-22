@@ -133,18 +133,20 @@ export const cssVariableMap = {
 // The drawn overlay layers, as the active-layers badges list them: one entry can be several map layers (the city
 // outline and fill, the three GeoJSON-mode layers of a road tier). `colors` are the CSS variables the layers are
 // painted with, so the badges and the map take their colours from the same place; a ward's fill is one of five.
+// `minZoom` is the zoom from which the entry is drawn (the first class of a road tier; the tiles use the same rules).
 export const LAYER_ENTRIES = [
-  { key: "city", group: LAYER_GROUPS.BOUNDARY, label: "City boundary", colors: [cssVariableMap.chart1] },
+  { key: "city", group: LAYER_GROUPS.BOUNDARY, label: "City boundary", colors: [cssVariableMap.chart1], minZoom: 0 },
   {
     key: "ward-fill",
     group: LAYER_GROUPS.WARDS,
     label: "Ward fill",
     colors: [cssVariableMap.chart1, cssVariableMap.chart2, cssVariableMap.chart3, cssVariableMap.chart4, cssVariableMap.chart5],
+    minZoom: WARD_OUTLINE_MIN_ZOOM,
   },
-  { key: "ward-outline", group: LAYER_GROUPS.WARDS, label: "Ward outline", colors: [cssVariableMap.foreground] },
-  { key: "ward-names", group: LAYER_GROUPS.WARDS, label: "Ward names", colors: [cssVariableMap.foreground] },
-  { key: "major", group: LAYER_GROUPS.ROADS, label: "Major roads", colors: [cssVariableMap.chart1] },
-  { key: "medium", group: LAYER_GROUPS.ROADS, label: "Medium roads", colors: [cssVariableMap.chart2] },
-  { key: "minor", group: LAYER_GROUPS.ROADS, label: "Minor roads", colors: [cssVariableMap.chart3] },
+  { key: "ward-outline", group: LAYER_GROUPS.WARDS, label: "Ward outline", colors: [cssVariableMap.foreground], minZoom: WARD_OUTLINE_MIN_ZOOM },
+  { key: "ward-names", group: LAYER_GROUPS.WARDS, label: "Ward names", colors: [cssVariableMap.foreground], minZoom: WARD_LABEL_MIN_ZOOM },
+  { key: "major", group: LAYER_GROUPS.ROADS, label: "Major roads", colors: [cssVariableMap.chart1], minZoom: ROAD_CLASS_MIN_ZOOM.motorway! },
+  { key: "medium", group: LAYER_GROUPS.ROADS, label: "Medium roads", colors: [cssVariableMap.chart2], minZoom: ROAD_CLASS_MIN_ZOOM.secondary! },
+  { key: "minor", group: LAYER_GROUPS.ROADS, label: "Minor roads", colors: [cssVariableMap.chart3], minZoom: ROAD_CLASS_MIN_ZOOM.residential! },
 ] as const;
 export type LayerEntryKey = (typeof LAYER_ENTRIES)[number]["key"];
