@@ -20,7 +20,7 @@ import {
   TILE_MODES,
 } from "@/constants";
 import { runsVersion, useMapSpec } from "@/lib/benchmark";
-import { parseLayersParam, toLayersParam, useMapZoom } from "@/lib/map-layers";
+import { parseLayersParam, toLayersParam, useMapZoom } from "@/lib/utils";
 
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";

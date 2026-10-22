@@ -2,8 +2,7 @@ import type { Map } from "maplibre-gl";
 
 import { LAYER_GROUPS } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-
-import { entryColors, layerMetadata } from "./_groups";
+import { entryColors, layerMetadata } from "@/lib/utils";
 
 export function addHCMCLayer(map: Map): Map {
   const [color] = entryColors("city");

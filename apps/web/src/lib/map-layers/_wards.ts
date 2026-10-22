@@ -2,9 +2,7 @@ import type { Map } from "maplibre-gl";
 
 import { cssVariableMap, LAYER_GROUPS, WARD_LABEL_MIN_ZOOM, WARD_OUTLINE_MIN_ZOOM } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { cssVarToRgba } from "@/lib/utils";
-
-import { entryColors, firstLayerOf, layerMetadata } from "./_groups";
+import { cssVarToRgba, entryColors, firstLayerOf, layerMetadata } from "@/lib/utils";
 
 export const WARDS_SOURCE_ID = "wards";
 const WARDS_FILL_ID = "wards-fill";

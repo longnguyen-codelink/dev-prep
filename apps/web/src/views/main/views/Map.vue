@@ -14,8 +14,8 @@ import {
   type TileMode,
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
-import { addRoadsLayer, addHCMCLayer, addWardsLayer, applyVisibility, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
-import { tryCatchSync } from "@/lib/utils";
+import { addRoadsLayer, addHCMCLayer, addWardsLayer, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
+import { applyVisibility, tryCatchSync } from "@/lib/utils";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
 if (import.meta.env.PROD) setWorkerUrl(`${import.meta.env.BASE_URL}assets/maplibre-gl-worker.js`);

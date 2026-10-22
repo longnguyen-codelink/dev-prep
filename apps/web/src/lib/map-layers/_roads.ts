@@ -13,9 +13,7 @@ import {
   type TileMode,
 } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
-import { createPmtilesSource } from "@/lib/utils";
-
-import { entryColors, layerMetadata } from "./_groups";
+import { createPmtilesSource, entryColors, layerMetadata } from "@/lib/utils";
 
 export const ROADS_SOURCE_ID = "roads";
 

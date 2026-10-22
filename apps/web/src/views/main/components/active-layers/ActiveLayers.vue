@@ -5,7 +5,7 @@ import { computed } from "vue";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { LAYER_ENTRIES, type LayerGroup } from "@/constants";
-import { entryColors } from "@/lib/map-layers";
+import { entryColors } from "@/lib/utils";
 
 const { layers, zoom } = defineProps<{ layers: readonly LayerGroup[]; zoom: number }>();
 

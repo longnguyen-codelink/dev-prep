@@ -1,7 +1,7 @@
 import type { Map } from "maplibre-gl";
 
 import { DEFAULT_LAYER_GROUPS, LAYER_ENTRIES, LAYER_GROUPS, type LayerEntryKey, type LayerGroup } from "@/constants";
-import { cssVarToRgba } from "@/lib/utils";
+import { cssVarToRgba } from "./_css";
 
 // Put in a layer's `metadata` when it is added; applyVisibility() finds the layers of a group through it,
 // so no layer id is listed anywhere (the road layer ids differ between the GeoJSON and tile modes).
