@@ -38,7 +38,7 @@ The app needs the map data under `apps/web/public/map/` (gitignored). The CLI wr
 | --- | --- |
 | `?mode=tiles` (default) / `?mode=geojson` | Which roads source loads. Anything other than `geojson` means tiles. |
 | `?tileMode=folder` (default) / `?tileMode=pmtiles` | Tiles from the `{z}/{x}/{y}.pbf` folder, or from the PM Tiles archive. Only used in tiles mode. |
-| `?benchmark` | Opens the benchmark view (fixed 1280 x 720 map box, pixel ratio pinned to 1, run panels). |
+| `?benchmark` | Opens the benchmark view (fixed 1280 x 720 map box, pixel ratio pinned to 1, run panels). It draws every layer group, roads and wards, in every variant. |
 | `?benchmark&run` | That page load records one benchmark run, then `run` is dropped from the URL so a manual reload does not record again. The "Run" button reloads the page with it. |
 
 Switching mode or tile mode in the toolbar reloads the page, so every run is a clean page load.
@@ -87,7 +87,7 @@ data       hosted separately on an external host, read by the app at runtime
 - **`apps/web`** is Vue 3, MapLibre GL JS 6, Tailwind 4 and shadcn-vue, built with Vite+ (`vp`). The `pmtiles` npm package lets MapLibre read the archive.
 - **The map data is not in the repo and not in the deployed bundle.** It is generated locally by the CLI and uploaded by hand to a public bucket on an external host. The app finds it through `MAP_HOST` (below).
 - **Deploy:** a manual GitHub Actions workflow (`.github/workflows/deploy.yml`, `workflow_dispatch`, only from `challenge/gis`) builds `apps/web` on a GitHub runner, writes `env-config.js` into `dist/`, then `rsync`s `dist/` to an external host over SSH. The site is served at `/dev-challenge-gis/`, so the build sets `VITE_BASE_PATH`.
-- **Basemap:** OpenFreeMap "liberty" style. Only the roads overlay is under test.
+- **Basemap:** OpenFreeMap "liberty" style. The roads and the wards are what is measured.
 
 ### Runtime config: `MAP_HOST`
 
@@ -107,23 +107,23 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 
 ## Results at a glance
 
-Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1, deployed site, first pass of the latest batch: median of 4 runs per variant, recorded 2026-10-21 21:53 to 21:56 (UTC+7) in the Claude desktop app's built-in browser.
+Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1. Since 2026-10-22 every benchmark variant carries and draws **roads and wards**. Latest batch: median of 3 runs per variant, recorded 2026-10-22 in the real Chrome with Claude in Chrome (tab visible and in front for every run), **dev server on localhost with the data from `apps/web/public/map`, not the deployed host**.
 
 | | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |
 | --- | --- | --- | --- |
-| Ready (first data request until the map is idle) | 9.29 s | 0.88 s | 1.65 s |
-| Bytes on the wire | 14.8 MB | 372 KB | 207 KB |
-| Requests | 1 | 11 (+1 missing tile) | 13 range requests |
+| Ready (first data request until the map is idle) | 4.86 s | 0.50 s | 0.56 s |
+| Bytes | 81.4 MB (uncompressed from the dev server) | 403 KB | 232 KB |
+| Requests | 2 (roads + wards) | 12 | 14 range requests |
 
 How to read this:
 
-- **Folder is the fastest** (about 10.6x faster than GeoJSON). **PM Tiles reads the fewest bytes** but was 1.9x to 2.8x slower than Folder, and still about 5.6x faster than GeoJSON.
-- **Bytes are the steadier headline.** Seconds depend on the network between the browser and the data host and moved between batches while the byte counts did not.
-- The GeoJSON file is 80.5 MB raw. The data host serves it brotli-compressed, so 14.8 MB is what crossed the wire.
-- The same tiles cost 372 KB as a folder and 207 KB as PM Tiles because the folder is built with `--no-tile-compression` (plain `.pbf`) and PMTiles gzips each tile by default. The 207 KB includes the header and directory reads.
+- **Both tile modes are about 9 to 10 times faster than GeoJSON** (0.50 s and 0.56 s against 4.86 s). **PM Tiles reads the fewest bytes** (232 KB, 42 % fewer than Folder's 403 KB) but was 1.1x slower than Folder in the median, and its three runs varied more (0.20 to 0.62 s).
+- **Bytes are the steadier headline.** Seconds depend on where the data is served from. These runs read from the local dev server over loopback, so they say nothing about a real network; the GeoJSON size is its raw size because the dev server does not compress (the deployed host serves brotli).
+- **Adding the wards cost little:** against the earlier roads-only batch Folder grew by 8.2 % (+30,503 B, one more served tile), PM Tiles by 12.1 % (+25,054 B, one more request) and GeoJSON by 1.2 % (+938,850 B, one more request).
+- The same tiles cost 403 KB as a folder and 232 KB as PM Tiles because the folder is built with `--no-tile-compression` (plain `.pbf`) and PMTiles gzips each tile by default; the PM Tiles figure includes the header and directory reads.
 - The throttled-network set (slow network, CPU slowdown) is still to be recorded.
 
-Full method, per-run numbers and caveats are in [Benchmark](#benchmark).
+Full method, per-run numbers and caveats are in [Benchmark](#benchmark), together with the earlier **roads-only** batch from the deployed site (GeoJSON 9.29 s, Folder 0.88 s, PM Tiles 1.65 s), which is not comparable in seconds because it ran on another network path.
 
 ## The data pipeline (`apps/cli`)
 
@@ -197,21 +197,49 @@ Reading it: dropping features is required for this data. Attribute pruning is th
 
 ### Method
 
-A run is **one clean page load** in one mode at the fixed view (centre `[106.7, 10.78]`, zoom 12, map box 1280 x 720, pixel ratio 1). It records, for the roads overlay only:
+A run is **one clean page load** in one mode at the fixed view (centre `[106.7, 10.78]`, zoom 12, map box 1280 x 720, pixel ratio 1). It records, for the data overlay (the roads and, since 2026-10-22, the wards):
 
-- **Bytes and requests:** MapLibre fetches overlay data in a worker, where the page's Resource Timing cannot see it. The roads source therefore goes through a custom `bench://` protocol whose handler runs on the main thread, tags each request with `?benchmark-run=<id>` and fetches it. After the run the tagged Resource Timing entries are summed (`encodedBodySize`, so bytes on the wire). PM Tiles reads go through a tagged range source in the same protocol (`apps/web/src/lib/benchmark/protocol.ts`); each range request must come back `206`, and a `200` (the server ignored `Range` and sent the whole file) fails the run. The range read itself is shared with the app (`fetchRange` in `apps/web/src/lib/map-layers/_pmtiles-source.ts`), so the benchmark and the app cannot drift apart.
-- **Ready time:** from the **first data request** until the map is idle with the roads source loaded. The startup delay before the first request is recorded separately and not used in the comparison. (Measuring from page mount, as another site does, let a variable startup delay swing the result between 2 s and 13 s.)
+- **Bytes and requests:** MapLibre fetches overlay data in a worker, where the page's Resource Timing cannot see it. The data sources (the roads, and in GeoJSON mode the ward file) therefore go through a custom `bench://` protocol whose handler runs on the main thread, tags each request with `?benchmark-run=<id>` and fetches it. After the run the tagged Resource Timing entries are summed (`encodedBodySize`, so bytes on the wire). PM Tiles reads go through a tagged range source in the same protocol (`apps/web/src/lib/benchmark/_protocol.ts`); each range request must come back `206`, and a `200` (the server ignored `Range` and sent the whole file) fails the run. The range read itself is shared with the app (`fetchRange` in `apps/web/src/lib/map-layers/_pmtiles-source.ts`), so the benchmark and the app cannot drift apart.
+- **Ready time:** from the **first data request** until the map is idle with the roads source loaded (in GeoJSON mode the ward source too; in the tile modes the wards arrive inside the tiles). The startup delay before the first request is recorded separately and not used in the comparison. (Measuring from page mount, as another site does, let a variable startup delay swing the result between 2 s and 13 s.)
 - **Missing tiles:** a 404 (or an HTML 200 from the dev server) counts as "missing". That is normal for an empty area: it is left out of bytes and request count, shown as "Missing files". For GeoJSON a missing file fails the run.
-- Runs that fail or exceed 120 s are excluded. The headline is the **median of ok runs**; at least 3 per mode is recommended. Runs are stored per variant (`geojson`, `folder`, `pmtiles`) in `localStorage`, and in development also appended to `tmp/benchmark/runs.json`.
+- Runs that fail or exceed 120 s are excluded. The headline is the **median of ok runs**; at least 3 per mode is recommended. Runs are stored per variant (`geojson`, `folder`, `pmtiles`) in `localStorage` under the key `dev-prep-benchmark-runs-v2`, and in development also appended to `tmp/benchmark/runs-v2.json`. The `-v2` store holds the roads + wards runs only; the earlier roads-only runs (`-v1`, `runs.json`) are never mixed in.
+- **All variants draw the same content.** The benchmark view draws every layer group whatever `?layers` says, so the three variants carry and render roads and wards alike: the tile modes get the wards inside the same tiles (no extra request), and the GeoJSON variant also loads `hcmc-wards.geojson` through the protocol, which counts its request and bytes and makes "ready" wait for it.
 - The benchmark view shows a per-mode summary, a comparison table, warnings (hidden tab, mixed viewports, slow startup, fewer than 3 runs) and "Copy as markdown table".
 
 ### Conditions
 
+Latest batch (roads + wards, 2026-10-22, commit `9472cc1`):
+
+- Claude in Chrome driving the real Chrome, the tab visible and in front for every run; every counted run was `ok` and `visible`, nothing was excluded.
+- The dev server on `localhost:5173` with the data read from the local `apps/web/public/map` (not the deployed bundle and not the external data host), map box 1280 x 720, pixel ratio 1, one clean page load per run (`?benchmark&run`), 3 runs per variant.
+
+### Latest batch: roads + wards in all three variants (2026-10-22, commit `9472cc1`)
+
+| | GeoJSON (roads + wards files) | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
+| --- | --- | --- | --- |
+| Ready, median (range) | 4.86 s (4.81 to 5.19) | 0.50 s (0.41 to 0.51) | 0.56 s (0.20 to 0.62) |
+| Network part, median | 1.01 s (plus 3.80 s after download) | 0.08 s | 0.18 s |
+| Bytes | 81,437,251 (80,498,401 + 938,850) | 402,849 | 232,027 |
+| Requests | 2 | 12 | 14 range requests |
+| Missing files | 0 | 0 | 0 |
+
+Ready per run, in order: GeoJSON 4.81, 4.86, 5.19 s; Folder 0.50, 0.41, 0.51 s; PM Tiles 0.56, 0.62, 0.20 s. Requests and bytes were identical in all three runs of each variant.
+
+| Against the roads-only numbers | Before | After | Change |
+| --- | --- | --- | --- |
+| GeoJSON | 1 request, 80,498,401 B | 2 requests, 81,437,251 B | +938,850 B (+1.2 %) |
+| Folder | 11 requests (+1 missing), 372,346 B | 12 requests, 402,849 B | +30,503 B (+8.2 %); the missing tile now exists (a 106 B ward-only tile) |
+| PM Tiles | 13 requests, 206,973 B | 14 requests, 232,027 B | +25,054 B (+12.1 %) |
+
+The older roads-only runs of the same machine and dev server (visible tab) give a Folder ready median of 0.09 s (9 runs) and a GeoJSON median of 4.62 s (4 runs); Folder is therefore about 5x slower with the wards, still half a second, and GeoJSON about 5 % slower. The cause of the Folder increase is not isolated (drawing the ward fill, outline and names at the start view, the larger tiles and run-to-run effects are all candidates). The earlier PM Tiles runs on this setup were taken with a hidden tab, so there is no like-for-like comparison for it.
+
+### Earlier batch: roads only, deployed site (2026-10-21 21:53 to 21:56, UTC+7, commit `9f6a0eb`)
+
+Before the wards were part of the benchmark. Conditions:
+
 - Deployed site, data served from an external host, commit `9f6a0eb` (workflow run 39615022646), bundle `index-niCdIVWS.js`.
 - Claude desktop app's built-in browser, a freshly opened pane in view for the whole batch; window 1680 x 958; every counted run was `ok` and `visible`, nothing was excluded.
 - Data host throughput about 5 to 7 MB/s per stream; a plain round trip from the page to the data host took about 0.43 to 0.60 s (3 probes before the batch, 3 after).
-
-### Latest batch: all three variants (2026-10-21 21:53 to 21:56, UTC+7, commit `9f6a0eb`)
 
 Order: PM Tiles, Folder, GeoJSON (4 runs each, from 21:53:39), then a second pass of PM Tiles and Folder (3 runs each, from 21:55:12).
 
@@ -238,10 +266,12 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 
 ### Caveats
 
-- Both modes trend down over the first runs (cold start). The spread is wide for Folder, so treat its median as approximate; more runs would firm up the medians. The second pass has only 3 runs per variant.
+- **Latest batch is local.** Its seconds come from the dev server over loopback and cannot be compared with the earlier deployed-site batch above; compare bytes and requests across the two, and ratios only within one batch. A deployed batch with the combined data is not recorded yet.
+- **Latest batch has 3 runs per variant.** That is enough to show the counts are stable and too few to explain the Folder increase; PM Tiles varied from 0.20 to 0.62 s between runs.
+- In the earlier batch both modes trend down over the first runs (cold start). The spread is wide for Folder, so treat its median as approximate; more runs would firm up the medians. The second pass has only 3 runs per variant.
 - The batches were taken in one environment, one browser and one network path. Absolute times will differ elsewhere, and they moved between batches on the same setup.
 - Runs flagged hidden or cut off were discarded (here, one PM Tiles run when the pane was resized). A hidden pane throttles timers and reports a 0 x 0 viewport; do not trust numbers taken that way.
-- Earlier runs on other conditions (dev server, mixed pixel ratios) are not included.
+- The earlier batch left out dev-server runs and mixed pixel ratios; the latest batch is a dev-server batch.
 - In benchmark mode the GeoJSON goes through the main thread (`fetch` and `response.json()`), so its after-download time includes parsing there, which the normal view does not do.
 - The throttled-network set is not recorded.
 
@@ -252,11 +282,11 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 - **Published files go straight into `apps/web/public/map`.** The CLI writes the boundary, roads GeoJSON, tile folder and PMTiles archive there directly (no symlinks into `tmp/data`), and only intermediates stay in `tmp/data`. That folder is what the dev server serves and what gets uploaded to the data host.
 - **Data is kept out of the bundle.** `apps/web/public/map` is gitignored; the data lives on a separate public host, which is why CORS, `Timing-Allow-Origin` and Range requirements apply.
 - **MapLibre worker shipped as `.js`.** MapLibre 6 loads `maplibre-gl-worker.mjs` as a sibling of the script and the bundle drops it, so a Vite plugin emits it. It is emitted as `assets/maplibre-gl-worker.js` because the host serves `.mjs` as `application/octet-stream`, which browsers reject for module workers.
-- **Folder tiles are uncompressed, PMTiles tiles are gzipped.** The folder is built with `--no-tile-compression` so any static host can serve it, and the host in front of it did not compress `.pbf`, so the 11 initial-view tiles cost 372,346 bytes on the wire, exactly their raw size. `check tiles` judges budgets on gzipped size (184 KB for the same view), which is what a compressing host would send. tippecanoe compresses tiles inside a PMTiles archive by default, so the archive is about 22.1 MB, close to the folder's gzipped total. That is why the same tiles are 372 KB as a folder and 207 KB as PM Tiles on the wire; keep that in mind when comparing bytes, it is a property of how each was built and served, not of the format.
+- **Folder tiles are uncompressed, PMTiles tiles are gzipped.** The folder is built with `--no-tile-compression` so any static host can serve it, and the host in front of it did not compress `.pbf`, so the 11 initial-view tiles cost 372,346 bytes on the wire, exactly their raw size. `check tiles` judges budgets on gzipped size (184 KB for the same view), which is what a compressing host would send. tippecanoe compresses tiles inside a PMTiles archive by default, so the archive is about 22.1 MB, close to the folder's gzipped total. That is why the same tiles are 372 KB as a folder and 207 KB as PM Tiles on the wire; keep that in mind when comparing bytes, it is a property of how each was built and served, not of the format. (Roads-only figures; with the wards in the tiles the same view is 402,849 B as a folder and 232,027 B as PM Tiles.)
 - **`simple` extract strategy.** `complete_ways` was killed above about 3.3 GiB on whole-Vietnam highways; `simple` needs about 47 MiB and loses about 0.2% of features (roads cut at the border).
 - **Fixed benchmark box and pixel ratio.** The viewport decides how many tiles load and the pixel ratio decides drawing work, so both are pinned. Mode switches reload the page so no warm heap or reused worker leaks into a run. The map is torn down (`map.remove()`) before a reload, because repeated 80 MB GeoJSON loads in one tab otherwise grew the renderer's memory.
 - **Dev server quirk.** Vite answers a missing file with `index.html` and status 200. In the normal (non-benchmark) view a missing tile can therefore be parsed as a tile and log an error; the benchmark protocol treats it as "missing".
-- **Roads only.** One layer, no points of interest. The city boundary is drawn in every mode but is not routed through the benchmark protocol, so it does not change the measured bytes.
+- **Roads and wards are what is measured.** No points of interest. The city boundary is drawn in every mode but is not routed through the benchmark protocol, so it does not change the measured bytes; the wards are in the measured data (inside the tiles, and as a second GeoJSON file in GeoJSON mode) so that all three variants carry and draw the same content.
 
 ## Data and attribution
 
