@@ -72,7 +72,7 @@ const hints = computed(() => {
     list.push({ warn: true, text: "The GeoJSON file was reported missing; check the link in public/map." });
   const conditions = new Set(runs.value.map((run) => `${run.viewport.width}x${run.viewport.height}|${run.userAgent}`));
   if (conditions.size > 1) list.push({ warn: true, text: "Stored runs mix different viewports or browsers; clear the runs before recording." });
-  list.push({ warn: false, text: "The dev server does not compress, so bytes are as served; gzipped sizes are reported separately." });
+  list.push({ warn: false, text: "Bytes are the encoded bytes on the wire: compressed when the host compresses (the deployed site does for GeoJSON, the dev server does not)." });
   return list;
 });
 
