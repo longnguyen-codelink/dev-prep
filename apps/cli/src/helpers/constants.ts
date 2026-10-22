@@ -10,9 +10,18 @@ export const DATA_DIR = resolve(import.meta.dirname, "../../../../tmp/data");
 export const ADMIN_PBF_NAME = "vn-admin.osm.pbf";
 export const HIGHWAYS_PBF_NAME = "vn-highways.osm.pbf";
 export const HCMC_BOUNDARY_NAME = "hcmc-boundary.geojson";
+export const HCMC_WARDS_NAME = "hcmc-wards.geojson";
 
 // OSM relation of Ho Chi Minh City in the pinned snapshot (the merged city).
 export const HCMC_RELATION_ID = "1973756";
+
+// The wards are the `subarea` members of the city relation. In the pinned snapshot (after the 2025 reform) they are all
+// admin_level 6; the command fails if a member has another level, since the snapshot then means something else.
+export const WARD_ROLE = "subarea";
+export const WARD_ADMIN_LEVEL = "6";
+// `ogr2ogr -simplify` tolerance in degrees (about 5 m) and the decimals kept (about 1 m), to keep the file near 1 MB.
+export const DEFAULT_WARD_SIMPLIFY = 0.00005;
+export const WARD_COORDINATE_PRECISION = 5;
 
 // Where the published artifacts are written and the web app reads them from in development (gitignored).
 export const WEB_MAP_DIR = resolve(import.meta.dirname, "../../../web/public/map");
@@ -104,6 +113,7 @@ export const MAPLIBRE_TILE_SIZE = 512;
 // --- Command line ---
 export const FETCH_BASE_FILE_USAGE = "usage: pnpm cli fetch base-file";
 export const EXTRACT_BOUNDARY_USAGE = "usage: pnpm cli extract boundary [--relation <osm id>] [--pbf <file>] [--out <file>]";
+export const EXTRACT_WARDS_USAGE = "usage: pnpm cli extract wards [--relation <osm id>] [--pbf <file>] [--out <file>] [--simplify <degrees>]";
 export const BUILD_ROADS_USAGE = "usage: pnpm cli build roads --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]";
 
 // Every command: `pnpm cli <action> <target>`. `file` is in src/entrypoints/ and exports run(args); the numbers
@@ -122,6 +132,13 @@ export const COMMANDS: readonly { action: string; target: string; file: string; 
     file: "02-extract-boundary.ts",
     description: "Extract the HCMC boundary GeoJSON",
     usage: EXTRACT_BOUNDARY_USAGE,
+  },
+  {
+    action: "extract",
+    target: "wards",
+    file: "08-extract-wards.ts",
+    description: "Extract the ward (phuong, xa, dac khu) polygons of HCMC as GeoJSON",
+    usage: EXTRACT_WARDS_USAGE,
   },
   { action: "build", target: "roads", file: "03-build-roads.ts", description: "Build the roads GeoJSON inside a boundary", usage: BUILD_ROADS_USAGE },
   { action: "build", target: "tiles", file: "04-build-tiles.ts", description: "Prepare the features and run tippecanoe", usage: TILES_USAGE },
