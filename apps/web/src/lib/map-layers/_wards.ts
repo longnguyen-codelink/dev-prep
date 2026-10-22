@@ -28,9 +28,9 @@ export function addWardsLayer(map: Map): Map {
       paint: {
         // Dashed and dark: the chart colours blend into the basemap's yellow roads and the overlay roads.
         "line-color": cssVarToRgba(cssVariableMap.foreground, root),
-        "line-width": ["interpolate", ["linear"], ["zoom"], WARD_OUTLINE_MIN_ZOOM, 0.75, 16, 1.5],
+        "line-width": ["interpolate", ["linear"], ["zoom"], WARD_OUTLINE_MIN_ZOOM, 1.5, 16, 3],
         "line-dasharray": [3, 2],
-        "line-opacity": 0.7,
+        "line-opacity": 0.9,
       },
     },
     firstLayerOf(map, LAYER_GROUPS.ROADS),
