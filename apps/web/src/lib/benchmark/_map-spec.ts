@@ -15,7 +15,7 @@ export function useMapSpec(map: Ref<Map | null>) {
     const layers = target.getStyle()?.layers ?? [];
     const container = target.getContainer();
     const center = target.getCenter();
-    const isOverlay = (layer: (typeof layers)[number]) => "source" in layer && layer.source === "roads";
+    const isOverlay = (layer: (typeof layers)[number]) => "source" in layer && (layer.source === "roads" || layer.source === "wards");
     live.value = {
       width: container.clientWidth,
       height: container.clientHeight,

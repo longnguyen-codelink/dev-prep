@@ -15,12 +15,13 @@ const WARDS_LABELS_ID = "wards-labels";
 // the roads, so nothing is requested here (their data already arrived with the tiles). GeoJSON mode has no tiles: it
 // requests the ward file (about 1 MB) now. The fill and outline go below the roads so road lines stay on top of them;
 // the names go on top so roads do not cross them.
-export function addWardsLayer(map: Map, mode: Mode): Map {
+// `toSourceUrl` lets the benchmark route the GeoJSON through its protocol; by default the URL is used as is.
+export function addWardsLayer(map: Map, mode: Mode, toSourceUrl: (url: string) => string = (url) => url): Map {
   const root = document.documentElement;
   const metadata = layerMetadata(LAYER_GROUPS.WARDS);
 
   const fromTiles = mode === MODES.TILES;
-  if (!fromTiles) map.addSource(WARDS_SOURCE_ID, { type: "geojson", data: MAP_URLS.wardsGeoJson });
+  if (!fromTiles) map.addSource(WARDS_SOURCE_ID, { type: "geojson", data: toSourceUrl(MAP_URLS.wardsGeoJson) });
   const source = fromTiles ? ROADS_SOURCE_ID : WARDS_SOURCE_ID;
   const sourceLayer = fromTiles ? { "source-layer": WARDS_SOURCE_LAYER } : {};
 

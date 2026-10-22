@@ -46,6 +46,9 @@ export const WARDS_SOURCE_LAYER = "wards";
 export const LAYERS_PARAM = "layers";
 
 // Wards are off until asked for, so the default view is the same as before the groups existed.
+// Every benchmark run draws all groups, so the three variants carry and draw the same content (roads and wards).
+export const BENCHMARK_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.BOUNDARY, LAYER_GROUPS.WARDS, LAYER_GROUPS.ROADS];
+
 export const DEFAULT_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.BOUNDARY, LAYER_GROUPS.ROADS];
 
 export const BASEMAP_STYLE ="https://tiles.openfreemap.org/styles/liberty";
@@ -92,7 +95,9 @@ export const BENCHMARK_VIEW_PARAM = "benchmark";
 export const BENCHMARK_RECORD_PARAM = "run";
 export const BENCHMARK_TIMEOUT_MS = 120_000;
 // Runs are stored per variant under "<key>-<variant>"; bump the version when the run shape changes.
-export const BENCHMARK_STORAGE_KEY = "dev-prep-benchmark-runs-v1";
+// v2: runs recorded with the wards drawn in every variant (roads + wards). v1 holds the older roads-only runs, which are not
+// comparable and are never mixed in.
+export const BENCHMARK_STORAGE_KEY = "dev-prep-benchmark-runs-v2";
 // The default buffer (250) could fill with basemap requests before the overlay data is read back.
 export const BENCHMARK_RESOURCE_BUFFER = 1000;
 // In development every finished run is also POSTed here and appended to tmp/benchmark/runs.json by the Vite dev server.

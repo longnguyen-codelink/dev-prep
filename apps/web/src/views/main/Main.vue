@@ -9,7 +9,7 @@ import {
   BENCHMARK_MAP_WIDTH,
   BENCHMARK_RECORD_PARAM,
   BENCHMARK_VIEW_PARAM,
-  DEFAULT_LAYER_GROUPS,
+  BENCHMARK_LAYER_GROUPS,
   LAYER_GROUPS,
   LAYERS_PARAM,
   type LayerGroup,
@@ -35,8 +35,8 @@ const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
 const tileModeParam = params.get("tileMode")?.toLowerCase();
 const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
 
-// Which layer groups are drawn; the benchmark view always draws the defaults, whatever ?layers says.
-const layers = ref<LayerGroup[]>(isBenchmark.value ? [...DEFAULT_LAYER_GROUPS] : parseLayersParam(params.get(LAYERS_PARAM)));
+// Which layer groups are drawn; the benchmark view always draws every group, whatever ?layers says.
+const layers = ref<LayerGroup[]>(isBenchmark.value ? [...BENCHMARK_LAYER_GROUPS] : parseLayersParam(params.get(LAYERS_PARAM)));
 
 // ?run makes this page load record one run; drop it so a manual reload only shows the view.
 const record = isBenchmark.value && params.has(BENCHMARK_RECORD_PARAM);
@@ -102,7 +102,8 @@ function switchTileMode(next: TileMode) {
 // Opening the benchmark view does not reload the page; the URL is kept in sync so F5 restores the view.
 function switchBenchmark(on: boolean) {
   isBenchmark.value = on;
-  if (on) layers.value = [...DEFAULT_LAYER_GROUPS]; // the benchmark view draws the default layers
+  // The benchmark view draws every group; leaving it goes back to what ?layers says.
+  layers.value = on ? [...BENCHMARK_LAYER_GROUPS] : parseLayersParam(new URLSearchParams(window.location.search).get(LAYERS_PARAM));
   const url = new URL(window.location.href);
   if (on) url.searchParams.set(BENCHMARK_VIEW_PARAM, "");
   else url.searchParams.delete(BENCHMARK_VIEW_PARAM);

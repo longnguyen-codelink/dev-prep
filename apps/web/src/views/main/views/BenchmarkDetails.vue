@@ -9,8 +9,8 @@ const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec }>();
 const { live, win, sizeOk, startCenter } = props.spec;
 
 const source = computed(() => {
-  if (props.mode !== MODES.TILES) return `GeoJSON, ${MAP_URLS.roadsGeoJson}`;
-  return props.tileMode === TILE_MODES.PM_TILES ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.pmtiles}` : `vector tiles (folder), ${MAP_URLS.tiles}`;
+  if (props.mode !== MODES.TILES) return `GeoJSON, ${MAP_URLS.roadsGeoJson} and ${MAP_URLS.wardsGeoJson}`;
+  return props.tileMode === TILE_MODES.PM_TILES ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.pmtiles} (roads + wards)` : `vector tiles (folder), ${MAP_URLS.tiles} (roads + wards)`;
 });
 
 function runsOf(variant: Variant) {

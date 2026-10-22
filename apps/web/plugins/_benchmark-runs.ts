@@ -4,8 +4,9 @@ import type { Plugin } from "vite";
 
 import { BENCHMARK_SAVE_ENDPOINT } from "../src/constants/index.ts";
 
-// Where the dev server appends every finished benchmark run (gitignored, under the repo's tmp folder).
-const RUNS_FILE = resolve(import.meta.dirname, "../../../tmp/benchmark/runs.json");
+// Where the dev server appends every finished benchmark run (gitignored, under the repo's tmp folder). runs.json holds the
+// older roads-only runs; runs-v2.json the runs with the wards drawn in every variant.
+const RUNS_FILE = resolve(import.meta.dirname, "../../../tmp/benchmark/runs-v2.json");
 
 // Appends to a JSON array one request at a time, so two runs finishing together cannot overwrite each other.
 let queue: Promise<void> = Promise.resolve();

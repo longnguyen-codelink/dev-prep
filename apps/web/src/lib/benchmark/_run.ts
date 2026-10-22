@@ -1,7 +1,7 @@
 import type { ErrorEvent, Map } from "maplibre-gl";
 
 import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS, type Mode, type TileMode } from "@/constants";
-import { ROADS_SOURCE_ID } from "@/lib/map-layers";
+import { ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
 
 import { registerDataProtocol } from "./_protocol";
 import { saveRun, variantOf } from "./_storage";
@@ -20,8 +20,8 @@ function saveRunToDisk(run: BenchmarkRun): void {
 }
 
 /**
- * Call once per page load, right after the map is created. Pass `toProtocolUrl` to addRoadsLayer. The run ends, and is
- * stored, when the roads source is loaded and the map is idle, or on a failure, or after the timeout; call `fail` if
+ * Call once per page load, right after the map is created. Pass `toProtocolUrl` to addRoadsLayer and addWardsLayer. The run
+ * ends, and is stored, when the data sources (roads, and the wards in GeoJSON mode) are loaded and the map is idle, or on a failure, or after the timeout; call `fail` if
  * adding the layers throws and `dispose` when the map is torn down.
  */
 export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
@@ -87,13 +87,17 @@ export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
     };
   }
 
-  // Ready = the roads source is loaded when the map next goes idle.
+  // Ready = the roads source is loaded, and in GeoJSON mode the ward source too (the tile modes carry the wards in the
+  // tiles), when the map next goes idle.
   const onIdle = () => {
-    if (map.getSource(ROADS_SOURCE_ID) && map.isSourceLoaded(ROADS_SOURCE_ID)) finish(performance.now(), null);
+    const wardsLoaded = !map.getSource(WARDS_SOURCE_ID) || map.isSourceLoaded(WARDS_SOURCE_ID);
+    if (map.getSource(ROADS_SOURCE_ID) && map.isSourceLoaded(ROADS_SOURCE_ID) && wardsLoaded) finish(performance.now(), null);
   };
-  // Only errors of the roads source fail the run; basemap tile and glyph errors are not part of the comparison.
+  // Only errors of the data sources fail the run; basemap tile and glyph errors are not part of the comparison.
   const onError = (event: ErrorEvent & { sourceId?: string }) => {
-    if (event.sourceId === ROADS_SOURCE_ID) finish(null, `source error: ${event.error?.message ?? "unknown"}`);
+    if (event.sourceId === ROADS_SOURCE_ID || event.sourceId === WARDS_SOURCE_ID) {
+      finish(null, `source error: ${event.error?.message ?? "unknown"}`);
+    }
   };
   const timer = setTimeout(() => finish(null, `timeout after ${BENCHMARK_TIMEOUT_MS / 1000} s`), BENCHMARK_TIMEOUT_MS);
   map.on("idle", onIdle);

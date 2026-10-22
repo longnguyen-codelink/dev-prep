@@ -48,12 +48,13 @@ watch(
   },
 );
 
-// Draws the selected groups. The ward layers are added the first time Wards is selected, and never in the benchmark view;
-// in GeoJSON mode that is also when the ward file is requested (in the tile modes the wards come with the tiles).
+// Draws the selected groups. The ward layers are added the first time Wards is selected (the benchmark view selects it from
+// the start); in GeoJSON mode that is also when the ward file is requested, through the benchmark protocol in a recorded run
+// so its request and bytes are counted (in the tile modes the wards come with the tiles).
 function syncLayers() {
   if (!map || !layersAdded) return;
-  if (layers.includes(LAYER_GROUPS.WARDS) && !isBenchmark && !wardsAdded) {
-    addWardsLayer(map, mode);
+  if (layers.includes(LAYER_GROUPS.WARDS) && !wardsAdded) {
+    addWardsLayer(map, mode, benchmark?.toProtocolUrl);
     wardsAdded = true;
   }
   applyVisibility(map, layers);
