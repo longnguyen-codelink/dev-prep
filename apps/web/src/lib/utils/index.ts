@@ -1,2 +1,3 @@
 export { cssVarToRgba } from "./_css";
-export { fetchRange, createPmtilesSource } from "./_pmtiles-source";
+export { tryCatch, tryCatchSync } from "./_helpers";
+export { createPmtilesSource, fetchRange } from "./_pmtiles-source";

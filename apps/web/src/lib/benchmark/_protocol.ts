@@ -2,7 +2,7 @@ import { addProtocol, AJAXError, removeProtocol, type AddProtocolAction } from "
 import type { Source } from "pmtiles";
 
 import { BENCHMARK_PROTOCOL, BENCHMARK_RUN_PARAM } from "@/constants";
-import { fetchRange } from "@/lib/utils";
+import { fetchRange, tryCatch } from "@/lib/utils";
 
 const PROTOCOLS = [`${BENCHMARK_PROTOCOL}-http`, `${BENCHMARK_PROTOCOL}-https`];
 const PREFIX = `${BENCHMARK_PROTOCOL}-`;
@@ -30,10 +30,8 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
     const url = new URL(params.url.slice(PREFIX.length));
     url.searchParams.set(BENCHMARK_RUN_PARAM, runId);
 
-    let response: Response;
-    try {
-      response = await fetch(url, { signal: abortController.signal });
-    } catch (error) {
+    const { data: response, error } = await tryCatch(fetch(url, { signal: abortController.signal }));
+    if (!response) {
       if (!abortController.signal.aborted) onFailure(`request failed: ${url.pathname} (${String(error)})`);
       throw error;
     }
@@ -46,6 +44,7 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
       if (params.type !== "arrayBuffer") onFailure(`file missing: ${url.pathname}`);
       throw new AJAXError(404, "Not Found", url.href, new Blob());
     }
+
     if (!response.ok) {
       await readBody(response, "arrayBuffer");
       onFailure(`HTTP ${response.status}: ${url.pathname}`);
@@ -54,16 +53,17 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
 
     return { data: await readBody(response, params.type === "json" ? "json" : "arrayBuffer", abortController.signal) };
   };
+
   for (const name of PROTOCOLS) addProtocol(name, handler);
 
   // A truncated or malformed body fails the run at once instead of waiting for the timeout.
   async function readBody(response: Response, kind: "json" | "arrayBuffer", signal?: AbortSignal) {
-    try {
-      return kind === "json" ? await response.json() : await response.arrayBuffer();
-    } catch (error) {
-      if (!signal?.aborted) onFailure(`could not read ${new URL(response.url).pathname} (${String(error)})`);
-      throw error;
-    }
+    const { data, error } = await tryCatch<ArrayBuffer, Error>(kind === "json" ? response.json() : response.arrayBuffer());
+
+    if (data) return data;
+
+    if (!signal?.aborted) onFailure(`could not read ${new URL(response.url).pathname} (${String(error?.message)})`);
+    throw error;
   }
 
   // The library's default fetch would send untagged requests, so PM Tiles range requests are made here instead.
@@ -74,10 +74,8 @@ export function registerDataProtocol(runId: string, onFailure: (reason: string) 
       const tagged = new URL(url);
       tagged.searchParams.set(BENCHMARK_RUN_PARAM, runId);
 
-      let response: Response;
-      try {
-        response = await fetchRange(tagged, offset, length, signal);
-      } catch (error) {
+      const { data: response, error } = await tryCatch<Response, Error>(fetchRange(tagged, offset, length, signal));
+      if (error) {
         if (!signal?.aborted) onFailure(`request failed: ${tagged.pathname} (${String(error)})`);
         throw error;
       }

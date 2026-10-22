@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { BENCHMARK_STORAGE_KEY, MODES, type Mode, TILE_MODES, type TileMode, VARIANTS, type Variant } from "@/constants";
 
 import type { BenchmarkRun } from "./_types";
+import { tryCatchSync } from "@/lib/utils";
 
 // The variant a run is benchmarked as: GeoJSON mode, PM Tiles, or the folder tiles.
 export function variantOf(mode: Mode, tileMode: TileMode): Variant {
@@ -20,29 +21,21 @@ const variantFallback = (run: BenchmarkRun): Variant => (run.mode.toLowerCase() 
 export const runsVersion = ref(0);
 
 export function loadRuns(variant: Variant): BenchmarkRun[] {
-  try {
-    const parsed: unknown = JSON.parse(localStorage.getItem(keyFor(variant)) ?? "[]");
-    return Array.isArray(parsed) ? (parsed as BenchmarkRun[]) : [];
-  } catch {
-    return [];
-  }
+  const { data, error } = tryCatchSync(() => JSON.parse(localStorage.getItem(keyFor(variant)) ?? "[]"));
+  if (error) return [];
+  const parsed = data;
+  return Array.isArray(parsed) ? (parsed as BenchmarkRun[]) : [];
 }
 
 export function saveRun(run: BenchmarkRun): void {
   const variant = run.variant ?? variantFallback(run);
-  try {
-    localStorage.setItem(keyFor(variant), JSON.stringify([...loadRuns(variant), run]));
-  } catch {
-    // Storage can be blocked or full; the run is still on window.__benchmarkRun.
-  }
+  void tryCatchSync(() => localStorage.setItem(keyFor(variant), JSON.stringify([...loadRuns(variant), run])));
   runsVersion.value++;
+  return;
 }
 
 export function clearRuns(variant: Variant): void {
-  try {
-    localStorage.removeItem(keyFor(variant));
-  } catch {
-    // Nothing stored if storage is blocked.
-  }
+  void tryCatchSync(() => localStorage.removeItem(keyFor(variant)));
   runsVersion.value++;
+  return;
 }
