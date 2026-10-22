@@ -57,17 +57,19 @@ export const BASEMAP_STYLE ="https://tiles.openfreemap.org/styles/liberty";
 export const START_CENTER: LngLatLike = [106.7, 10.78];
 export const START_ZOOM = 12;
 
-// Zoom range of the tile build (same as apps/cli TILE_MIN_ZOOM / TILE_MAX_ZOOM).
-export const ROAD_TILE_MIN_ZOOM = 8;
+// Zoom range of the tile build. The maximum mirrors apps/cli TILE_MAX_ZOOM. The minimum is 10, the lowest zoom with any tile:
+// the wards start there (apps/cli TILE_WARD_MIN_ZOOM) and the roads from 12 (HIGHWAY_MIN_ZOOM). apps/cli TILE_MIN_ZOOM (8) is
+// only tippecanoe's --minimum-zoom, so no tile is written below 10.
+export const ROAD_TILE_MIN_ZOOM = 10;
 export const ROAD_TILE_MAX_ZOOM = 16;
 
 // GeoJSON mode has no tile build, so it applies the same per-class zoom rules itself.
 // Mirrors apps/cli HIGHWAY_MIN_ZOOM / DEFAULT_HIGHWAY_MIN_ZOOM; keep them in step. A _link follows its parent class.
 export const ROAD_CLASS_MIN_ZOOM: Record<string, number> = {
-  motorway: 8,
-  trunk: 8,
-  primary: 8,
-  secondary: 10,
+  motorway: 12,
+  trunk: 12,
+  primary: 12,
+  secondary: 12,
   tertiary: 12,
   residential: 13,
   unclassified: 13,

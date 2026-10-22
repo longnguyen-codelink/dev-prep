@@ -56,10 +56,10 @@ export const TILE_MAX_ZOOM = 16;
 
 // Zoom from which each highway class appears; a `_link` follows its parent class.
 export const HIGHWAY_MIN_ZOOM: Record<string, number> = {
-  motorway: 8,
-  trunk: 8,
-  primary: 8,
-  secondary: 10,
+  motorway: 12,
+  trunk: 12,
+  primary: 12,
+  secondary: 12,
   tertiary: 12,
   residential: 13,
   unclassified: 13,
