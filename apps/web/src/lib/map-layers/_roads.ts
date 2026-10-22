@@ -131,7 +131,7 @@ function roadLayersByZoom(): LineLayerSpecification[] {
 function addFolderTilesSource(map: Map, toSourceUrl: (url: string) => string) {
   map.addSource(ROADS_SOURCE_ID, {
     type: "vector",
-    tiles: [toSourceUrl(MAP_URLS.roadTiles)],
+    tiles: [toSourceUrl(MAP_URLS.tiles)],
     minzoom: ROAD_TILE_MIN_ZOOM,
     maxzoom: ROAD_TILE_MAX_ZOOM,
   });
@@ -148,7 +148,7 @@ function addPmtilesSource(map: Map, toPmtilesSource?: (url: string) => Source) {
     addProtocol("pmtiles", pmtilesProtocol.tile);
     pmtilesRegistered = true;
   }
-  const archiveUrl = new URL(MAP_URLS.roadPmtiles, window.location.href).href;
+  const archiveUrl = new URL(MAP_URLS.pmtiles, window.location.href).href;
   const source = toPmtilesSource ? toPmtilesSource(archiveUrl) : createPmtilesSource(archiveUrl);
   pmtilesProtocol.add(new PMTiles(source));
   map.addSource(ROADS_SOURCE_ID, { type: "vector", url: `pmtiles://${archiveUrl}` });

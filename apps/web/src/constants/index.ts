@@ -38,6 +38,10 @@ export const LAYER_GROUP_LABELS: Record<LayerGroup, string> = {
 export const WARD_OUTLINE_MIN_ZOOM = 10;
 export const WARD_LABEL_MIN_ZOOM = 12;
 
+// The wards' layer in the vector tiles (apps/cli TILE_WARD_LAYER_NAME; the roads' layer is "roads"). Their tiles start at
+// zoom 10, the same as WARD_OUTLINE_MIN_ZOOM.
+export const WARDS_SOURCE_LAYER = "wards";
+
 // URL parameter holding the difference from the defaults, e.g. ?layers=-roads,+wards.
 export const LAYERS_PARAM = "layers";
 
