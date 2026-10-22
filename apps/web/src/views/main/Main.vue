@@ -1,9 +1,4 @@
 <script setup lang="ts">
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-
-import { SelectMode } from "./components/select-mode";
-import { SelectTileMode } from "./components/select-tilemode";
 import { ChipBuildVersion } from "./components/chip-build-version";
 
 import type { Map } from "maplibre-gl";
@@ -25,6 +20,7 @@ import { runsVersion, useMapSpec } from "@/lib/benchmark";
 import BenchmarkDetails from "./views/BenchmarkDetails.vue";
 import BenchmarkPanel from "./views/BenchmarkPanel.vue";
 import MapView from "./views/Map.vue";
+import Toolbar from "./views/Toolbar.vue";
 
 const params = new URLSearchParams(window.location.search);
 // Case-insensitive so old links (?mode=geojson, ?mode=tiles) still work; anything else means Tiles.
@@ -99,23 +95,15 @@ function startRun() {
       :class="cn('relative flex flex-col', isBenchmark ? 'shrink-0' : 'w-full')"
       :style="isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px` } : undefined"
     >
-      <div id="toolbar" class="absolute top-5 left-0 z-10 min-h-12 w-full">
-        <div class="mx-auto flex w-160 justify-between rounded-lg bg-background p-2">
-          <section class="flex items-center gap-4">
-            <SelectMode :mode="mode" :busy="busy" :switchMode="switchMode" />
-            <SelectTileMode :mode="tileMode" :busy="busy" :switchMode="switchTileMode" :isHidden="mode != MODES.TILES" />
-          </section>
-
-          <section class="flex items-center">
-            <div class="flex flex-col gap-2">
-              <Label for="benchmark-switch">Benchmark</Label>
-              <div class="flex h-9 items-center">
-                <Switch id="benchmark-switch" :model-value="isBenchmark" :disabled="busy" @update:model-value="switchBenchmark" />
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
+      <Toolbar
+        :mode="mode"
+        :tileMode="tileMode"
+        :isBenchmark="isBenchmark"
+        :busy="busy"
+        @switchMode="switchMode"
+        @switchTileMode="switchTileMode"
+        @switchBenchmark="switchBenchmark"
+      />
 
       <MapView
         ref="mapView"
