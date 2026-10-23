@@ -51,7 +51,7 @@ export const BENCHMARK_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.BOUND
 
 export const DEFAULT_LAYER_GROUPS: readonly LayerGroup[] = [LAYER_GROUPS.BOUNDARY, LAYER_GROUPS.ROADS];
 
-export const BASEMAP_STYLE ="https://tiles.openfreemap.org/styles/liberty";
+export const BASEMAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 // [lng, lat] (kinh do, vi do): central Ho Chi Minh City
 export const START_CENTER: LngLatLike = [106.7, 10.78];
@@ -92,6 +92,8 @@ export const BENCHMARK_PIXEL_RATIO = 1;
 // Overlay data goes through this MapLibre protocol so its requests run on the main thread (visible to Resource Timing).
 export const BENCHMARK_PROTOCOL = "bench";
 export const BENCHMARK_RUN_PARAM = "benchmark-run";
+// Tags the one extra boundary fetch made after a run, so it is not counted as overlay data.
+export const BENCHMARK_BOUNDARY_PARAM = "benchmark-boundary";
 // ?benchmark opens the benchmark view; ?benchmark&run makes that page load record one run (then drops the param).
 export const BENCHMARK_VIEW_PARAM = "benchmark";
 export const BENCHMARK_RECORD_PARAM = "run";

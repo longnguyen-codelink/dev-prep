@@ -1,7 +1,17 @@
 import type { ErrorEvent, Map } from "maplibre-gl";
 
-import { BENCHMARK_RESOURCE_BUFFER, BENCHMARK_RUN_PARAM, BENCHMARK_SAVE_ENDPOINT, BENCHMARK_TIMEOUT_MS, type Mode, type TileMode } from "@/constants";
+import {
+  BENCHMARK_BOUNDARY_PARAM,
+  BENCHMARK_RESOURCE_BUFFER,
+  BENCHMARK_RUN_PARAM,
+  BENCHMARK_SAVE_ENDPOINT,
+  BENCHMARK_TIMEOUT_MS,
+  type Mode,
+  type TileMode,
+} from "@/constants";
+import { MAP_URLS } from "@/constants/endpoints";
 import { ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
+import { tryCatch } from "@/lib/utils";
 
 import { registerDataProtocol } from "./_protocol";
 import { saveRun, variantOf } from "./_storage";
@@ -17,6 +27,18 @@ function saveRunToDisk(run: BenchmarkRun): void {
     body: JSON.stringify(run),
     keepalive: true,
   }).catch(() => {});
+}
+
+// The boundary is a plain GeoJSON source fetched by the map, outside the benchmark protocol, so its size is measured here with one
+// extra tagged request (a worker's requests do not show up in the page's Resource Timing). Null when it cannot be measured.
+async function measureBoundaryBytes(): Promise<number | null> {
+  const url = new URL(MAP_URLS.boundaryGeoJson, window.location.href);
+  url.searchParams.set(BENCHMARK_BOUNDARY_PARAM, Date.now().toString(36));
+  const { data: response } = await tryCatch(fetch(url));
+  if (!response?.ok) return null;
+  await response.arrayBuffer();
+  const entry = performance.getEntriesByName(url.href, "resource")[0] as PerformanceResourceTiming | undefined;
+  return entry?.encodedBodySize || null;
 }
 
 /**
@@ -91,12 +113,12 @@ export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
   // tiles), when the map next goes idle.
   const onIdle = () => {
     const wardsLoaded = !map.getSource(WARDS_SOURCE_ID) || map.isSourceLoaded(WARDS_SOURCE_ID);
-    if (map.getSource(ROADS_SOURCE_ID) && map.isSourceLoaded(ROADS_SOURCE_ID) && wardsLoaded) finish(performance.now(), null);
+    if (map.getSource(ROADS_SOURCE_ID) && map.isSourceLoaded(ROADS_SOURCE_ID) && wardsLoaded) void finish(performance.now(), null);
   };
   // Only errors of the data sources fail the run; basemap tile and glyph errors are not part of the comparison.
   const onError = (event: ErrorEvent & { sourceId?: string }) => {
     if (event.sourceId === ROADS_SOURCE_ID || event.sourceId === WARDS_SOURCE_ID) {
-      finish(null, `source error: ${event.error?.message ?? "unknown"}`);
+      void finish(null, `source error: ${event.error?.message ?? "unknown"}`);
     }
   };
   const timer = setTimeout(() => finish(null, `timeout after ${BENCHMARK_TIMEOUT_MS / 1000} s`), BENCHMARK_TIMEOUT_MS);
@@ -112,10 +134,12 @@ export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
   }
 
   // The protocol stays registered after the run: the map keeps loading tiles when it is moved.
-  function finish(readyAt: number | null, failure: string | null) {
+  async function finish(readyAt: number | null, failure: string | null) {
     if (finished) return;
     cleanup();
     const result = buildRun(readyAt, failure);
+    // After the timing is fixed: the extra request cannot affect it.
+    if (result.status === "ok") result.boundaryBytes = await measureBoundaryBytes();
     saveRun(result);
     saveRunToDisk(result);
     window.__benchmarkRun = result;
@@ -128,5 +152,10 @@ export function createBenchmark(mode: Mode, tileMode: TileMode, map: Map) {
     protocol.dispose();
   }
 
-  return { toProtocolUrl: protocol.toProtocolUrl, toPmtilesSource: protocol.toPmtilesSource, fail: (reason: string) => finish(null, reason), dispose };
+  return {
+    toProtocolUrl: protocol.toProtocolUrl,
+    toPmtilesSource: protocol.toPmtilesSource,
+    fail: (reason: string) => finish(null, reason),
+    dispose,
+  };
 }
