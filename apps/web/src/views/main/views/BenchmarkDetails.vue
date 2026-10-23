@@ -1,7 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import { BASEMAP_STYLE, BENCHMARK_MAP_HEIGHT, BENCHMARK_MAP_WIDTH, BENCHMARK_PIXEL_RATIO, START_ZOOM, MODES, TILE_MODES, type Mode, type TileMode, VARIANTS, type Variant } from "@/constants";
+import {
+  BASEMAP_STYLE,
+  BENCHMARK_MAP_HEIGHT,
+  BENCHMARK_MAP_WIDTH,
+  BENCHMARK_PIXEL_RATIO,
+  START_ZOOM,
+  MODES,
+  TILE_MODES,
+  type Mode,
+  type TileMode,
+  VARIANTS,
+  type Variant,
+} from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
 import { formatBytes, formatMs, loadRuns, runsVersion, summarize, type MapSpec } from "@/lib/benchmark";
 
@@ -10,7 +22,9 @@ const { live, win, sizeOk, startCenter } = props.spec;
 
 const source = computed(() => {
   if (props.mode !== MODES.TILES) return `GeoJSON, ${MAP_URLS.roadsGeoJson} and ${MAP_URLS.wardsGeoJson}`;
-  return props.tileMode === TILE_MODES.PM_TILES ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.pmtiles} (roads + wards)` : `vector tiles (folder), ${MAP_URLS.tiles} (roads + wards)`;
+  return props.tileMode === TILE_MODES.PM_TILES
+    ? `${TILE_MODES.PM_TILES}, ${MAP_URLS.pmtiles} (roads + wards)`
+    : `vector tiles (folder), ${MAP_URLS.tiles} (roads + wards)`;
 });
 
 function runsOf(variant: Variant) {
@@ -25,8 +39,22 @@ const pmtiles = computed(() => summarize(runsOf(VARIANTS.PM_TILES)));
 const comparison = computed(() => {
   const [g, f, p] = [geojson.value, folder.value, pmtiles.value];
   const rows = [
-    { name: "Ready", g: formatMs(g.readyMs), f: formatMs(f.readyMs), p: formatMs(p.readyMs), fRatio: ratio(f.readyMs, g.readyMs), pRatio: ratio(p.readyMs, g.readyMs) },
-    { name: "Bytes", g: formatBytes(g.bytes), f: formatBytes(f.bytes), p: formatBytes(p.bytes), fRatio: ratio(f.bytes, g.bytes), pRatio: ratio(p.bytes, g.bytes) },
+    {
+      name: "Ready",
+      g: formatMs(g.readyMs),
+      f: formatMs(f.readyMs),
+      p: formatMs(p.readyMs),
+      fRatio: ratio(f.readyMs, g.readyMs),
+      pRatio: ratio(p.readyMs, g.readyMs),
+    },
+    {
+      name: "Bytes",
+      g: formatBytes(g.bytes),
+      f: formatBytes(f.bytes),
+      p: formatBytes(p.bytes),
+      fRatio: ratio(f.bytes, g.bytes),
+      pRatio: ratio(p.bytes, g.bytes),
+    },
     {
       name: "Requests",
       g: String(g.requests ?? "-"),

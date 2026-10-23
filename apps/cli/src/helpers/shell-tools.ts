@@ -21,19 +21,22 @@ export async function runTool(tool: string, args: string[], opts: RunToolOptions
   if (!quiet) Logger.info(`${label}: running`);
   const started = performance.now();
 
-  const { data, error } = await tryCatch<{ stdout: string; stderr: string }, ExecError>(
-    execFileAsync(tool, args, { maxBuffer: MAX_BUFFER_BYTES }),
-  );
+  const { data, error } = await tryCatch<{ stdout: string; stderr: string }, ExecError>(execFileAsync(tool, args, { maxBuffer: MAX_BUFFER_BYTES }));
 
   if (error) {
     if (error.code === "ENOENT") throw new Error(`${tool} is not installed (run this inside the dev container)`, { cause: error });
 
     // A tool killed by a signal has no exit code; SIGKILL is usually the out-of-memory killer.
-    const how = error.signal
-      ? `killed by ${error.signal}${error.signal === "SIGKILL" ? ", probably out of memory" : ""}`
-      : `exit ${error.code}`;
+    const how = error.signal ? `killed by ${error.signal}${error.signal === "SIGKILL" ? ", probably out of memory" : ""}` : `exit ${error.code}`;
     // Tools like tippecanoe print long progress output; the end of stderr holds the actual error.
-    const detail = (error.stderr?.split(/[\r\n]+/).filter(Boolean).slice(-8).join("\n") ?? "") || error.message;
+    const detail =
+      (error.stderr
+        ?.split(/[\r\n]+/)
+        .filter(Boolean)
+        .slice(-8)
+        .join("\n") ??
+        "") ||
+      error.message;
     throw new Error(`${label} failed (${how}): ${detail}`, { cause: error });
   }
 
@@ -43,7 +46,7 @@ export async function runTool(tool: string, args: string[], opts: RunToolOptions
 }
 
 /**
- * Fails early, with a clear message, 
+ * Fails early, with a clear message,
  * if a required tool is missing; logs each tool's version.
  */
 export async function assertTools(): Promise<void> {

@@ -142,13 +142,7 @@ type PreparedRun = { features: number; wards: number; prepareMs: number; tippeca
  * The part shared by the folder and the archive: removes the old output, prepares the features, and runs
  * tippecanoe into `output`. Both builds therefore get exactly the same tiles.
  */
-async function prepareAndTile(
-  input: string,
-  name: string,
-  settings: TileSettings,
-  output: TileOutput,
-  wardsInput?: string,
-): Promise<PreparedRun> {
+async function prepareAndTile(input: string, name: string, settings: TileSettings, output: TileOutput, wardsInput?: string): Promise<PreparedRun> {
   const prepared = resolve(DATA_DIR, `${name}.prepared.geojsonl`);
   await mkdir(DATA_DIR, { recursive: true });
 
