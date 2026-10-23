@@ -1,4 +1,4 @@
-import { medianOfOkRuns } from "./_stats";
+import { isCounted, medianOfOkRuns, medianTotalBytes } from "./_stats";
 import type { BenchmarkRun } from "./_types";
 
 // Decimal units, like the CLI's formatBytes: 1 MB = 1,000,000 bytes.
@@ -17,18 +17,23 @@ export function formatMs(ms: number | null): string {
 export type ModeSummary = {
   okRuns: number;
   failedRuns: number;
+  hiddenRuns: number; // ok but taken in a hidden tab: not counted
   readyMs: number | null;
   bytes: number | null;
+  totalBytes: number | null; // overlay bytes plus the boundary file
   requests: number | null;
 };
 
 export function summarize(runs: BenchmarkRun[]): ModeSummary {
-  const okRuns = runs.filter((run) => run.status === "ok").length;
+  const okRuns = runs.filter(isCounted).length;
+  const hiddenRuns = runs.filter((run) => run.status === "ok" && run.visibility === "hidden").length;
   return {
     okRuns,
-    failedRuns: runs.length - okRuns,
+    failedRuns: runs.length - okRuns - hiddenRuns,
+    hiddenRuns,
     readyMs: medianOfOkRuns(runs, "readyMs"),
     bytes: medianOfOkRuns(runs, "bytes"),
+    totalBytes: medianTotalBytes(runs),
     requests: medianOfOkRuns(runs, "requests"),
   };
 }
@@ -38,11 +43,13 @@ export function toMarkdownTable(summaries: { geojson: ModeSummary; folder: ModeS
   const columns = [summaries.geojson, summaries.folder, summaries.pmtiles];
   const row = (label: string, pick: (s: ModeSummary) => string) => `| ${label} | ${columns.map((s) => pick(s)).join(" | ")} |`;
   return [
-    "| Metric (median of ok runs) | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |",
+    "| Metric (median of counted runs) | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |",
     "| --- | --- | --- | --- |",
     row("Ready (from first data request)", (s) => formatMs(s.readyMs)),
-    row("Bytes transferred", (s) => formatBytes(s.bytes)),
+    row("Overlay bytes transferred", (s) => formatBytes(s.bytes)),
+    row("Total bytes with boundary", (s) => formatBytes(s.totalBytes)),
     row("Requests", (s) => (s.requests === null ? "-" : String(s.requests))),
-    row("Runs", (s) => String(s.okRuns)),
+    row("Runs counted", (s) => String(s.okRuns)),
+    row("Hidden-tab runs (excluded)", (s) => String(s.hiddenRuns)),
   ].join("\n");
 }

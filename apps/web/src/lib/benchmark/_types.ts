@@ -10,6 +10,7 @@ export type BenchmarkRun = {
   // Overlay data only: encodedBodySize summed over its requests (missing tiles excluded).
   bytes: number;
   requests: number;
+  boundaryBytes?: number | null; // the city boundary file, fetched once after the run (it is not part of the overlay data above); absent in older runs
   missingFiles: number;
   files?: { url: string; bytes: number }[]; // served overlay files, url without the run tag; absent in older stored runs
   // All in ms; null when the run failed before the value existed.

@@ -3,17 +3,7 @@ import { computed, ref } from "vue";
 
 import { Button } from "@/components/ui/button";
 import { MODES, type Mode, type TileMode, VARIANTS, type Variant } from "@/constants";
-import {
-  clearRuns,
-  formatBytes,
-  formatMs,
-  loadRuns,
-  runsVersion,
-  summarize,
-  toMarkdownTable,
-  variantOf,
-  type MapSpec,
-} from "@/lib/benchmark";
+import { clearRuns, formatBytes, formatMs, loadRuns, runsVersion, summarize, toMarkdownTable, variantOf, type MapSpec } from "@/lib/benchmark";
 
 const props = defineProps<{ mode: Mode; tileMode: TileMode; spec: MapSpec; running: boolean; busy: boolean }>();
 const emit = defineEmits<{ run: [] }>();
@@ -62,12 +52,16 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
       <dl class="grid grid-cols-[1fr_auto] gap-x-2 gap-y-0.5">
         <dt>Ready (from first data request), median</dt>
         <dd class="font-medium">{{ formatMs(current.readyMs) }}</dd>
-        <dt>Bytes, median</dt>
+        <dt>Overlay bytes, median</dt>
         <dd class="font-medium">{{ formatBytes(current.bytes) }}</dd>
+        <dt>Total with boundary, median</dt>
+        <dd class="font-medium">{{ formatBytes(current.totalBytes) }}</dd>
         <dt>Requests, median</dt>
         <dd class="font-medium">{{ countText(current.requests) }}</dd>
       </dl>
-      <p class="mt-1 text-muted-foreground">Based on {{ current.okRuns }} ok run(s); {{ current.failedRuns }} failed (not counted)</p>
+      <p class="mt-1 text-muted-foreground">
+        Based on {{ current.okRuns }} ok run(s); {{ current.failedRuns }} failed and {{ current.hiddenRuns }} hidden-tab (not counted)
+      </p>
     </section>
 
     <section v-if="latest">
@@ -111,7 +105,7 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
     </section>
 
     <section>
-      <h3 class="font-semibold">Summary (median of ok runs)</h3>
+      <h3 class="font-semibold">Summary (median of counted runs)</h3>
       <table class="w-full">
         <thead>
           <tr class="text-left text-muted-foreground">
@@ -129,10 +123,16 @@ const countText = (value: number | null) => (value === null ? "-" : String(value
             <td>{{ formatMs(pmtiles.readyMs) }}</td>
           </tr>
           <tr>
-            <td>Bytes</td>
+            <td>Overlay bytes</td>
             <td>{{ formatBytes(geojson.bytes) }}</td>
             <td>{{ formatBytes(folder.bytes) }}</td>
             <td>{{ formatBytes(pmtiles.bytes) }}</td>
+          </tr>
+          <tr>
+            <td>Total with boundary</td>
+            <td>{{ formatBytes(geojson.totalBytes) }}</td>
+            <td>{{ formatBytes(folder.totalBytes) }}</td>
+            <td>{{ formatBytes(pmtiles.totalBytes) }}</td>
           </tr>
           <tr>
             <td>Requests</td>
