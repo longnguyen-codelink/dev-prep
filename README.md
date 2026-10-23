@@ -34,12 +34,12 @@ The app needs the map data under `apps/web/public/map/` (gitignored). The CLI wr
 
 ### 3. URL parameters
 
-| Parameter | Effect |
-| --- | --- |
-| `?mode=tiles` (default) / `?mode=geojson` | Which roads source loads. Anything other than `geojson` means tiles. |
-| `?tileMode=folder` (default) / `?tileMode=pmtiles` | Tiles from the `{z}/{x}/{y}.pbf` folder, or from the PM Tiles archive. Only used in tiles mode. |
-| `?benchmark` | Opens the benchmark view (fixed 1280 x 720 map box, pixel ratio pinned to 1, run panels). It draws every layer group, roads and wards, in every variant. |
-| `?benchmark&run` | That page load records one benchmark run, then `run` is dropped from the URL so a manual reload does not record again. The "Run" button reloads the page with it. |
+| Parameter                                          | Effect                                                                                                                                                                              |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `?mode=tiles` (default) / `?mode=geojson`          | Which roads source loads. Anything other than `geojson` means tiles.                                                                                                                |
+| `?tileMode=folder` (default) / `?tileMode=pmtiles` | Tiles from the `{z}/{x}/{y}.pbf` folder, or from the PM Tiles archive. Only used in tiles mode. Case-insensitive; `pm tiles` (the label) works too, and anything else means Folder. |
+| `?benchmark`                                       | Opens the benchmark view (fixed 1280 x 720 map box, pixel ratio pinned to 1, run panels). It draws every layer group, roads and wards, in every variant.                            |
+| `?benchmark&run`                                   | That page load records one benchmark run, then `run` is dropped from the URL so a manual reload does not record again. The "Run" button reloads the page with it.                   |
 
 Switching mode or tile mode in the toolbar reloads the page, so every run is a clean page load.
 
@@ -47,14 +47,14 @@ Switching mode or tile mode in the toolbar reloads the page, so every run is a c
 
 The dev container only bundles the tools below. You can install them yourself on macOS or Linux.
 
-| Tool | Needed for | Notes |
-| --- | --- | --- |
-| Node 24 | web app and CLI | The CLI is TypeScript that Node 24 runs directly, so older Node will not work. |
-| Vite+ (`vp`) | `vp install`, `vp dev`, `vp check` | Install it following the Vite+ docs. It pins and downloads pnpm 12.11.2 from `devEngines`. |
-| `osmium` (osmium-tool) | `extract boundary`, `extract wards`, `build roads` | |
-| `ogr2ogr` (GDAL) | `extract boundary`, `extract wards`, `build roads` | GDAL needs the OSM driver, which the usual packages include. |
-| `tippecanoe` | `build tiles`, `build pmtiles`, `sweep tiles` | Version 2.x; `build pmtiles` needs a build that can write `.pmtiles`. |
-| `jq` | optional | Only for inspecting data by hand. |
+| Tool                   | Needed for                                         | Notes                                                                                      |
+| ---------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Node 24                | web app and CLI                                    | The CLI is TypeScript that Node 24 runs directly, so older Node will not work.             |
+| Vite+ (`vp`)           | `vp install`, `vp dev`, `vp check`                 | Install it following the Vite+ docs. It pins and downloads pnpm 12.11.2 from `devEngines`. |
+| `osmium` (osmium-tool) | `extract boundary`, `extract wards`, `build roads` |                                                                                            |
+| `ogr2ogr` (GDAL)       | `extract boundary`, `extract wards`, `build roads` | GDAL needs the OSM driver, which the usual packages include.                               |
+| `tippecanoe`           | `build tiles`, `build pmtiles`, `sweep tiles`      | Version 2.x; `build pmtiles` needs a build that can write `.pmtiles`.                      |
+| `jq`                   | optional                                           | Only for inspecting data by hand.                                                          |
 
 ```bash
 # macOS (Homebrew)
@@ -72,7 +72,7 @@ vp dev
 ```
 
 - **Web app only:** if you just want to run or work on the app, you do not need osmium, GDAL or tippecanoe. Set `MAP_HOST` (in the environment or in `.env`, see `.env.example`) to a host that already serves the map data, or build the data with the CLI, which writes into `apps/web/public/map/`.
-- **Data pipeline:** all three GIS tools must be on your `PATH`. Every CLI command checks for them first and stops with an error naming any that are missing. With the default `simple` extract strategy the roads step needed about 47 MiB of memory on the full Vietnam extract; `complete_ways` was killed above about 3.3 GiB.
+- **Data pipeline:** all three GIS tools must be on your `PATH`. Every CLI command checks for them first and stops with an error naming any that are missing. With the default `simple` extract strategy the roads step needed about 47 MiB of memory on the full Vietnam extract; `complete_ways` was killed above about 3.3 GiB (see [Border roads and the `simple` strategy](#border-roads-and-the-simple-strategy)).
 - The dev container creates an empty `.env` for you; without it, create one yourself only if you want to set `MAP_HOST`.
 
 ## Project structure
@@ -93,13 +93,13 @@ data       hosted separately on an external host, read by the app at runtime
 
 The data location is **not** a build-time variable. `index.html` loads `/env-config.js`, which sets `window.__ENV__ = { MAP_HOST }`, and `apps/web/src/constants/endpoints.ts` builds every data URL from it:
 
-| Data | URL |
-| --- | --- |
-| Roads GeoJSON | `<MAP_HOST>/map/hcmc-roads.geojson` |
-| Boundary GeoJSON | `<MAP_HOST>/map/hcmc-boundary.geojson` |
-| Wards GeoJSON | `<MAP_HOST>/map/hcmc-wards.geojson` |
-| Tile folder (roads + wards) | `<MAP_HOST>/map/tiles-roads-wards/{z}/{x}/{y}.pbf` |
-| PMTiles archive (roads + wards) | `<MAP_HOST>/map/hcmc-roads-wards.pmtiles` |
+| Data                            | URL                                                |
+| ------------------------------- | -------------------------------------------------- |
+| Roads GeoJSON                   | `<MAP_HOST>/map/hcmc-roads.geojson`                |
+| Boundary GeoJSON                | `<MAP_HOST>/map/hcmc-boundary.geojson`             |
+| Wards GeoJSON                   | `<MAP_HOST>/map/hcmc-wards.geojson`                |
+| Tile folder (roads + wards)     | `<MAP_HOST>/map/tiles-roads-wards/{z}/{x}/{y}.pbf` |
+| PMTiles archive (roads + wards) | `<MAP_HOST>/map/hcmc-roads-wards.pmtiles`          |
 
 - `MAP_HOST` is an origin, optionally followed by a path prefix (production: a path prefix on the external data host). Unset means same origin, which is the local `apps/web/public/map` folder.
 - In development a Vite plugin answers `/env-config.js` from `MAP_HOST` in the environment or `.env` files (see `.env.example`). In CI the workflow overwrites `dist/env-config.js` from the `MAP_HOST` repository variable. One built bundle can therefore run against any data host.
@@ -110,11 +110,11 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 
 Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1. Since 2026-10-22 every benchmark variant carries and draws **roads and wards**. Latest batch: median of 3 runs per variant, recorded 2026-10-22 in the real Chrome with Claude in Chrome (tab visible and in front for every run), **dev server on localhost with the data from `apps/web/public/map`, not the deployed host**.
 
-| | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |
-| --- | --- | --- | --- |
-| Ready (first data request until the map is idle) | 4.86 s | 0.50 s | 0.56 s |
-| Bytes | 81.4 MB (uncompressed from the dev server) | 403 KB | 232 KB |
-| Requests | 2 (roads + wards) | 12 | 14 range requests |
+|                                                  | GeoJSON                                    | Tiles (Folder) | Tiles (PM Tiles)  |
+| ------------------------------------------------ | ------------------------------------------ | -------------- | ----------------- |
+| Ready (first data request until the map is idle) | 4.86 s                                     | 0.50 s         | 0.56 s            |
+| Bytes                                            | 81.4 MB (uncompressed from the dev server) | 403 KB         | 232 KB            |
+| Requests                                         | 2 (roads + wards)                          | 12             | 14 range requests |
 
 How to read this:
 
@@ -134,16 +134,16 @@ Commands are verb first, run through one root script, and have no program name:
 pnpm cli <action> <target> [options]      # `pnpm cli` alone prints the list, add --help for one command
 ```
 
-| Step | Command | What it does |
-| --- | --- | --- |
-| 1 | `pnpm cli fetch base-file` | Download the pinned Geofabrik Vietnam extract (`vietnam-260101.osm.pbf`, about 318 MB) with an md5 check. |
-| 2 | `pnpm cli extract boundary` | `osmium tags-filter` the administrative relations, then `ogr2ogr` the Ho Chi Minh City relation (OSM relation `1973756`) to `apps/web/public/map/hcmc-boundary.geojson`. |
-| 3 | `pnpm cli extract wards` | Read the `subarea` members of the same relation (the wards: 168, with `admin_level=6` in this snapshot), `ogr2ogr` them with `-simplify` and 5 coordinate decimals, keep `osm_id` and `name`, write `apps/web/public/map/hcmc-wards.geojson` (938,850 bytes, 234,629 gzipped). Options: `--relation`, `--pbf`, `--out`, `--simplify <degrees>` (default 0.00005, about 5 m). |
-| 4 | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, clip them to the boundary (`osmium extract`), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes. |
-| 5 | `pnpm cli build tiles --name hcmc-roads-wards` | Prepare the roads and the wards, then run tippecanoe into the published folder `apps/web/public/map/tiles-roads-wards/{z}/{x}/{y}.pbf` (26,837 tiles), with the source-layers `roads` and `wards`. |
-| 6 | `pnpm cli build pmtiles --name hcmc-roads-wards` | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads-wards` for the archive the app expects (24,923,360 bytes). |
-| 7 | `pnpm cli check tiles` | Gzip every tile of the published folder and check budgets: 500,000 bytes per tile, 3,000,000 bytes for the initial view. Exit 1 when over budget. |
-| 8 | `pnpm cli sweep tiles` | Optional: rebuild the roads once per setting variant (without the wards) and write a size table (`tmp/data/tiles/sweep.md`); nothing is published. |
+| Step | Command                                                                                       | What it does                                                                                                                                                                                                                                                                                                                                                                 |
+| ---- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `pnpm cli fetch base-file`                                                                    | Download the pinned Geofabrik Vietnam extract (`vietnam-260101.osm.pbf`, about 318 MB) with an md5 check.                                                                                                                                                                                                                                                                    |
+| 2    | `pnpm cli extract boundary`                                                                   | `osmium tags-filter` the administrative relations, then `ogr2ogr` the Ho Chi Minh City relation (OSM relation `1973756`) to `apps/web/public/map/hcmc-boundary.geojson`.                                                                                                                                                                                                     |
+| 3    | `pnpm cli extract wards`                                                                      | Read the `subarea` members of the same relation (the wards: 168, with `admin_level=6` in this snapshot), `ogr2ogr` them with `-simplify` and 5 coordinate decimals, keep `osm_id` and `name`, write `apps/web/public/map/hcmc-wards.geojson` (938,850 bytes, 234,629 gzipped). Options: `--relation`, `--pbf`, `--out`, `--simplify <degrees>` (default 0.00005, about 5 m). |
+| 4    | `pnpm cli build roads --boundary apps/web/public/map/hcmc-boundary.geojson --name hcmc-roads` | Keep ways tagged `highway`, extract the ones with a node inside the boundary (`osmium extract`, strategy `simple`: a road that leaves the city is cut at its last node inside, not at the exact edge), write `apps/web/public/map/<name>.geojson` (`ogr2ogr`). 209,399 features, 80,498,401 bytes.                                                                           |
+| 5    | `pnpm cli build tiles --name hcmc-roads-wards`                                                | Prepare the roads and the wards, then run tippecanoe into the published folder `apps/web/public/map/tiles-roads-wards/{z}/{x}/{y}.pbf` (26,837 tiles), with the source-layers `roads` and `wards`.                                                                                                                                                                           |
+| 6    | `pnpm cli build pmtiles --name hcmc-roads-wards`                                              | Same preparation and settings, written as `apps/web/public/map/<name>.pmtiles`; use `--name hcmc-roads-wards` for the archive the app expects (24,923,360 bytes).                                                                                                                                                                                                            |
+| 7    | `pnpm cli check tiles`                                                                        | Gzip every tile of the published folder and check budgets: 500,000 bytes per tile, 3,000,000 bytes for the initial view. Exit 1 when over budget.                                                                                                                                                                                                                            |
+| 8    | `pnpm cli sweep tiles`                                                                        | Optional: rebuild the roads once per setting variant (without the wards) and write a size table (`tmp/data/tiles/sweep.md`); nothing is published.                                                                                                                                                                                                                           |
 
 Steps 2 and 3 share one filtered file, `tmp/data/vn-admin.osm.pbf`; `extract wards` reuses it when it exists and rebuilds it only when it is missing or `--pbf` is given. `extract wards` fails if a ward is not a named polygon or has another `admin_level`, or if the feature count differs from the member count.
 
@@ -161,13 +161,13 @@ Road class to first zoom: motorway, trunk, primary, secondary and tertiary from 
 
 Result of the default build (roads and wards, measured with `check tiles` on the published folder):
 
-| Measure | Value |
-| --- | --- |
-| Tiles | 26,837 (z10 17, z11 41, z12 123, z13 402, z14 1,411, z15 5,164, z16 19,679; none at z8 or z9) |
-| Size | 36.8 MB raw (36,824,882 bytes), 25.3 MB gzipped (25,290,083 bytes); the PMTiles archive is 24,923,360 bytes |
-| Largest tile | 65 KB gzipped (65,235 bytes, tile 13/6522/3849; 13 % of the 500 KB budget) |
-| Initial view (z12, 1280 x 720) | 12 tiles requested, 12 exist, 208 KB gzipped (budget about 3 MB) |
-| Build time (this machine) | `build tiles` 70.8 s in tippecanoe (prepare 0.98 s); `build pmtiles` 69.4 s in total (prepare 1.7 s, tippecanoe 67.7 s) |
+| Measure                        | Value                                                                                                                   |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Tiles                          | 26,837 (z10 17, z11 41, z12 123, z13 402, z14 1,411, z15 5,164, z16 19,679; none at z8 or z9)                           |
+| Size                           | 36.8 MB raw (36,824,882 bytes), 25.3 MB gzipped (25,290,083 bytes); the PMTiles archive is 24,923,360 bytes             |
+| Largest tile                   | 65 KB gzipped (65,235 bytes, tile 13/6522/3849; 13 % of the 500 KB budget)                                              |
+| Initial view (z12, 1280 x 720) | 12 tiles requested, 12 exist, 208 KB gzipped (budget about 3 MB)                                                        |
+| Build time (this machine)      | `build tiles` 70.8 s in tippecanoe (prepare 0.98 s); `build pmtiles` 69.4 s in total (prepare 1.7 s, tippecanoe 67.7 s) |
 
 For comparison, the roads-only build measured earlier (before the wards and before the roads moved to zoom 12, so the arteries still started at z8; now `--no-wards`): 21,304 tiles (3 at z8, 105 at z12, 15,106 at z16), 33.9 MB raw, 22.1 MB gzipped (PMTiles 22,099,325 bytes), largest tile 65 KB, initial view 11 of 12 tiles existing, 184 KB gzipped, tippecanoe about 34 s on an idle machine. That time is for the roads-only build and is not comparable with the 70.8 s of the combined build above.
 
@@ -177,18 +177,28 @@ Each row is a real build that changes one thing from the base (all attributes, e
 
 The sweep numbers were measured with the earlier class-zoom rule (motorway, trunk and primary from z8, secondary from z10); the `class-zoom` and `chosen` rows would differ now that all five main classes start at z12. The sweep has not been re-run since the roads moved to z12.
 
-| Variant | Change | Tiles | Raw | Gzipped | Largest tile (gz) | Initial view (gz) |
-| --- | --- | --- | --- | --- | --- | --- |
-| no-dropping | base without dropping | failed: "No zoom levels were successfully written" | - | - | - | - |
-| base | all attributes, all classes from z8 | 21,352 | 74.2 MB | 37.9 MB | 177 KB | 927 KB |
-| prune | keep only `highway` and `name` | 21,352 | 44.0 MB | 27.3 MB | 204 KB | 903 KB |
-| class-zoom | classes appear by zoom | 21,304 | 66.5 MB | 33.4 MB | 122 KB | 412 KB |
-| detail-10 | `--full-detail 10` | 21,349 | 72.8 MB | 36.3 MB | 177 KB | 927 KB |
-| simplify-4 | `--simplification 4` | 21,352 | 71.6 MB | 35.2 MB | 163 KB | 862 KB |
-| max-zoom-14 | max zoom 14 | 1,818 | 35.5 MB | 15.8 MB | 177 KB | 927 KB |
-| chosen | prune + class zoom | 21,304 | 33.9 MB | 22.1 MB | 65 KB | 184 KB |
+| Variant     | Change                              | Tiles                                              | Raw     | Gzipped | Largest tile (gz) | Initial view (gz) |
+| ----------- | ----------------------------------- | -------------------------------------------------- | ------- | ------- | ----------------- | ----------------- |
+| no-dropping | base without dropping               | failed: "No zoom levels were successfully written" | -       | -       | -                 | -                 |
+| base        | all attributes, all classes from z8 | 21,352                                             | 74.2 MB | 37.9 MB | 177 KB            | 927 KB            |
+| prune       | keep only `highway` and `name`      | 21,352                                             | 44.0 MB | 27.3 MB | 204 KB            | 903 KB            |
+| class-zoom  | classes appear by zoom              | 21,304                                             | 66.5 MB | 33.4 MB | 122 KB            | 412 KB            |
+| detail-10   | `--full-detail 10`                  | 21,349                                             | 72.8 MB | 36.3 MB | 177 KB            | 927 KB            |
+| simplify-4  | `--simplification 4`                | 21,352                                             | 71.6 MB | 35.2 MB | 163 KB            | 862 KB            |
+| max-zoom-14 | max zoom 14                         | 1,818                                              | 35.5 MB | 15.8 MB | 177 KB            | 927 KB            |
+| chosen      | prune + class zoom                  | 21,304                                             | 33.9 MB | 22.1 MB | 65 KB             | 184 KB            |
 
 Reading it: dropping features is required for this data. Attribute pruning is the biggest lever on total size (74.2 to 44.0 MB raw), class-by-zoom on the first screen (927 to 412 KB), and together they gave 184 KB (with the earlier rule). `--full-detail` and `--simplification` change little. Max zoom 14 is much smaller but loses the detail of zooms 15 and 16. The sweep changes one factor at a time, so `chosen` is the only combined row. Pruning removes fields: a popup or filter that wants another OSM tag would need it kept.
+
+### Border roads and the `simple` strategy
+
+Checked on 2026-10-23 with osmium 1.15.0 and GDAL 3.6.2 (`osmium extract -s simple`, then `ogr2ogr ... lines`):
+
+- `simple` keeps a way if at least one of its nodes is inside the polygon; the nodes outside are not in the file, so GDAL draws only the part with known nodes. The road therefore ends at its last inside node, which can be a little before the polygon edge. A way with all its nodes outside is not extracted at all, even if one of its segments crosses the polygon; that case is not measured here, because it needs the complete data that `complete_ways` could not produce.
+- On the stored HCMC data (210,032 ways in the extract, 209,399 features in the GeoJSON): **130 ways (0.06%) are cut at the border**, and **633 ways (0.30%) are missing from the GeoJSON**. Of those 633, **471 are closed rings** (roundabouts, pedestrian areas), which GDAL exports to its polygon layer, not to `lines`; **162 (0.08%) are open ways with only one node inside**, a single point, which is no line. So the earlier "loses about 0.2% of features (roads cut at the border)" blamed the border for most of what is the ring handling.
+- A small polygon over Monaco shows the same split: 2,215 ways, 2,192 features, 23 missing (20 rings, 3 single-node), 22 cut.
+- `complete_ways` was killed (exit 137) here even on the small Monaco extract and on a padded HCMC bounding box, so it could not be used as the reference in this environment.
+- Closed rings are therefore the larger gap. The map does not draw them as roads; whether they should be is a separate question, not changed here.
 
 ## GIS concepts used
 
@@ -199,7 +209,7 @@ Reading it: dropping features is required for this data. Attribute pruning is th
 - **Attribute pruning.** Fewer properties per feature means smaller tiles; it reduces attribute payload, not geometry.
 - **PMTiles and range requests.** One archive file with a header and a directory index. The client reads the index and fetches only the bytes of the tiles it needs with HTTP `Range` requests (`206 Partial Content`), so no tile server and no tens of thousands of small files. The host must support Range (and CORS, and expose `Content-Range`).
 - **OSM model.** Nodes, ways, relations. Roads are ways tagged `highway`; the city boundary is a relation (`boundary=administrative`).
-- **osmium extract strategies.** `simple` cuts ways at the polygon edge and needs little memory; `complete_ways` keeps border-crossing ways whole but was killed by the memory limit on whole-Vietnam highways.
+- **osmium extract strategies.** `simple` keeps every way that has at least one node inside the polygon and leaves out the nodes outside it, so a road that crosses the border is cut at its last inside node (not at the exact edge) and needs little memory; `complete_ways` keeps border-crossing ways whole but was killed by the memory limit on whole-Vietnam highways. See [Border roads and the `simple` strategy](#border-roads-and-the-simple-strategy).
 
 ## Benchmark
 
@@ -210,8 +220,9 @@ A run is **one clean page load** in one mode at the fixed view (centre `[106.7, 
 - **Bytes and requests:** MapLibre fetches overlay data in a worker, where the page's Resource Timing cannot see it. The data sources (the roads, and in GeoJSON mode the ward file) therefore go through a custom `bench://` protocol whose handler runs on the main thread, tags each request with `?benchmark-run=<id>` and fetches it. After the run the tagged Resource Timing entries are summed (`encodedBodySize`, so bytes on the wire). PM Tiles reads go through a tagged range source in the same protocol (`apps/web/src/lib/benchmark/_protocol.ts`); each range request must come back `206`, and a `200` (the server ignored `Range` and sent the whole file) fails the run. The range read itself is shared with the app (`fetchRange` in `apps/web/src/lib/map-layers/_pmtiles-source.ts`), so the benchmark and the app cannot drift apart.
 - **Ready time:** from the **first data request** until the map is idle with the roads source loaded (in GeoJSON mode the ward source too; in the tile modes the wards arrive inside the tiles). The startup delay before the first request is recorded separately and not used in the comparison. (Measuring from page mount, as another site does, let a variable startup delay swing the result between 2 s and 13 s.)
 - **Missing tiles:** a 404 (or an HTML 200 from the dev server) counts as "missing". That is normal for an empty area: it is left out of bytes and request count, shown as "Missing files". For GeoJSON a missing file fails the run.
-- Runs that fail or exceed 120 s are excluded. The headline is the **median of ok runs**; at least 3 per mode is recommended. Runs are stored per variant (`geojson`, `folder`, `pmtiles`) in `localStorage` under the key `dev-prep-benchmark-runs-v2`, and in development also appended to `tmp/benchmark/runs-v2.json`. The `-v2` store holds the roads + wards runs only; the earlier roads-only runs (`-v1`, `runs.json`) are never mixed in.
+- Runs that fail or exceed 120 s are excluded, and so is any run from a tab that was hidden at any point (flagged `hidden`: timers and rendering are throttled). They stay in the store and are shown as "hidden-tab (not counted)". The headline is the **median of counted runs** (ok and never hidden); at least 3 per mode is recommended. Runs are stored per variant (`geojson`, `folder`, `pmtiles`) in `localStorage` under the key `dev-prep-benchmark-runs-v2`, and in development also appended to `tmp/benchmark/runs-v2.json`. The `-v2` store holds the roads + wards runs only; the earlier roads-only runs (`-v1`, `runs.json`) are never mixed in.
 - **All variants draw the same content.** The benchmark view draws every layer group whatever `?layers` says, so the three variants carry and render roads and wards alike: the tile modes get the wards inside the same tiles (no extra request), and the GeoJSON variant also loads `hcmc-wards.geojson` through the protocol, which counts its request and bytes and makes "ready" wait for it.
+- **Bytes with the boundary:** the city boundary is a plain GeoJSON source the map fetches in a worker, outside the protocol, so it is not in the overlay bytes. After the run (so it cannot change the timing) the page fetches it once more, tagged `?benchmark-boundary=`, and stores its wire size as `boundaryBytes`. The view shows it as "Total with boundary" (overlay bytes plus the boundary, 587,641 B on the local dev server). Runs stored before this was added have no value, so that row shows `-` until new runs are recorded.
 - The benchmark view shows a per-mode summary, a comparison table, warnings (hidden tab, mixed viewports, slow startup, fewer than 3 runs) and "Copy as markdown table".
 
 ### Conditions
@@ -223,21 +234,21 @@ Latest batch (roads + wards, 2026-10-22, commit `9472cc1`):
 
 ### Latest batch: roads + wards in all three variants (2026-10-22, commit `9472cc1`)
 
-| | GeoJSON (roads + wards files) | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
-| --- | --- | --- | --- |
-| Ready, median (range) | 4.86 s (4.81 to 5.19) | 0.50 s (0.41 to 0.51) | 0.56 s (0.20 to 0.62) |
-| Network part, median | 1.01 s (plus 3.80 s after download) | 0.08 s | 0.18 s |
-| Bytes | 81,437,251 (80,498,401 + 938,850) | 402,849 | 232,027 |
-| Requests | 2 | 12 | 14 range requests |
-| Missing files | 0 | 0 | 0 |
+|                       | GeoJSON (roads + wards files)       | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
+| --------------------- | ----------------------------------- | ------------------------ | -------------------------- |
+| Ready, median (range) | 4.86 s (4.81 to 5.19)               | 0.50 s (0.41 to 0.51)    | 0.56 s (0.20 to 0.62)      |
+| Network part, median  | 1.01 s (plus 3.80 s after download) | 0.08 s                   | 0.18 s                     |
+| Bytes                 | 81,437,251 (80,498,401 + 938,850)   | 402,849                  | 232,027                    |
+| Requests              | 2                                   | 12                       | 14 range requests          |
+| Missing files         | 0                                   | 0                        | 0                          |
 
 Ready per run, in order: GeoJSON 4.81, 4.86, 5.19 s; Folder 0.50, 0.41, 0.51 s; PM Tiles 0.56, 0.62, 0.20 s. Requests and bytes were identical in all three runs of each variant.
 
-| Against the roads-only numbers | Before | After | Change |
-| --- | --- | --- | --- |
-| GeoJSON | 1 request, 80,498,401 B | 2 requests, 81,437,251 B | +938,850 B (+1.2 %) |
-| Folder | 11 requests (+1 missing), 372,346 B | 12 requests, 402,849 B | +30,503 B (+8.2 %); the missing tile now exists (a 106 B ward-only tile) |
-| PM Tiles | 13 requests, 206,973 B | 14 requests, 232,027 B | +25,054 B (+12.1 %) |
+| Against the roads-only numbers | Before                              | After                    | Change                                                                   |
+| ------------------------------ | ----------------------------------- | ------------------------ | ------------------------------------------------------------------------ |
+| GeoJSON                        | 1 request, 80,498,401 B             | 2 requests, 81,437,251 B | +938,850 B (+1.2 %)                                                      |
+| Folder                         | 11 requests (+1 missing), 372,346 B | 12 requests, 402,849 B   | +30,503 B (+8.2 %); the missing tile now exists (a 106 B ward-only tile) |
+| PM Tiles                       | 13 requests, 206,973 B              | 14 requests, 232,027 B   | +25,054 B (+12.1 %)                                                      |
 
 The older roads-only runs of the same machine and dev server (visible tab) give a Folder ready median of 0.09 s (9 runs) and a GeoJSON median of 4.62 s (4 runs); Folder is therefore about 5x slower with the wards, still half a second, and GeoJSON about 5 % slower. The cause of the Folder increase is not isolated (drawing the ward fill, outline and names at the start view, the larger tiles and run-to-run effects are all candidates). The earlier PM Tiles runs on this setup were taken with a hidden tab, so there is no like-for-like comparison for it.
 
@@ -253,22 +264,22 @@ Order: PM Tiles, Folder, GeoJSON (4 runs each, from 21:53:39), then a second pas
 
 First pass (4 runs each):
 
-| | GeoJSON | Tiles (Folder) | Tiles (PM Tiles) |
-| --- | --- | --- | --- |
-| Ready, median (range) | 9.29 s (8.74 to 10.27) | 0.88 s (0.78 to 0.93) | 1.65 s (1.48 to 1.72) |
-| Network part, median | 5.86 s (plus 3.47 s after download) | 0.86 s | 1.64 s |
-| Bytes on the wire | 14.8 MB | 372 KB | 207 KB |
-| Requests | 1 | 11 (1 missing tile) | 13 range requests |
+|                       | GeoJSON                             | Tiles (Folder)        | Tiles (PM Tiles)      |
+| --------------------- | ----------------------------------- | --------------------- | --------------------- |
+| Ready, median (range) | 9.29 s (8.74 to 10.27)              | 0.88 s (0.78 to 0.93) | 1.65 s (1.48 to 1.72) |
+| Network part, median  | 5.86 s (plus 3.47 s after download) | 0.86 s                | 1.64 s                |
+| Bytes on the wire     | 14.8 MB                             | 372 KB                | 207 KB                |
+| Requests              | 1                                   | 11 (1 missing tile)   | 13 range requests     |
 
 Ready per run, in order: GeoJSON 9.63, 8.95, 8.74, 10.27 s; Folder 0.93, 0.89, 0.87, 0.78 s; PM Tiles 1.60, 1.48, 1.72, 1.71 s.
 
 Second pass (3 runs each): Folder 0.59, 0.51, 0.52 s (median 0.52 s); PM Tiles 1.44, 1.44, 1.67 s (median 1.44 s).
 
-| | First pass | Second pass |
-| --- | --- | --- |
-| PM Tiles vs Folder | 1.9x slower (1.65 s vs 0.88 s) | 2.8x slower (1.44 s vs 0.52 s) |
-| Folder vs GeoJSON | 10.6x faster (0.88 s vs 9.29 s) | not measured |
-| PM Tiles vs GeoJSON | 5.6x faster (1.65 s vs 9.29 s) | not measured |
+|                     | First pass                      | Second pass                    |
+| ------------------- | ------------------------------- | ------------------------------ |
+| PM Tiles vs Folder  | 1.9x slower (1.65 s vs 0.88 s)  | 2.8x slower (1.44 s vs 0.52 s) |
+| Folder vs GeoJSON   | 10.6x faster (0.88 s vs 9.29 s) | not measured                   |
+| PM Tiles vs GeoJSON | 5.6x faster (1.65 s vs 9.29 s)  | not measured                   |
 
 PM Tiles was not faster than Folder in any pass of this batch. Compare ratios within a pass, not seconds across batches.
 
@@ -291,7 +302,7 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 - **Data is kept out of the bundle.** `apps/web/public/map` is gitignored; the data lives on a separate public host, which is why CORS, `Timing-Allow-Origin` and Range requirements apply.
 - **MapLibre worker shipped as `.js`.** MapLibre 6 loads `maplibre-gl-worker.mjs` as a sibling of the script and the bundle drops it, so a Vite plugin emits it. It is emitted as `assets/maplibre-gl-worker.js` because the host serves `.mjs` as `application/octet-stream`, which browsers reject for module workers.
 - **Folder tiles are uncompressed, PMTiles tiles are gzipped.** The folder is built with `--no-tile-compression` so any static host can serve it, and the host in front of it did not compress `.pbf`, so the 11 initial-view tiles cost 372,346 bytes on the wire, exactly their raw size. `check tiles` judges budgets on gzipped size (184 KB for the same view), which is what a compressing host would send. tippecanoe compresses tiles inside a PMTiles archive by default, so the archive is about 22.1 MB, close to the folder's gzipped total. That is why the same tiles are 372 KB as a folder and 207 KB as PM Tiles on the wire; keep that in mind when comparing bytes, it is a property of how each was built and served, not of the format. (Roads-only figures; with the wards in the tiles the same view is 402,849 B as a folder and 232,027 B as PM Tiles.)
-- **`simple` extract strategy.** `complete_ways` was killed above about 3.3 GiB on whole-Vietnam highways; `simple` needs about 47 MiB and loses about 0.2% of features (roads cut at the border).
+- **`simple` extract strategy.** `complete_ways` was killed above about 3.3 GiB on whole-Vietnam highways; `simple` needs about 47 MiB. About 0.3% of the extracted ways never reach the GeoJSON, but mostly for another reason than the border (see [Border roads and the `simple` strategy](#border-roads-and-the-simple-strategy)).
 - **Fixed benchmark box and pixel ratio.** The viewport decides how many tiles load and the pixel ratio decides drawing work, so both are pinned. Mode switches reload the page so no warm heap or reused worker leaks into a run. The map is torn down (`map.remove()`) before a reload, because repeated 80 MB GeoJSON loads in one tab otherwise grew the renderer's memory.
 - **Dev server quirk.** Vite answers a missing file with `index.html` and status 200. In the normal (non-benchmark) view a missing tile can therefore be parsed as a tile and log an error; the benchmark protocol treats it as "missing".
 - **Roads and wards are what is measured.** No points of interest. The city boundary is drawn in every mode but is not routed through the benchmark protocol, so it does not change the measured bytes; the wards are in the measured data (inside the tiles, and as a second GeoJSON file in GeoJSON mode) so that all three variants carry and draw the same content.

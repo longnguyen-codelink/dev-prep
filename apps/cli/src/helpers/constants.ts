@@ -35,8 +35,9 @@ export const REQUIRED_TOOLS = ["osmium", "ogr2ogr", "tippecanoe"] as const;
 export const MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 
 // osmium extract strategies. `complete_ways` keeps roads that cross the boundary whole, but needs more
-// than 3 GiB for all of Vietnam's roads. `simple` needs almost no memory and cuts roads at the
-// polygon's edge (about 0.2% fewer features for the merged HCMC), so it is the default.
+// than 3 GiB for all of Vietnam's roads. `simple` needs almost no memory: it keeps ways with a node inside
+// the polygon and drops their outside nodes, so a road that leaves the city ends at its last inside node
+// (about 0.06% of the HCMC ways); it is the default. See the README, "Border roads and the simple strategy".
 export const EXTRACT_STRATEGIES = ["simple", "complete_ways", "smart"] as const;
 export const DEFAULT_EXTRACT_STRATEGY = "simple";
 
