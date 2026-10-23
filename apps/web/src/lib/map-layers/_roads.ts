@@ -176,7 +176,13 @@ export function addRoadsLayer(
 // The road features under a point, topmost first. A box, because roads are thin lines.
 function roadsAt(map: Map, layers: string[], x: number, y: number) {
   const r = ROAD_CLICK_TOLERANCE_PX;
-  return map.queryRenderedFeatures([[x - r, y - r], [x + r, y + r]], { layers });
+  return map.queryRenderedFeatures(
+    [
+      [x - r, y - r],
+      [x + r, y + r],
+    ],
+    { layers },
+  );
 }
 
 // Popup body. Built with textContent because the name and class come from data, never as HTML.
