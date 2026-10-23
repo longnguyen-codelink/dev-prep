@@ -33,7 +33,9 @@ const modeParam = params.get("mode")?.toLowerCase();
 const mode: Mode = modeParam === MODES.GEOJSON.toLowerCase() ? MODES.GEOJSON : MODES.TILES;
 const isBenchmark = ref(params.has(BENCHMARK_VIEW_PARAM));
 const tileModeParam = params.get("tileMode")?.toLowerCase();
-const tileMode: TileMode = tileModeParam === TILE_MODES.PM_TILES.toLowerCase() ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
+// The label is "PM Tiles" but links use ?tileMode=pmtiles, so spaces are ignored.
+const tileMode: TileMode =
+  tileModeParam?.replace(/\s/g, "") === TILE_MODES.PM_TILES.toLowerCase().replace(/\s/g, "") ? TILE_MODES.PM_TILES : TILE_MODES.FOLDER;
 
 // Which layer groups are drawn; the benchmark view always draws every group, whatever ?layers says.
 const layers = ref<LayerGroup[]>(isBenchmark.value ? [...BENCHMARK_LAYER_GROUPS] : parseLayersParam(params.get(LAYERS_PARAM)));
