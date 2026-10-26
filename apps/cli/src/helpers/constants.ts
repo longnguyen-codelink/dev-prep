@@ -9,8 +9,11 @@ export const DATA_DIR = resolve(import.meta.dirname, "../../../../tmp/data");
 // Intermediate and output file names inside DATA_DIR.
 export const ADMIN_PBF_NAME = "vn-admin.osm.pbf";
 export const HIGHWAYS_PBF_NAME = "vn-highways.osm.pbf";
+export const POI_PBF_NAME = "vn-poi.osm.pbf";
+export const HCMC_POI_PBF_NAME = "hcmc-poi.osm.pbf";
 export const HCMC_BOUNDARY_NAME = "hcmc-boundary.geojson";
 export const HCMC_WARDS_NAME = "hcmc-wards.geojson";
+export const HCMC_POI_NAME = "hcmc-poi.geojson";
 
 // OSM relation of Ho Chi Minh City in the pinned snapshot (the merged city).
 export const HCMC_RELATION_ID = "1973756";
@@ -22,6 +25,28 @@ export const WARD_ADMIN_LEVEL = "6";
 // `ogr2ogr -simplify` tolerance in degrees (about 5 m) and the decimals kept (about 1 m), to keep the file near 1 MB.
 export const DEFAULT_WARD_SIMPLIFY = 0.00005;
 export const WARD_COORDINATE_PRECISION = 5;
+
+// --- Points of interest (POI) ---
+export const POI_COORDINATE_PRECISION = 5;
+export const POI_MAX_COUNT = 200;
+
+// Curated landmark tags in priority order (index 0 = highest). Used to filter OSM nodes and select POIs.
+export const POI_LANDMARK_TAGS = [
+  ["tourism", "attraction"],
+  ["tourism", "museum"],
+  ["tourism", "viewpoint"],
+  ["tourism", "gallery"],
+  ["tourism", "zoo"],
+  ["tourism", "theme_park"],
+  ["amenity", "theatre"],
+  ["amenity", "library"],
+  ["amenity", "townhall"],
+  ["amenity", "arts_centre"],
+  ["amenity", "university"],
+  ["amenity", "hospital"],
+  ["amenity", "cinema"],
+  ["amenity", "marketplace"],
+] as const;
 
 // Where the published artifacts are written and the web app reads them from in development (gitignored).
 export const WEB_MAP_DIR = resolve(import.meta.dirname, "../../../web/public/map");
@@ -125,6 +150,7 @@ export const MAPLIBRE_TILE_SIZE = 512;
 export const FETCH_BASE_FILE_USAGE = "usage: pnpm cli fetch base-file";
 export const EXTRACT_BOUNDARY_USAGE = "usage: pnpm cli extract boundary [--relation <osm id>] [--pbf <file>] [--out <file>]";
 export const EXTRACT_WARDS_USAGE = "usage: pnpm cli extract wards [--relation <osm id>] [--pbf <file>] [--out <file>] [--simplify <degrees>]";
+export const EXTRACT_POI_USAGE = "usage: pnpm cli extract poi [--boundary <polygon.geojson>] [--pbf <file>] [--out <file>]";
 export const BUILD_ROADS_USAGE = "usage: pnpm cli build roads --boundary <polygon.geojson> --name <output name> [--pbf <file>] [--strategy <name>]";
 
 // Every command: `pnpm cli <action> <target>`. `file` is in src/entrypoints/ and exports run(args); the numbers
@@ -150,6 +176,13 @@ export const COMMANDS: readonly { action: string; target: string; file: string; 
     file: "03-extract-wards.ts",
     description: "Extract the ward (phuong, xa, dac khu) polygons of HCMC as GeoJSON",
     usage: EXTRACT_WARDS_USAGE,
+  },
+  {
+    action: "extract",
+    target: "poi",
+    file: "09-extract-poi.ts",
+    description: "Extract points of interest (amenity and tourism landmarks) as GeoJSON",
+    usage: EXTRACT_POI_USAGE,
   },
   { action: "build", target: "roads", file: "04-build-roads.ts", description: "Build the roads GeoJSON inside a boundary", usage: BUILD_ROADS_USAGE },
   { action: "build", target: "tiles", file: "05-build-tiles.ts", description: "Prepare the features and run tippecanoe", usage: TILES_USAGE },
