@@ -110,16 +110,16 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 
 Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1. Every benchmark variant carries and draws **roads and wards**. Latest batch: median of 5 runs per variant, recorded 2026-10-23 on commit `b5a3ba3` in the real Chrome with Claude in Chrome (tab visible and in front for every run, none hidden), **dev server on localhost (`localhost:5173`) with the data from `apps/web/public/map`, not the deployed host**. The older batches used other commits (see [Benchmark](#benchmark)), so their speed-up factors do not describe this build.
 
-|                                                  | GeoJSON                                      | Tiles (Folder) | Tiles (PM Tiles)  |
-| ------------------------------------------------ | -------------------------------------------- | -------------- | ----------------- |
-| Ready (first data request until the map is idle) | 15.5 s (4.8 to 19.5, **machine under load**) | 0.41 s         | 0.55 s            |
-| Overlay bytes                                    | 81.4 MB (uncompressed from the dev server)   | 403 KB         | 232 KB            |
-| Total bytes with the boundary (588 KB)           | 82.0 MB                                      | 990 KB         | 820 KB            |
-| Requests                                         | 2 (roads + wards)                            | 12             | 14 range requests |
+|                                                  | GeoJSON                                    | Tiles (Folder) | Tiles (PM Tiles)  |
+| ------------------------------------------------ | ------------------------------------------ | -------------- | ----------------- |
+| Ready (first data request until the map is idle) | 4.69 s (4.26 to 9.26)                      | 0.41 s         | 0.55 s            |
+| Overlay bytes                                    | 81.4 MB (uncompressed from the dev server) | 403 KB         | 232 KB            |
+| Total bytes with the boundary (588 KB)           | 82.0 MB                                    | 990 KB         | 820 KB            |
+| Requests                                         | 2 (roads + wards)                          | 12             | 14 range requests |
 
 How to read this:
 
-- **The GeoJSON time in this batch is not reliable.** The machine was under heavy load while it ran (load average about 8.6, 9.2 of 10 GB of swap in use) and the 80 MB parse is the part that suffers: the five runs went 4.8, 8.6, 19.5, 15.5 and 17.4 s, almost all of it after the download (median 14.8 s of 15.5 s). The first run, 4.8 s, matches the previous batch (4.86 s median). Treat GeoJSON as "about 5 s on an idle machine, much worse under memory pressure"; a clean rerun on an idle machine is still to be done. The tile runs were steady (Folder 0.38 to 0.48 s, PM Tiles 0.45 to 0.55 s).
+- **The GeoJSON runs were repeated on an idle machine.** A first set on 2026-10-23 was taken while the machine was under heavy load (load average about 8.6, 9.2 of 10 GB of swap in use) and ran 4.8 to 23 s because the 80 MB parse suffers most from memory pressure; it is discarded here (it is still in `tmp/benchmark/runs-v2.json`). The numbers above are the rerun on 2026-10-26 after a restart (load average 2.6 falling to 2.3, memory free): 9.26, 4.45, 4.26, 4.69 and 5.13 s, median 4.69 s, of which 3.84 s is after the download (the parse on the main thread). The first run is the cold one. The tile runs are from 2026-10-23, so GeoJSON against tiles compares two sessions: about 11x (Folder) and 9x (PM Tiles), indicative until all three are rerun in one sitting.
 - **Bytes and requests are the steady headline** and were identical in every run of a variant. PM Tiles reads the fewest bytes (232 KB, 42 % fewer than Folder's 403 KB) but was 1.3x slower than Folder in the median (0.55 s against 0.41 s). With the boundary file included the tile modes are 1.0 MB and 0.8 MB against 82 MB.
 - Seconds depend on where the data is served from. These runs read from the local dev server over loopback, so they say nothing about a real network; the GeoJSON size is its raw size because the dev server does not compress (the deployed host serves brotli).
 - The same tiles cost 403 KB as a folder and 232 KB as PM Tiles because the folder is built with `--no-tile-compression` (plain `.pbf`) and PMTiles gzips each tile by default; the PM Tiles figure includes the header and directory reads.
@@ -232,7 +232,7 @@ Latest batch (roads + wards, 2026-10-23, commit `b5a3ba3`, 5 runs per variant):
 
 - Claude in Chrome driving the real Chrome, the tab visible and in front for every run (`visibility: visible`; nothing hidden, nothing excluded). The earlier stored runs were cleared first, so the medians contain only this batch.
 - **Run on localhost:** the dev server on `localhost:5173` with the data read from the local `apps/web/public/map` (not the deployed bundle and not the external data host), map box 1280 x 720, pixel ratio 1, one clean page load per run (`?benchmark&run`).
-- **Machine state:** load average about 8.6 and 9.2 of 10 GB swap in use while the GeoJSON runs were taken, which inflated them (see the table). The PM Tiles and Folder runs came first, a few minutes earlier.
+- **Machine state:** the tile runs (2026-10-23) were taken on a machine with a few apps open. The first GeoJSON set the same day was under heavy load (load average about 8.6, swap nearly full) and was discarded. The GeoJSON rerun is from 2026-10-26, right after a restart: load average 2.6 at the start and 2.3 at the end, plenty of free memory, no other heavy apps. The 5th run came from a fresh tab because the first tab froze its renderer after the 4th run (that run was not recorded; the fresh tab's run was).
 
 Previous batch (roads + wards, 2026-10-22, commit `9472cc1`, before the hidden-run rule and the boundary row):
 
@@ -241,18 +241,18 @@ Previous batch (roads + wards, 2026-10-22, commit `9472cc1`, before the hidden-r
 
 ### Latest batch: roads + wards in all three variants (2026-10-23, commit `b5a3ba3`)
 
-|                       | GeoJSON (roads + wards files)          | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
-| --------------------- | -------------------------------------- | ------------------------ | -------------------------- |
-| Ready, median (range) | 15.48 s (4.77 to 19.49) **under load** | 0.41 s (0.38 to 0.48)    | 0.55 s (0.45 to 0.55)      |
-| Network part, median  | 0.90 s (plus 14.76 s after download)   | 0.07 s                   | 0.17 s                     |
-| Overlay bytes         | 81,437,251 (80,498,401 + 938,850)      | 402,849                  | 232,005                    |
-| Total with boundary   | 82,024,892                             | 990,490                  | 819,646                    |
-| Requests              | 2                                      | 12                       | 14 range requests          |
-| Missing files         | 0                                      | 0                        | 0                          |
+|                       | GeoJSON (roads + wards files)       | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
+| --------------------- | ----------------------------------- | ------------------------ | -------------------------- |
+| Ready, median (range) | 4.69 s (4.26 to 9.26)               | 0.41 s (0.38 to 0.48)    | 0.55 s (0.45 to 0.55)      |
+| Network part, median  | 0.80 s (plus 3.84 s after download) | 0.07 s                   | 0.17 s                     |
+| Overlay bytes         | 81,437,251 (80,498,401 + 938,850)   | 402,849                  | 232,005                    |
+| Total with boundary   | 82,024,892                          | 990,490                  | 819,646                    |
+| Requests              | 2                                   | 12                       | 14 range requests          |
+| Missing files         | 0                                   | 0                        | 0                          |
 
-Ready per run, in order: GeoJSON 4.77, 8.56, 19.49, 15.48, 17.39 s; Folder 0.41, 0.44, 0.38, 0.48, 0.41 s; PM Tiles 0.55, 0.55, 0.55, 0.45, 0.52 s. The boundary file is 587,641 B in every run. Requests and bytes were identical across the runs of each variant; PM Tiles is 22 B smaller than in the previous batch (232,005 against 232,027), which is the range reads, not the data.
+Ready per run, in order: GeoJSON 9.26, 4.45, 4.26, 4.69, 5.13 s (rerun 2026-10-26); Folder 0.41, 0.44, 0.38, 0.48, 0.41 s; PM Tiles 0.55, 0.55, 0.55, 0.45, 0.52 s (2026-10-23). The boundary file is 587,641 B in every run. Requests and bytes were identical across the runs of each variant; PM Tiles is 22 B smaller than in the previous batch (232,005 against 232,027), which is the range reads, not the data.
 
-Against the previous batch (same machine and dev server): Folder 0.50 s then, 0.41 s now; PM Tiles 0.56 s then, 0.55 s now; GeoJSON 4.86 s then and 15.5 s now only because of the load above (its first run was 4.77 s). No speed-up factor between GeoJSON and the tiles is claimed for this batch.
+Against the previous batch (same machine and dev server): Folder 0.50 s then, 0.41 s now; PM Tiles 0.56 s then, 0.55 s now; GeoJSON 4.86 s then and 4.69 s now. GeoJSON against tiles: about 11x faster for Folder (0.41 s against 4.69 s) and about 9x for PM Tiles (0.55 s against 4.69 s); the GeoJSON runs are from a later session, so treat the factors as indicative.
 
 ### Previous batch: roads + wards in all three variants (2026-10-22, commit `9472cc1`)
 
@@ -308,7 +308,7 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 ### Caveats
 
 - **Latest batch is local.** Its seconds come from the dev server over loopback and cannot be compared with the earlier deployed-site batch above; compare bytes and requests across the two, and ratios only within one batch. A deployed batch with the combined data is not recorded yet.
-- **Latest batch: the GeoJSON seconds were taken under memory pressure** (swap nearly full) and are not a stable figure; the tile runs are steady. Rerun GeoJSON on an idle machine before quoting a GeoJSON-versus-tiles factor.
+- **Latest batch mixes two sessions.** The tile runs (2026-10-23) and the GeoJSON rerun (2026-10-26, after a restart) were not taken in one sitting, and the first GeoJSON set was discarded because of machine load. A single sitting with all three variants on an idle machine would remove this caveat. The first GeoJSON run of a sitting is slower (9.26 s here), the cold start.
 - **Latest batch has 5 runs per variant**, none hidden; the previous batch had 3.
 - In the earlier batch both modes trend down over the first runs (cold start). The spread is wide for Folder, so treat its median as approximate; more runs would firm up the medians. The second pass has only 3 runs per variant.
 - The batches were taken in one environment, one browser and one network path. Absolute times will differ elsewhere, and they moved between batches on the same setup.
