@@ -1,25 +1,14 @@
-import { type Map, type MapGeoJSONFeature, type MapMouseEvent, type PointLike, Popup } from "maplibre-gl";
+import type { Map } from "maplibre-gl";
 
-import { cssVariableMap, LAYER_GROUPS, POI_LABEL_MIN_ZOOM, POI_POINT_MIN_ZOOM } from "@/constants";
+import { cssVariableMap, LAYER_GROUPS, POI_CLICK_TOLERANCE_PX, POI_LABEL_MIN_ZOOM, POI_POINT_MIN_ZOOM } from "@/constants";
 import { MAP_URLS } from "@/constants/endpoints";
 import { cssVarToRgba, entryColors, layerMetadata } from "@/lib/utils";
+
+import { type createMapPopups, popupLine } from "./_popups";
 
 export const POI_SOURCE_ID = "poi";
 export const POI_POINTS_ID = "poi-points";
 const POI_LABELS_ID = "poi-labels";
-
-let poiPopup: Popup | null = null;
-let clickListener: ((event: MapMouseEvent) => void) | null = null;
-
-export function closePoiPopup(): void {
-  poiPopup?.remove();
-}
-
-// The rendered POI features at a pixel; empty array when the layer does not exist yet.
-export function poiAt(map: Map, point: PointLike): MapGeoJSONFeature[] {
-  if (!map.getLayer(POI_POINTS_ID)) return [];
-  return map.queryRenderedFeatures(point, { layers: [POI_POINTS_ID] });
-}
 
 // Popup body. Built only with createElement and textContent (never innerHTML, never HTML strings).
 function poiPopupContent(properties: Record<string, unknown>): HTMLElement {
@@ -30,32 +19,10 @@ function poiPopupContent(properties: Record<string, unknown>): HTMLElement {
   const rawWebsite = typeof properties.website === "string" ? properties.website.trim() : "";
 
   const content = document.createElement("div");
-
-  const title = document.createElement("div");
-  title.className = "font-semibold";
-  title.textContent = name;
-  content.append(title);
-
-  if (kind) {
-    const kindEl = document.createElement("div");
-    kindEl.className = "text-xs text-muted-foreground";
-    kindEl.textContent = kind;
-    content.append(kindEl);
-  }
-
-  if (nameEn && nameEn !== name) {
-    const enEl = document.createElement("div");
-    enEl.className = "text-xs text-muted-foreground";
-    enEl.textContent = nameEn;
-    content.append(enEl);
-  }
-
-  if (street) {
-    const streetEl = document.createElement("div");
-    streetEl.className = "text-xs text-muted-foreground";
-    streetEl.textContent = street;
-    content.append(streetEl);
-  }
+  content.append(popupLine("font-semibold", name));
+  if (kind) content.append(popupLine("text-xs text-muted-foreground", kind));
+  if (nameEn && nameEn !== name) content.append(popupLine("text-xs text-muted-foreground", nameEn));
+  if (street) content.append(popupLine("text-xs text-muted-foreground", street));
 
   if (rawWebsite) {
     try {
@@ -81,7 +48,7 @@ function poiPopupContent(properties: Record<string, unknown>): HTMLElement {
 }
 
 // Called when the Landmarks group is first switched on. Data is requested directly as GeoJSON (outside the benchmark).
-export function addPoiLayer(map: Map): Map {
+export function addPoiLayer(map: Map, popups: ReturnType<typeof createMapPopups>): Map {
   const root = document.documentElement;
   const metadata = layerMetadata(LAYER_GROUPS.POI);
 
@@ -124,36 +91,20 @@ export function addPoiLayer(map: Map): Map {
     },
   });
 
-  if (!poiPopup) {
-    poiPopup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: "240px", offset: 8 });
-  }
-
-  if (clickListener) {
-    map.off("click", clickListener);
-  }
-  clickListener = (event) => {
-    const [feature] = poiAt(map, event.point);
-    if (!feature) {
-      closePoiPopup();
-      return;
-    }
-    poiPopup!
-      .setLngLat(event.lngLat)
-      .setDOMContent(poiPopupContent(feature.properties as Record<string, unknown>))
-      .addTo(map);
-  };
-  map.on("click", clickListener);
+  popups.add({
+    id: "poi",
+    priority: 1,
+    tolerancePx: POI_CLICK_TOLERANCE_PX,
+    layers: () => (map.getLayer(POI_POINTS_ID) ? [POI_POINTS_ID] : []),
+    content: poiPopupContent,
+  });
 
   return map;
 }
 
 // After a failed load of the POI GeoJSON or when removing the layer.
-export function removePoiLayer(map: Map): Map {
-  closePoiPopup();
-  if (clickListener) {
-    map.off("click", clickListener);
-    clickListener = null;
-  }
+export function removePoiLayer(map: Map, popups: ReturnType<typeof createMapPopups>): Map {
+  popups.remove("poi");
   for (const id of [POI_LABELS_ID, POI_POINTS_ID]) {
     if (map.getLayer(id)) map.removeLayer(id);
   }

@@ -20,7 +20,7 @@ import {
   addRoadsLayer,
   addRoadsPopup,
   addWardsLayer,
-  closePoiPopup,
+  createMapPopups,
   POI_SOURCE_ID,
   removePoiLayer,
   removeWardsLayer,
@@ -46,6 +46,7 @@ const mapSize = computed(() =>
 );
 
 let map: Map | null = null;
+let popups: ReturnType<typeof createMapPopups> | null = null;
 let layersAdded = false;
 let wardsAdded = false;
 let poiAdded = false;
@@ -71,11 +72,11 @@ function syncLayers() {
     wardsAdded = true;
   }
   if (layers.includes(LAYER_GROUPS.POI) && !poiAdded) {
-    addPoiLayer(map);
+    addPoiLayer(map, popups!);
     poiAdded = true;
   }
   if (!layers.includes(LAYER_GROUPS.POI)) {
-    closePoiPopup();
+    popups?.close("poi");
   }
   applyVisibility(map, layers);
 }
@@ -112,7 +113,7 @@ onMounted(() => {
       wardsAdded = false;
       emit("wardsError");
     } else if (sourceId === POI_SOURCE_ID) {
-      removePoiLayer(created);
+      removePoiLayer(created, popups!);
       poiAdded = false;
       emit("poiError");
     }
@@ -121,7 +122,8 @@ onMounted(() => {
     const { error } = tryCatchSync(() => {
       addHCMCLayer(created);
       addRoadsLayer(created, mode, tileMode, benchmark?.toProtocolUrl, benchmark?.toPmtilesSource);
-      addRoadsPopup(created);
+      popups = createMapPopups(created);
+      addRoadsPopup(created, popups);
       layersAdded = true;
       syncLayers();
     });
@@ -133,7 +135,7 @@ onMounted(() => {
 // Frees the map's worker (which holds the parsed GeoJSON) and GL context right away, so repeated heavy loads in the
 // same tab do not pile up memory; called before the page navigates away and when it is hidden.
 function teardown() {
-  closePoiPopup();
+  popups?.close("poi");
   benchmark?.dispose();
   benchmark = null;
   map?.remove();
