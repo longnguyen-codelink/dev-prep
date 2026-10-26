@@ -110,7 +110,7 @@ The data location is **not** a build-time variable. `index.html` loads `/env-con
 
 ## Results at a glance
 
-Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1. Every benchmark variant carries and draws **roads and wards**. Latest batch: median of 5 runs per variant, recorded in **one sitting on 2026-10-26** on commit `b5a3ba3` in the real Chrome (tab visible and in front for every run, none hidden, 10 s between runs), **dev server on localhost (`localhost:5173`) with the data from `apps/web/public/map`, not the deployed host**. The older batches used other commits (see [Benchmark](#benchmark)), so their speed-up factors do not describe this build.
+Initial view (zoom 12, centre of the city), map box 1280 x 720 at pixel ratio 1. Every benchmark variant carries and draws **roads and wards**. Latest batch: median of 5 runs per variant, recorded in **one sitting on 2026-10-26** on commit `8dcb2a8` in the real Chrome (tab visible and in front for every run, none hidden, 10 s between runs), **dev server on localhost (`localhost:5173`) with the data from `apps/web/public/map`, not the deployed host**. The older batches used other commits (see [Benchmark](#benchmark)), so their speed-up factors do not describe this build.
 
 |                                                  | GeoJSON                                    | Tiles (Folder) | Tiles (PM Tiles)  |
 | ------------------------------------------------ | ------------------------------------------ | -------------- | ----------------- |
@@ -244,7 +244,7 @@ A run is **one clean page load** in one mode at the fixed view (centre `[106.7, 
 
 ### Conditions
 
-Latest batch (roads + wards, 2026-10-26, commit `b5a3ba3`, 5 runs per variant, one sitting):
+Latest batch (roads + wards, 2026-10-26, commit `8dcb2a8`, 5 runs per variant, one sitting):
 
 - The real Chrome, the tab visible and in front for every run (`visibility: visible`; nothing hidden, nothing excluded), a pause of 10 s between runs. The earlier runs were cleared from the browser store first, so the on-screen medians contain only this batch (every run stays in `runs-v2.json`; the three Landmarks-check runs taken afterwards are not part of it). Order: Folder, PM Tiles, GeoJSON.
 - **Run on localhost:** the dev server on `localhost:5173` with the data read from the local `apps/web/public/map` (not the deployed bundle and not the external data host), map box 1280 x 720, pixel ratio 1, one clean page load per run (`?benchmark&run`).
@@ -255,7 +255,7 @@ Previous batch (roads + wards, 2026-10-22, commit `9472cc1`, before the hidden-r
 - The real Chrome, the tab visible and in front for every run; every counted run was `ok` and `visible`, nothing was excluded.
 - The dev server on `localhost:5173` with the data read from the local `apps/web/public/map` (not the deployed bundle and not the external data host), map box 1280 x 720, pixel ratio 1, one clean page load per run (`?benchmark&run`), 3 runs per variant.
 
-### Latest batch: roads + wards in all three variants (2026-10-26, commit `b5a3ba3`)
+### Latest batch: roads + wards in all three variants (2026-10-26, commit `8dcb2a8`)
 
 |                       | GeoJSON (roads + wards files)       | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
 | --------------------- | ----------------------------------- | ------------------------ | -------------------------- |
@@ -272,7 +272,7 @@ Against the batches before it (same machine and dev server): GeoJSON 4.86 s on 2
 
 ### Deployed site batch (2026-10-26)
 
-The same protocol on the live site (`https://landing-stage.longngphuc.id.vn/dev-challenge-gis/`, build `eade242`, data from the homelab SeaweedFS host behind Cloudflare): the real Chrome, visible tab, 10 s between runs, order Folder, PM Tiles, GeoJSON. The benchmark code is the same as in the local batch (commit `b5a3ba3`); the later commits only add the Landmarks layer and the popup refactor, which the benchmark view does not draw. Machine: load average about 3 during the Folder and PM Tiles runs; it climbed to 5 to 7 during the GeoJSON runs (macOS background scans plus the browser).
+The same protocol on the live site (`https://landing-stage.longngphuc.id.vn/dev-challenge-gis/`, build `f38153c` (the build chip on the live site still shows `eade242`, the hash it had before the commit messages were rewritten; the files are identical), data from the homelab SeaweedFS host behind Cloudflare): the real Chrome, visible tab, 10 s between runs, order Folder, PM Tiles, GeoJSON. The benchmark code is the same as in the local batch (commit `8dcb2a8`); the later commits only add the Landmarks layer and the popup refactor, which the benchmark view does not draw. Machine: load average about 3 during the Folder and PM Tiles runs; it climbed to 5 to 7 during the GeoJSON runs (macOS background scans plus the browser).
 
 |                              | GeoJSON (roads + wards files)           | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
 | ---------------------------- | --------------------------------------- | ------------------------ | -------------------------- |
