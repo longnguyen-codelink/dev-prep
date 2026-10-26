@@ -6,6 +6,7 @@ export const MAP_URLS = {
   roadsGeoJson: `${mapHost}/map/hcmc-roads.geojson`,
   boundaryGeoJson: `${mapHost}/map/hcmc-boundary.geojson`,
   wardsGeoJson: `${mapHost}/map/hcmc-wards.geojson`,
+  poiGeoJson: `${mapHost}/map/hcmc-poi.geojson`,
   // Roads and wards are one set of tiles (source-layers `roads` and `wards`), built by `pnpm cli build tiles` / `build pmtiles`.
   tiles: `${mapHost}/map/tiles-roads-wards/{z}/{x}/{y}.pbf`,
   pmtiles: `${mapHost}/map/hcmc-roads-wards.pmtiles`,

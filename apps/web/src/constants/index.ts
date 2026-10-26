@@ -25,6 +25,7 @@ export const LAYER_GROUPS = {
   BOUNDARY: "boundary",
   WARDS: "wards",
   ROADS: "roads",
+  POI: "poi",
 } as const;
 export type LayerGroup = (typeof LAYER_GROUPS)[keyof typeof LAYER_GROUPS];
 
@@ -32,11 +33,15 @@ export const LAYER_GROUP_LABELS: Record<LayerGroup, string> = {
   [LAYER_GROUPS.BOUNDARY]: "Boundary",
   [LAYER_GROUPS.WARDS]: "Wards",
   [LAYER_GROUPS.ROADS]: "Roads",
+  [LAYER_GROUPS.POI]: "Landmarks",
 };
 
 // Ward outlines are drawn from this zoom, their names from WARD_LABEL_MIN_ZOOM (a layer is hidden below its minzoom).
 export const WARD_OUTLINE_MIN_ZOOM = 10;
 export const WARD_LABEL_MIN_ZOOM = 12;
+
+export const POI_POINT_MIN_ZOOM = 10;
+export const POI_LABEL_MIN_ZOOM = 14;
 
 // The wards' layer in the vector tiles (apps/cli TILE_WARD_LAYER_NAME; the roads' layer is "roads"). Their tiles start at
 // zoom 10, the same as WARD_OUTLINE_MIN_ZOOM.
@@ -161,6 +166,8 @@ export const LAYER_ENTRIES = [
   },
   { key: "ward-outline", group: LAYER_GROUPS.WARDS, label: "Ward outline", colors: [cssVariableMap.foreground], minZoom: WARD_OUTLINE_MIN_ZOOM },
   { key: "ward-names", group: LAYER_GROUPS.WARDS, label: "Ward names", colors: [cssVariableMap.foreground], minZoom: WARD_LABEL_MIN_ZOOM },
+  { key: "poi-points", group: LAYER_GROUPS.POI, label: "Landmarks", colors: [cssVariableMap.chart4], minZoom: POI_POINT_MIN_ZOOM },
+  { key: "poi-names", group: LAYER_GROUPS.POI, label: "Landmark names", colors: [cssVariableMap.foreground], minZoom: POI_LABEL_MIN_ZOOM },
   { key: "major", group: LAYER_GROUPS.ROADS, label: "Major roads", colors: [cssVariableMap.chart1], minZoom: ROAD_CLASS_MIN_ZOOM.motorway! },
   { key: "medium", group: LAYER_GROUPS.ROADS, label: "Medium roads", colors: [cssVariableMap.chart2], minZoom: ROAD_CLASS_MIN_ZOOM.secondary! },
   { key: "minor", group: LAYER_GROUPS.ROADS, label: "Minor roads", colors: [cssVariableMap.chart3], minZoom: ROAD_CLASS_MIN_ZOOM.residential! },

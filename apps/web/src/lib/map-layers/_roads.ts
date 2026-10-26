@@ -16,6 +16,8 @@ import {
 import { MAP_URLS } from "@/constants/endpoints";
 import { createPmtilesSource, entryColors, layerIdsOf, layerMetadata } from "@/lib/utils";
 
+import { poiAt } from "./_poi";
+
 export const ROADS_SOURCE_ID = "roads";
 
 const ROADS_METADATA = layerMetadata(LAYER_GROUPS.ROADS);
@@ -209,6 +211,10 @@ export function addRoadsPopup(map: Map): void {
   const roadLayers = layerIdsOf(map, LAYER_GROUPS.ROADS);
 
   map.on("click", (event) => {
+    if (poiAt(map, event.point).length > 0) {
+      popup.remove();
+      return;
+    }
     const [feature] = roadsAt(map, roadLayers, event.point.x, event.point.y);
     if (!feature) {
       popup.remove();
@@ -219,6 +225,8 @@ export function addRoadsPopup(map: Map): void {
 
   // Empty string gives back the cursor from the stylesheet (MapLibre's grab cursor) rather than forcing an arrow.
   map.on("mousemove", (event) => {
-    map.getCanvas().style.cursor = roadsAt(map, roadLayers, event.point.x, event.point.y).length > 0 ? "pointer" : "";
+    const hasRoad = roadsAt(map, roadLayers, event.point.x, event.point.y).length > 0;
+    const hasPoi = poiAt(map, event.point).length > 0;
+    map.getCanvas().style.cursor = hasRoad || hasPoi ? "pointer" : "";
   });
 }

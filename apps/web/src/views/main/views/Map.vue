@@ -14,7 +14,19 @@ import {
   type TileMode,
 } from "@/constants";
 import { createBenchmark } from "@/lib/benchmark";
-import { addRoadsLayer, addRoadsPopup, addHCMCLayer, addWardsLayer, removeWardsLayer, ROADS_SOURCE_ID, WARDS_SOURCE_ID } from "@/lib/map-layers";
+import {
+  addHCMCLayer,
+  addPoiLayer,
+  addRoadsLayer,
+  addRoadsPopup,
+  addWardsLayer,
+  closePoiPopup,
+  POI_SOURCE_ID,
+  removePoiLayer,
+  removeWardsLayer,
+  ROADS_SOURCE_ID,
+  WARDS_SOURCE_ID,
+} from "@/lib/map-layers";
 import { applyVisibility, tryCatchSync } from "@/lib/utils";
 
 // The production bundle drops MapLibre's sibling worker file; the plugin in vite.config.ts ships it as a .js file.
@@ -27,7 +39,7 @@ const {
   layers,
   benchmark: isBenchmark,
 } = defineProps<{ mode: Mode; tileMode: TileMode; benchmark: boolean; record: boolean; layers: readonly LayerGroup[] }>();
-const emit = defineEmits<{ map: [map: Map]; ready: []; wardsError: [] }>();
+const emit = defineEmits<{ map: [map: Map]; ready: []; wardsError: []; poiError: [] }>();
 
 const mapSize = computed(() =>
   isBenchmark ? { width: `${BENCHMARK_MAP_WIDTH}px`, height: `${BENCHMARK_MAP_HEIGHT}px` } : { width: "100%", height: "100vh" },
@@ -36,6 +48,7 @@ const mapSize = computed(() =>
 let map: Map | null = null;
 let layersAdded = false;
 let wardsAdded = false;
+let poiAdded = false;
 let benchmark: ReturnType<typeof createBenchmark> | null = null;
 
 // The benchmark view changes the map box without recreating the map, so tell it to pick up the new size.
@@ -56,6 +69,13 @@ function syncLayers() {
   if (layers.includes(LAYER_GROUPS.WARDS) && !wardsAdded) {
     addWardsLayer(map, mode, benchmark?.toProtocolUrl);
     wardsAdded = true;
+  }
+  if (layers.includes(LAYER_GROUPS.POI) && !poiAdded) {
+    addPoiLayer(map);
+    poiAdded = true;
+  }
+  if (!layers.includes(LAYER_GROUPS.POI)) {
+    closePoiPopup();
   }
   applyVisibility(map, layers);
 }
@@ -86,10 +106,16 @@ onMounted(() => {
   created.on("idle", onIdle);
   // A ward file that cannot be loaded (e.g. not uploaded to the data host yet) is taken out again, so selecting Wards retries.
   created.on("error", (event) => {
-    if ((event as { sourceId?: string }).sourceId !== WARDS_SOURCE_ID) return;
-    removeWardsLayer(created);
-    wardsAdded = false;
-    emit("wardsError");
+    const sourceId = (event as { sourceId?: string }).sourceId;
+    if (sourceId === WARDS_SOURCE_ID) {
+      removeWardsLayer(created);
+      wardsAdded = false;
+      emit("wardsError");
+    } else if (sourceId === POI_SOURCE_ID) {
+      removePoiLayer(created);
+      poiAdded = false;
+      emit("poiError");
+    }
   });
   created.on("load", () => {
     const { error } = tryCatchSync(() => {
@@ -107,6 +133,7 @@ onMounted(() => {
 // Frees the map's worker (which holds the parsed GeoJSON) and GL context right away, so repeated heavy loads in the
 // same tab do not pile up memory; called before the page navigates away and when it is hidden.
 function teardown() {
+  closePoiPopup();
   benchmark?.dispose();
   benchmark = null;
   map?.remove();

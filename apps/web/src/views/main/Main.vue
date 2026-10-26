@@ -78,9 +78,17 @@ function onWardsError() {
   wardsError.value = true;
 }
 
+// Set when the landmark file could not be loaded; Landmarks is then switched off again.
+const poiError = ref(false);
+function onPoiError() {
+  switchLayers(layers.value.filter((group) => group !== LAYER_GROUPS.POI));
+  poiError.value = true;
+}
+
 // Like the benchmark switch, this keeps the URL in sync without a reload, so a link restores the selection.
 function switchLayers(next: LayerGroup[]) {
   wardsError.value = false;
+  poiError.value = false;
   layers.value = next;
   const url = new URL(window.location.href);
   const param = toLayersParam(next);
@@ -139,13 +147,14 @@ function startRun() {
         @switchBenchmark="switchBenchmark"
       />
 
-      <p
-        v-if="wardsError"
-        role="status"
-        class="absolute top-24 left-1/2 z-10 -translate-x-1/2 rounded-md bg-background px-3 py-1.5 text-sm text-muted-foreground shadow"
-      >
-        Ward data is not available.
-      </p>
+      <div v-if="wardsError || poiError" class="absolute top-24 left-1/2 z-10 flex -translate-x-1/2 flex-col gap-2">
+        <p v-if="wardsError" role="status" class="rounded-md bg-background px-3 py-1.5 text-sm text-muted-foreground shadow">
+          Ward data is not available.
+        </p>
+        <p v-if="poiError" role="status" class="rounded-md bg-background px-3 py-1.5 text-sm text-muted-foreground shadow">
+          Landmark data is not available.
+        </p>
+      </div>
 
       <MapView
         ref="mapView"
@@ -157,6 +166,7 @@ function startRun() {
         @map="(m) => (map = m)"
         @ready="ready = true"
         @wardsError="onWardsError"
+        @poiError="onPoiError"
       />
       <BenchmarkDetails v-if="isBenchmark" :mode="mode" :tileMode="tileMode" :spec="spec" />
     </div>
