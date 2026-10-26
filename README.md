@@ -123,11 +123,11 @@ How to read this:
 
 - **This batch replaces two earlier sets taken on 2026-10-23 and in an earlier 2026-10-26 sitting.** Those were discarded: the 2026-10-23 GeoJSON runs were taken under heavy load (load average about 8.6, swap nearly full; 4.8 to 23 s), and the tiles and GeoJSON of the next set came from two different sessions. All of them are still in `tmp/benchmark/runs-v2.json`, together with three later single runs of the same day that are not part of this batch (they were taken afterwards to check that the Landmarks layer does not change the benchmark). This batch has all three variants in one sitting on an idle machine (load average 2.2 to 2.5, memory free). The first PM Tiles run (0.20 s) is the cold one; the other four are 0.10 to 0.11 s.
 - **Bytes and requests are the steady headline** and were identical in every run of a variant. On this sitting PM Tiles is both the smallest (232 KB, 42 % fewer than Folder's 403 KB) and the fastest (0.10 s against Folder's 0.43 s and GeoJSON's 4.18 s), about 4x faster than Folder and about 40x faster than GeoJSON; Folder is about 10x faster than GeoJSON. **The order of the two tile modes flipped against the earlier batches**, where PM Tiles was slower than Folder (0.56 s against 0.50 s on 2026-10-22, 0.55 s against 0.41 s on 2026-10-23). The cause is not isolated (candidates: the idle machine, the 10 s pause between runs, and the browser cache serving the repeated range reads); do not quote the PM Tiles time as a stable figure until it is repeated. With the boundary file included the tile modes are 1.0 MB and 0.8 MB against 82 MB.
-- Seconds depend on where the data is served from. These runs read from the local dev server over loopback, so they say nothing about a real network; the GeoJSON size is its raw size because the dev server does not compress (the deployed host serves brotli).
+- Seconds depend on where the data is served from. The local batch reads from the dev server over loopback, so it says nothing about a real network, and its GeoJSON size is the raw size because the dev server does not compress. The [deployed-site batch](#deployed-site-batch-2026-10-26) measured the live host: GeoJSON 15.1 MB on the wire (the host compresses it), Folder 403 KB (not compressed) and PM Tiles 232 KB, and there PM Tiles (about 1.0 s) was slower than Folder (0.69 s), the opposite of the local batch.
 - The same tiles cost 403 KB as a folder and 232 KB as PM Tiles because the folder is built with `--no-tile-compression` (plain `.pbf`) and PMTiles gzips each tile by default; the PM Tiles figure includes the header and directory reads.
 - The throttled-network set (slow network, CPU slowdown) is still to be recorded.
 
-Full method, per-run numbers and caveats are in [Benchmark](#benchmark), together with the earlier **roads-only** batch from the deployed site (GeoJSON 9.29 s, Folder 0.88 s, PM Tiles 1.65 s), which is not comparable in seconds because it ran on another network path.
+Full method, per-run numbers and caveats are in [Benchmark](#benchmark), together with the [deployed-site batch](#deployed-site-batch-2026-10-26) of the same build and the earlier **roads-only** batch from the deployed site (GeoJSON 9.29 s, Folder 0.88 s, PM Tiles 1.65 s), which is not comparable in seconds because it ran on another network path.
 
 ## The data pipeline (`apps/cli`)
 
@@ -270,6 +270,29 @@ Ready per run, in order: GeoJSON 4.24, 4.18, 4.14, 5.12, 4.17 s; Folder 0.43, 0.
 
 Against the batches before it (same machine and dev server): GeoJSON 4.86 s on 2026-10-22 and 4.18 s now; Folder 0.50 s then and 0.43 s now; PM Tiles 0.56 s then and 0.10 s now, the one number that moved a lot (see the note under the table at the top).
 
+### Deployed site batch (2026-10-26)
+
+The same protocol on the live site (`https://landing-stage.longngphuc.id.vn/dev-challenge-gis/`, build `eade242`, data from the homelab SeaweedFS host behind Cloudflare): Claude in Chrome, visible tab, 10 s between runs, order Folder, PM Tiles, GeoJSON. The benchmark code is the same as in the local batch (commit `b5a3ba3`); the later commits only add the Landmarks layer and the popup refactor, which the benchmark view does not draw. Machine: load average about 3 during the Folder and PM Tiles runs; it climbed to 5 to 7 during the GeoJSON runs (macOS background scans plus the browser).
+
+|                              | GeoJSON (roads + wards files)           | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
+| ---------------------------- | --------------------------------------- | ------------------------ | -------------------------- |
+| Counted runs                 | 6                                       | 5 (1 more was hidden)    | 6                          |
+| Ready, median (range)        | 24.6 s (23.0 to 29.2) **machine-bound** | 0.69 s (0.48 to 0.82)    | 1.02 s (0.86 to 9.61)      |
+| Network part, median         | 4.3 s (plus 19.8 s after download)      | 0.47 s                   | 0.74 s                     |
+| Overlay bytes on the wire    | 15,103,264 (15.00 to 15.22 million)     | 402,849                  | 232,005                    |
+| Boundary on the wire, median | 194,646                                 | 194,366                  | 194,447                    |
+| Total with boundary, median  | 15,298,025                              | 597,215                  | 426,453                    |
+| Requests                     | 2                                       | 12                       | 14 range requests          |
+
+Ready per run, in order: GeoJSON 23.75, 29.20, 29.11, 24.61, 24.66, 22.99 s; Folder 0.69, 0.70, 0.82, 0.48, 0.64 s (a first run of 0.76 s was flagged hidden, the tab had just opened, and is not counted); PM Tiles 9.61, 0.86, 0.97, 1.16, 1.05, 0.99 s.
+
+What this shows, and what it does not:
+
+- **The GeoJSON seconds are not usable.** Almost all of 24.6 s is the main-thread parse (19.8 s after the download), and that part depends on the machine: a control run of the same GeoJSON on localhost, taken right after at load average 5.2, took 21.4 s (20.4 s after the download) against 4.2 s on an idle machine earlier the same day. What is stable is the download: 4.0 to 5.3 s for about 15 MB, which alone is about 6x the complete ready time of Folder (0.69 s). No GeoJSON-versus-tiles time factor is claimed.
+- **Bytes on the live host:** the host compresses the GeoJSON (81.4 MB raw, about 15.1 MB on the wire, varying by about 200 KB between runs, probably because Cloudflare compresses on the fly) and the boundary (587,641 B raw, about 194 KB), but not the Folder tiles (402,849 B, the same as their raw size). PM Tiles are gzipped inside the archive (232,005 B). So the live ratios in bytes are about 37x (Folder) and 65x (PM Tiles) against GeoJSON.
+- **PM Tiles against Folder is the reverse of the local batch.** On the live host Folder (0.69 s) is faster than PM Tiles (1.02 s), in line with the earlier deployed-site batch (0.88 s against 1.65 s). The first PM Tiles load was a cold 9.6 s (the archive's header and directory, a first visit to the host); the other five are 0.86 to 1.16 s. This supports the guess that the local PM Tiles speed came from loopback and a warm browser cache, though it does not prove it.
+- 6 runs, not 5, for PM Tiles and GeoJSON, because an extra run was queued; all runs were counted, none dropped except the hidden Folder run.
+
 ### Previous batch: roads + wards in all three variants (2026-10-22, commit `9472cc1`)
 
 |                       | GeoJSON (roads + wards files)       | Tiles (Folder, combined) | Tiles (PM Tiles, combined) |
@@ -323,7 +346,7 @@ PM Tiles was not faster than Folder in any pass of this batch. Compare ratios wi
 
 ### Caveats
 
-- **Latest batch is local.** Its seconds come from the dev server over loopback and cannot be compared with the earlier deployed-site batch above; compare bytes and requests across the two, and ratios only within one batch. A deployed batch with the combined data is not recorded yet.
+- **Latest batch is local.** Its seconds come from the dev server over loopback and cannot be compared with the earlier deployed-site batch above; compare bytes and requests across the two, and ratios only within one batch. The deployed batch is recorded in its own section below.
 - **Latest batch is one sitting on one machine.** The run order was Folder, PM Tiles, GeoJSON, so a warm cache or a changing machine state could favour the later variants; interleaving the variants run by run would test that, and so would a run without the 10 s pauses.
 - **Latest batch has 5 runs per variant**, none hidden; the previous batch had 3. The Chrome tab froze on the 5th consecutive GeoJSON run in this and in the previous attempt (80 MB parsed five times in one tab), so the 5th GeoJSON run was taken in a fresh tab.
 - In the earlier batch both modes trend down over the first runs (cold start). The spread is wide for Folder, so treat its median as approximate; more runs would firm up the medians. The second pass has only 3 runs per variant.
